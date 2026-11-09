@@ -1,0 +1,6 @@
+
+Chn1 Chn2  PAE Dist  Type   ipSAE    ipSAE_d0chn ipSAE_d0dom  ipTM_af  ipTM_d0chn     pDockQ     pDockQ2    LIS       n0res  n0chn  n0dom   d0res   d0chn   d0dom  nres1   nres2   dist1   dist2  Model
+A    B     10   10   asym  0.010173    0.204238    0.010157    0.180    0.079080      0.1902     0.0161     0.0502       1    180      2    1.00    5.00    1.00      1       1       0       0   /tmp/cellertz-gpu4-ipsae/PDB/PDL1_l65_s985772_mpnn1_model1
+B    A     10   10   asym  0.000000    0.000000    0.000000    0.180    0.066114      0.1902     0.0142     0.0000      21    180      0    1.00    5.00    1.00      0       0       0       0   /tmp/cellertz-gpu4-ipsae/PDB/PDL1_l65_s985772_mpnn1_model1
+A    B     10   10   max   0.010173    0.204238    0.010157    0.180    0.079080      0.1902     0.0161     0.0251       1    180      2    1.00    5.00    1.00      1       1       0       0   /tmp/cellertz-gpu4-ipsae/PDB/PDL1_l65_s985772_mpnn1_model1
+

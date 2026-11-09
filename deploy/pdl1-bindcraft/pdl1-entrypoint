@@ -1,0 +1,10 @@
+#!/bin/sh
+# Container command for the governed adapter. The scientific flags arrive
+# as arguments; this script does not add a seed, a length, or a filter.
+# The interpreter is the BindCraft conda environment. A stock CUDA image
+# does not provide this path.
+PYTHON="/opt/conda/envs/BindCraft/bin/python"
+export PYTHONPATH="/opt/cellertz-src${PYTHONPATH:+:$PYTHONPATH}"
+LD_LIBRARY_PATH="$("$PYTHON" -c 'from cellertz.application.pdl1_image_readiness import prepend_library_path; import os; print(prepend_library_path(os.environ.get("LD_LIBRARY_PATH")))')"
+export LD_LIBRARY_PATH
+exec /opt/conda/envs/BindCraft/bin/python -m cellertz.application.pdl1_container_entrypoint "$@"

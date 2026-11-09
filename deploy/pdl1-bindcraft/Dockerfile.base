@@ -1,0 +1,48 @@
+# BindCraft conda base. The governed Dockerfile consumes this image only
+# after it has a repository digest. docker image inspect Id is the local
+# image ID. RepoDigests is empty for a local build that was not pushed.
+# The parent is docker.io/library/ubuntu:22.04 for linux/amd64.
+# The tag's OCI index digest is not the pin. FROM uses the linux/amd64
+# OCI image manifest digest recorded in ubuntu-22.04-identity.json.
+# Historical builds are not driver approval.
+# Scientific execution stays disabled.
+
+FROM ubuntu:22.04@sha256:98510ac07bb4545e389be502a8918b385c018bfe4ceeb5ac7e0375c782268b04
+
+ARG MINIFORGE_SHA256=281b0ac7d550802efc81af633225a5e6116d29ae72f3ab4eae7168c3931a4c05
+
+ENV PATH="/opt/conda/envs/BindCraft/bin:/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# python3 runs the lock constraint checker only. The BindCraft interpreter
+# is /opt/conda/envs/BindCraft/bin/python after the conda prefix is created.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates bzip2 python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY deploy/pdl1-bindcraft/conda-observed.lock /tmp/conda-observed.lock
+COPY deploy/pdl1-bindcraft/required-conda-names.txt /tmp/required-conda-names.txt
+COPY deploy/pdl1-bindcraft/conda-bindcraft.depends.tsv /tmp/conda-bindcraft.depends.tsv
+COPY deploy/pdl1-bindcraft/check-conda-lock.sh /tmp/check-conda-lock.sh
+COPY deploy/pdl1-bindcraft/check-conda-constraints.py /tmp/check-conda-constraints.py
+RUN chmod 0755 /tmp/check-conda-lock.sh \
+    && /tmp/check-conda-lock.sh /tmp/conda-observed.lock /tmp/required-conda-names.txt /tmp/conda-bindcraft.depends.tsv
+
+# miniforge.sh is the verified Miniforge3-26.7.2-0-Linux-x86_64.sh installer.
+# The bytes are gitignored. MINIFORGE_SHA256 is that file's official checksum.
+COPY deploy/pdl1-bindcraft/installer/miniforge.sh /tmp/miniforge.sh
+RUN test -n "$MINIFORGE_SHA256" \
+    || { echo miniforge_installer_unresolved >&2; exit 1; } \
+    && echo "$MINIFORGE_SHA256  /tmp/miniforge.sh" | sha256sum -c - \
+    && bash /tmp/miniforge.sh -b -p /opt/conda \
+    && rm /tmp/miniforge.sh \
+    && grep -E '^[a-z0-9].*=.*=.*$' /tmp/conda-observed.lock > /tmp/conda-explicit.txt \
+    && /opt/conda/bin/conda create -p /opt/conda/envs/BindCraft \
+        --yes \
+        --no-deps \
+        --override-channels \
+        --strict-channel-priority \
+        --channel conda-forge \
+        --file /tmp/conda-explicit.txt \
+    && /opt/conda/bin/conda clean -afy
+
+WORKDIR /opt/conda/envs/BindCraft

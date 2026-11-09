@@ -1,0 +1,43 @@
+{
+  "record_kind": "conda_base_prefix_observation",
+  "prefix": "/opt/conda",
+  "inventory_file": "conda-bootstrap.observed.tsv",
+  "belongs_in_bindcraft_lock": false,
+  "scientific_run_execution": "disabled",
+  "python": {
+    "version": "3.14.7",
+    "build": "hcd007b5_106_cp314",
+    "channel": "conda.anaconda.org/conda-forge"
+  },
+  "conda": {
+    "version": "26.7.2",
+    "build": "py314h9e666f3_1",
+    "channel": "conda.anaconda.org/conda-forge"
+  },
+  "conda_libmamba_solver": {
+    "version": "26.7.0",
+    "build": "pyhcf101f3_0",
+    "channel": "conda.anaconda.org/conda-forge"
+  },
+  "libmambapy": {
+    "version": "2.9.0",
+    "build": "py314h959206d_0",
+    "channel": "conda.anaconda.org/conda-forge"
+  },
+  "mamba": {
+    "version": "2.9.0",
+    "build": "h9649d4f_0",
+    "channel": "conda.anaconda.org/conda-forge"
+  },
+  "conda_cli_version": "26.7.2",
+  "miniforge_release_label": "26.7.2-0",
+  "miniforge_release_verified_by_inventory": false,
+  "miniforge_release_url": "https://github.com/conda-forge/miniforge/releases/tag/26.7.2-0",
+  "installer_filename": "Miniforge3-26.7.2-0-Linux-x86_64.sh",
+  "installer_download_url": "https://github.com/conda-forge/miniforge/releases/download/26.7.2-0/Miniforge3-26.7.2-0-Linux-x86_64.sh",
+  "installer_checksum_url": "https://github.com/conda-forge/miniforge/releases/download/26.7.2-0/Miniforge3-26.7.2-0-Linux-x86_64.sh.sha256",
+  "installer_sha256": "281b0ac7d550802efc81af633225a5e6116d29ae72f3ab4eae7168c3931a4c05",
+  "installer_sha256_verified_against_official_checksum": true,
+  "installer_bytes_compared_to_sif": false,
+  "conda_package_build_is_not_the_cli_version": true
+}

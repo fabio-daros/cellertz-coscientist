@@ -1,0 +1,431 @@
+# /opt/conda bootstrap observations. These rows are not BindCraft lock entries.
+# belongs_in_bindcraft_lock: false
+# scientific_run_execution: disabled
+conda	/opt/conda	_openmp_mutex	4.5	20_gnu	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	_openmp_mutex	4.5	20_gnu	conda.anaconda.org/conda-forge	libgomp >=7.5.0
+conda	/opt/conda	_python_abi3_support	1.0	hd8ed1ab_3	conda.anaconda.org/conda-forge	cpython
+conda	/opt/conda	_python_abi3_support	1.0	hd8ed1ab_3	conda.anaconda.org/conda-forge	python-gil
+conda	/opt/conda	annotated-types	0.8.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	annotated-types	0.8.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	typing-extensions >=4.0.0
+conda	/opt/conda	anyio	4.15.1	pyh5ded981_1	conda.anaconda.org/conda-forge	idna >=2.8
+conda	/opt/conda	anyio	4.15.1	pyh5ded981_1	conda.anaconda.org/conda-forge	python >=3.11
+conda	/opt/conda	anyio	4.15.1	pyh5ded981_1	conda.anaconda.org/conda-forge	typing_extensions >=4.16.0
+conda	/opt/conda	anyio	4.15.1	pyh5ded981_1	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	archspec	0.2.5	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	backports.zstd	1.7.0	py314h680f03e_1	conda.anaconda.org/conda-forge	python >=3.14
+conda	/opt/conda	boltons	26.2.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.11
+conda	/opt/conda	brotli-python	1.2.0	py314hcd2bdb6_4	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	brotli-python	1.2.0	py314hcd2bdb6_4	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	brotli-python	1.2.0	py314hcd2bdb6_4	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	brotli-python	1.2.0	py314hcd2bdb6_4	conda.anaconda.org/conda-forge	python >=3.14,<3.15.0a0
+conda	/opt/conda	brotli-python	1.2.0	py314hcd2bdb6_4	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	bzip2	1.0.8	hda65f42_10	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	bzip2	1.0.8	hda65f42_10	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	c-ares	1.34.8	hebe6cf0_2	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	c-ares	1.34.8	hebe6cf0_2	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	ca-certificates	2026.7.22	hbd8a1cb_0	conda.anaconda.org/conda-forge	__unix
+conda	/opt/conda	cached-property	2.0.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	cached_property >=2.0.1,<2.0.2.0a0
+conda	/opt/conda	cached_property	2.0.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	cached_property	2.0.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	certifi	2026.7.22	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	charset-normalizer	3.5.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	colorama	0.4.6	pyhd8ed1ab_1	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	archspec >=0.2.3
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	boltons >=23.0.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	charset-normalizer
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	conda-package-handling >=2.2.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	distro >=1.5.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	frozendict >=2.4.2
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	menuinst >=2
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	msgpack-python >=1.1.1
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	packaging >=23.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	platformdirs >=3.10.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	pluggy >=1.6.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	pycosat >=0.6.3
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	requests >=2.28.0,<3
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	ruamel.yaml >=0.11.14,<0.20
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	setuptools >=60.0.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	tqdm >=4
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	truststore >=0.8.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	conda-libmamba-solver >=26.4.1
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	conda-lockfiles >=0.2.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	conda-pypi >=0.10.1
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	conda-rattler-solver >=0.1.1
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	conda-self >=0.2.0
+conda	/opt/conda	conda	26.7.2	py314h9e666f3_1	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	conda-index	0.13.0	pyh5ded981_0	conda.anaconda.org/conda-forge	python >=3.11
+conda	/opt/conda	conda-index	0.13.0	pyh5ded981_0	conda.anaconda.org/conda-forge	backports.zstd >=1.3.0
+conda	/opt/conda	conda-index	0.13.0	pyh5ded981_0	conda.anaconda.org/conda-forge	conda >=25
+conda	/opt/conda	conda-index	0.13.0	pyh5ded981_0	conda.anaconda.org/conda-forge	conda-package-streaming >=0.12.0
+conda	/opt/conda	conda-index	0.13.0	pyh5ded981_0	conda.anaconda.org/conda-forge	jinja2
+conda	/opt/conda	conda-index	0.13.0	pyh5ded981_0	conda.anaconda.org/conda-forge	msgpack-python >=1.1.1
+conda	/opt/conda	conda-index	0.13.0	pyh5ded981_0	conda.anaconda.org/conda-forge	ruamel.yaml
+conda	/opt/conda	conda-index	0.13.0	pyh5ded981_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	conda-libmamba-solver	26.7.0	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	conda-libmamba-solver	26.7.0	pyhcf101f3_0	conda.anaconda.org/conda-forge	libmambapy >=2.0.0,!=2.6.2
+conda	/opt/conda	conda-libmamba-solver	26.7.0	pyhcf101f3_0	conda.anaconda.org/conda-forge	boltons >=23.0.0
+conda	/opt/conda	conda-libmamba-solver	26.7.0	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	conda-lockfiles	0.2.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	conda >=26.3.0
+conda	/opt/conda	conda-lockfiles	0.2.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	pydantic >=2.12.5,<3
+conda	/opt/conda	conda-lockfiles	0.2.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	conda-lockfiles	0.2.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	ruamel.yaml
+conda	/opt/conda	conda-package-handling	2.6.0	pyh5ded981_0	conda.anaconda.org/conda-forge	python >=3.11
+conda	/opt/conda	conda-package-handling	2.6.0	pyh5ded981_0	conda.anaconda.org/conda-forge	conda-package-streaming >=0.13.0
+conda	/opt/conda	conda-package-handling	2.6.0	pyh5ded981_0	conda.anaconda.org/conda-forge	backports.zstd >=1.1.0
+conda	/opt/conda	conda-package-handling	2.6.0	pyh5ded981_0	conda.anaconda.org/conda-forge	requests
+conda	/opt/conda	conda-package-handling	2.6.0	pyh5ded981_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	conda-package-streaming	0.13.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	backports.zstd
+conda	/opt/conda	conda-package-streaming	0.13.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	python >=3.11
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	pip >=23.0.1
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	packaging
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	unearth
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	python-build
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	python-installer >=1.0
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	platformdirs
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	conda-index >=0.11.0
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	conda-package-streaming >=0.11
+conda	/opt/conda	conda-pypi	0.11.0	pyh5ded981_2	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	conda-rattler-solver	0.1.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	conda-rattler-solver	0.1.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	conda >=26.5.0
+conda	/opt/conda	conda-rattler-solver	0.1.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	py-rattler >=0.25.0,<0.26.0a0
+conda	/opt/conda	conda-rattler-solver	0.1.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	conda-self	0.2.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	conda >=26.1.1
+conda	/opt/conda	conda-self	0.2.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	cpp-expected	1.3.1	h171cf75_1	conda.anaconda.org/conda-forge	libstdcxx >=14
+conda	/opt/conda	cpp-expected	1.3.1	h171cf75_1	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	cpp-expected	1.3.1	h171cf75_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	cpython	3.14.7	py314hd8ed1ab_106	conda.anaconda.org/conda-forge	python >=3.14,<3.15.0a0
+conda	/opt/conda	cpython	3.14.7	py314hd8ed1ab_106	conda.anaconda.org/conda-forge	python_abi * *_cp314
+conda	/opt/conda	distro	1.9.0	pyhd8ed1ab_1	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	fmt	12.1.0	h76c4fd7_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	fmt	12.1.0	h76c4fd7_1	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	fmt	12.1.0	h76c4fd7_1	conda.anaconda.org/conda-forge	libstdcxx >=14
+conda	/opt/conda	frozendict	2.4.7	pyh851646a_2	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	frozendict	2.4.7	pyh851646a_2	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	h11	0.16.0	pyhcf101f3_1	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	h11	0.16.0	pyhcf101f3_1	conda.anaconda.org/conda-forge	typing_extensions
+conda	/opt/conda	h11	0.16.0	pyhcf101f3_1	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	h2	4.4.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	h2	4.4.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	hyperframe >=6.1,<7
+conda	/opt/conda	h2	4.4.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	hpack >=4.2,<5
+conda	/opt/conda	h2	4.4.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	hpack	4.2.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	httpcore	1.0.9	pyh29332c3_0	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	httpcore	1.0.9	pyh29332c3_0	conda.anaconda.org/conda-forge	h11 >=0.16
+conda	/opt/conda	httpcore	1.0.9	pyh29332c3_0	conda.anaconda.org/conda-forge	h2 >=3,<5
+conda	/opt/conda	httpcore	1.0.9	pyh29332c3_0	conda.anaconda.org/conda-forge	sniffio 1.*
+conda	/opt/conda	httpcore	1.0.9	pyh29332c3_0	conda.anaconda.org/conda-forge	anyio >=4.0,<5.0
+conda	/opt/conda	httpcore	1.0.9	pyh29332c3_0	conda.anaconda.org/conda-forge	certifi
+conda	/opt/conda	httpcore	1.0.9	pyh29332c3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	httpx	0.28.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	anyio
+conda	/opt/conda	httpx	0.28.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	certifi
+conda	/opt/conda	httpx	0.28.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	httpcore 1.*
+conda	/opt/conda	httpx	0.28.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	idna
+conda	/opt/conda	httpx	0.28.1	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	hyperframe	6.1.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	icu	78.3	py310h44b86e0_2	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	icu	78.3	py310h44b86e0_2	conda.anaconda.org/conda-forge	libstdcxx >=14
+conda	/opt/conda	icu	78.3	py310h44b86e0_2	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	idna	3.19	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	idna	3.19	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	importlib-metadata	9.0.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	importlib-metadata	9.0.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	zipp >=3.20
+conda	/opt/conda	importlib-metadata	9.0.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	jinja2	3.1.6	pyhcf101f3_1	conda.anaconda.org/conda-forge	markupsafe >=2.0
+conda	/opt/conda	jinja2	3.1.6	pyhcf101f3_1	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	jinja2	3.1.6	pyhcf101f3_1	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	keyutils	1.6.3	h7cc23a3_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	keyutils	1.6.3	h7cc23a3_1	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	krb5	1.22.2	hbc21106_2	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	krb5	1.22.2	hbc21106_2	conda.anaconda.org/conda-forge	keyutils >=1.6.3,<2.0a0
+conda	/opt/conda	krb5	1.22.2	hbc21106_2	conda.anaconda.org/conda-forge	libedit >=3.1.20250104,<3.2.0a0
+conda	/opt/conda	krb5	1.22.2	hbc21106_2	conda.anaconda.org/conda-forge	libedit >=3.1.20250104,<4.0a0
+conda	/opt/conda	krb5	1.22.2	hbc21106_2	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	krb5	1.22.2	hbc21106_2	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	krb5	1.22.2	hbc21106_2	conda.anaconda.org/conda-forge	openssl >=3.5.7,<4.0a0
+conda	/opt/conda	ld_impl_linux-64	2.46.1	default_hbd61a6d_102	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	ld_impl_linux-64	2.46.1	default_hbd61a6d_102	conda.anaconda.org/conda-forge	zstd >=1.5.7,<1.6.0a0
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	bzip2 >=1.0.8,<2.0a0
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	liblzma >=5.8.3,<6.0a0
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	libxml2
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	libxml2-16 >=2.15.3
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	lz4-c >=1.10.0,<1.11.0a0
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	lzo >=2.10,<3.0a0
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	openssl >=3.5.7,<4.0a0
+conda	/opt/conda	libarchive	3.8.9	gpl_h3152399_101	conda.anaconda.org/conda-forge	zstd >=1.5.7,<1.6.0a0
+conda	/opt/conda	libcurl	8.22.0	ha042cf0_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libcurl	8.22.0	ha042cf0_0	conda.anaconda.org/conda-forge	krb5 >=1.22.2,<1.23.0a0
+conda	/opt/conda	libcurl	8.22.0	ha042cf0_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libcurl	8.22.0	ha042cf0_0	conda.anaconda.org/conda-forge	libnghttp2 >=1.68.1,<2.0a0
+conda	/opt/conda	libcurl	8.22.0	ha042cf0_0	conda.anaconda.org/conda-forge	libpsl >=0.23.1,<0.24.0a0
+conda	/opt/conda	libcurl	8.22.0	ha042cf0_0	conda.anaconda.org/conda-forge	libssh2 >=1.11.1,<2.0a0
+conda	/opt/conda	libcurl	8.22.0	ha042cf0_0	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	libcurl	8.22.0	ha042cf0_0	conda.anaconda.org/conda-forge	openssl >=3.5.8,<4.0a0
+conda	/opt/conda	libcurl	8.22.0	ha042cf0_0	conda.anaconda.org/conda-forge	zstd >=1.5.7,<1.6.0a0
+conda	/opt/conda	libedit	3.1.20250104	pl5321h373387f_1	conda.anaconda.org/conda-forge	ncurses
+conda	/opt/conda	libedit	3.1.20250104	pl5321h373387f_1	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	libedit	3.1.20250104	pl5321h373387f_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libedit	3.1.20250104	pl5321h373387f_1	conda.anaconda.org/conda-forge	ncurses >=6.6,<7.0a0
+conda	/opt/conda	libev	4.33	h280c20c_3	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	libev	4.33	h280c20c_3	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libexpat	2.8.1	hecca717_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libexpat	2.8.1	hecca717_1	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	libffi	3.7.0	h81df57d_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libffi	3.7.0	h81df57d_1	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libgcc	16.2.0	ha9f2e26_4	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libgcc	16.2.0	ha9f2e26_4	conda.anaconda.org/conda-forge	_openmp_mutex >=4.5
+conda	/opt/conda	libgomp	16.2.0	he0feb66_4	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libiconv	1.18	h0cb94f2_3	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libiconv	1.18	h0cb94f2_3	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	liblzma	5.8.3	hb03c661_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	liblzma	5.8.3	hb03c661_1	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	cpp-expected >=1.3.1,<1.3.2.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	libmsgpack-c >=6.1.0,<7.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	libarchive >=3.8.9,<3.9.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	zstd >=1.5.7,<1.6.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	libsolv >=0.7.39,<0.8.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	openssl >=3.5.8,<4.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	libcurl >=8.21.0,<9.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	reproc-cpp >=14.2.8.post0,<14.3.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	fmt >=12.1.0,<12.2.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	reproc >=14.2.8.post0,<14.3.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	simdjson >=4.6.9,<4.7.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	spdlog >=1.17.0,<1.18.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	yaml-cpp >=0.8.0,<0.9.0a0
+conda	/opt/conda	libmamba	2.9.0	py314h6ba947b_0	conda.anaconda.org/conda-forge	nlohmann_json-abi ==3.12.0
+conda	/opt/conda	libmamba-spdlog	2.9.0	h5efa3ab_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libmamba-spdlog	2.9.0	h5efa3ab_0	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	libmamba-spdlog	2.9.0	h5efa3ab_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libmamba-spdlog	2.9.0	h5efa3ab_0	conda.anaconda.org/conda-forge	libmamba >=2.9.0,<2.10.0a0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	libmamba ==2.9.0 py314h6ba947b_0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	libmamba-spdlog ==2.9.0 h5efa3ab_0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	fmt >=12.1.0,<12.2.0a0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	openssl >=3.5.8,<4.0a0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	nlohmann_json-abi ==3.12.0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	yaml-cpp >=0.8.0,<0.9.0a0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	spdlog >=1.17.0,<1.18.0a0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	zstd >=1.5.7,<1.6.0a0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	libmamba >=2.9.0,<2.10.0a0
+conda	/opt/conda	libmambapy	2.9.0	py314h959206d_0	conda.anaconda.org/conda-forge	pybind11-abi ==11
+conda	/opt/conda	libmpdec	4.0.0	hb03c661_2	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libmpdec	4.0.0	hb03c661_2	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	libmsgpack-c	6.1.0	h54a6638_7	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libmsgpack-c	6.1.0	h54a6638_7	conda.anaconda.org/conda-forge	libstdcxx >=14
+conda	/opt/conda	libmsgpack-c	6.1.0	h54a6638_7	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	libnghttp2	1.68.1	h74cf4be_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libnghttp2	1.68.1	h74cf4be_1	conda.anaconda.org/conda-forge	c-ares >=1.34.8,<2.0a0
+conda	/opt/conda	libnghttp2	1.68.1	h74cf4be_1	conda.anaconda.org/conda-forge	libev >=4.33,<4.34.0a0
+conda	/opt/conda	libnghttp2	1.68.1	h74cf4be_1	conda.anaconda.org/conda-forge	libev >=4.33,<5.0a0
+conda	/opt/conda	libnghttp2	1.68.1	h74cf4be_1	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libnghttp2	1.68.1	h74cf4be_1	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	libnghttp2	1.68.1	h74cf4be_1	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	libnghttp2	1.68.1	h74cf4be_1	conda.anaconda.org/conda-forge	openssl >=3.5.7,<4.0a0
+conda	/opt/conda	libpsl	0.23.1	hd9e3e90_1	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	libpsl	0.23.1	hd9e3e90_1	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libpsl	0.23.1	hd9e3e90_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libpsl	0.23.1	hd9e3e90_1	conda.anaconda.org/conda-forge	icu >=78.3,<79.0a0
+conda	/opt/conda	libpython	3.14.7	hdc7f604_106_cp314	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libpython	3.14.7	hdc7f604_106_cp314	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libpython	3.14.7	hdc7f604_106_cp314	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	libsolv	0.7.39	h72ddc62_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libsolv	0.7.39	h72ddc62_1	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libsolv	0.7.39	h72ddc62_1	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	libsolv	0.7.39	h72ddc62_1	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	libsqlite	3.53.4	h13e7031_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libsqlite	3.53.4	h13e7031_1	conda.anaconda.org/conda-forge	icu >=78.3,<79.0a0
+conda	/opt/conda	libsqlite	3.53.4	h13e7031_1	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libsqlite	3.53.4	h13e7031_1	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	libssh2	1.11.1	h6154650_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libssh2	1.11.1	h6154650_1	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	libssh2	1.11.1	h6154650_1	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	libssh2	1.11.1	h6154650_1	conda.anaconda.org/conda-forge	openssl >=3.5.7,<4.0a0
+conda	/opt/conda	libstdcxx	16.2.0	h934c35e_4	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libstdcxx	16.2.0	h934c35e_4	conda.anaconda.org/conda-forge	libgcc 16.2.0 ha9f2e26_4
+conda	/opt/conda	libuuid	2.42.3	hcfc3c73_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libuuid	2.42.3	hcfc3c73_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libxml2	2.15.4	h7df9aa5_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libxml2	2.15.4	h7df9aa5_0	conda.anaconda.org/conda-forge	icu >=78.3,<79.0a0
+conda	/opt/conda	libxml2	2.15.4	h7df9aa5_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libxml2	2.15.4	h7df9aa5_0	conda.anaconda.org/conda-forge	libiconv >=1.18,<2.0a0
+conda	/opt/conda	libxml2	2.15.4	h7df9aa5_0	conda.anaconda.org/conda-forge	liblzma >=5.8.3,<6.0a0
+conda	/opt/conda	libxml2	2.15.4	h7df9aa5_0	conda.anaconda.org/conda-forge	libxml2-16 2.15.4 hf3af7cc_0
+conda	/opt/conda	libxml2	2.15.4	h7df9aa5_0	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	libxml2-16	2.15.4	hf3af7cc_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	libxml2-16	2.15.4	hf3af7cc_0	conda.anaconda.org/conda-forge	icu >=78.3,<79.0a0
+conda	/opt/conda	libxml2-16	2.15.4	hf3af7cc_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	libxml2-16	2.15.4	hf3af7cc_0	conda.anaconda.org/conda-forge	libiconv >=1.18,<2.0a0
+conda	/opt/conda	libxml2-16	2.15.4	hf3af7cc_0	conda.anaconda.org/conda-forge	liblzma >=5.8.3,<6.0a0
+conda	/opt/conda	libxml2-16	2.15.4	hf3af7cc_0	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	libzlib	1.3.2	h25fd6f3_3	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	lz4-c	1.10.0	hee9eb32_2	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	lz4-c	1.10.0	hee9eb32_2	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	lz4-c	1.10.0	hee9eb32_2	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	lzo	2.10	hebe6cf0_1003	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	lzo	2.10	hebe6cf0_1003	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	mamba	2.9.0	h9649d4f_0	conda.anaconda.org/conda-forge	libmamba ==2.9.0 py314h6ba947b_0
+conda	/opt/conda	mamba	2.9.0	h9649d4f_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	mamba	2.9.0	h9649d4f_0	conda.anaconda.org/conda-forge	reproc-cpp >=14.2.8.post0,<14.3.0a0
+conda	/opt/conda	mamba	2.9.0	h9649d4f_0	conda.anaconda.org/conda-forge	zstd >=1.5.7,<1.6.0a0
+conda	/opt/conda	mamba	2.9.0	h9649d4f_0	conda.anaconda.org/conda-forge	libmamba >=2.9.0,<2.10.0a0
+conda	/opt/conda	mamba	2.9.0	h9649d4f_0	conda.anaconda.org/conda-forge	reproc >=14.2.8.post0,<14.3.0a0
+conda	/opt/conda	markupsafe	3.0.3	py314h67df5f8_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	markupsafe	3.0.3	py314h67df5f8_1	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	markupsafe	3.0.3	py314h67df5f8_1	conda.anaconda.org/conda-forge	python >=3.14,<3.15.0a0
+conda	/opt/conda	markupsafe	3.0.3	py314h67df5f8_1	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	menuinst	2.5.2	py314h9e666f3_2	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	menuinst	2.5.2	py314h9e666f3_2	conda.anaconda.org/conda-forge	tomli-w
+conda	/opt/conda	menuinst	2.5.2	py314h9e666f3_2	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	msgpack-python	1.2.2	py314h5383ef5_2	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	msgpack-python	1.2.2	py314h5383ef5_2	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	msgpack-python	1.2.2	py314h5383ef5_2	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	msgpack-python	1.2.2	py314h5383ef5_2	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	msgpack-python	1.2.2	py314h5383ef5_2	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	ncurses	6.6	hdb14827_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	ncurses	6.6	hdb14827_1	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	nlohmann_json-abi	3.12.0	h0f90c79_2	conda.anaconda.org/conda-forge	
+conda	/opt/conda	openssl	3.6.4	h781a0a9_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	openssl	3.6.4	h781a0a9_0	conda.anaconda.org/conda-forge	ca-certificates
+conda	/opt/conda	openssl	3.6.4	h781a0a9_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	packaging	26.3	pyhc364b38_0	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	packaging	26.3	pyhc364b38_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	pip	26.2.1	pyh145f28c_0	conda.anaconda.org/conda-forge	python >=3.13.0a0
+conda	/opt/conda	platformdirs	4.11.6	pyh5ded981_0	conda.anaconda.org/conda-forge	python >=3.11
+conda	/opt/conda	platformdirs	4.11.6	pyh5ded981_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	pluggy	1.6.0	pyhf9edf01_1	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	pluggy	1.6.0	pyhf9edf01_1	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	py-rattler	0.25.0	py310hefeb9ab_5	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	py-rattler	0.25.0	py310hefeb9ab_5	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	py-rattler	0.25.0	py310hefeb9ab_5	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	py-rattler	0.25.0	py310hefeb9ab_5	conda.anaconda.org/conda-forge	_python_abi3_support 1.*
+conda	/opt/conda	py-rattler	0.25.0	py310hefeb9ab_5	conda.anaconda.org/conda-forge	cpython >=3.10
+conda	/opt/conda	py-rattler	0.25.0	py310hefeb9ab_5	conda.anaconda.org/conda-forge	openssl >=3.5.8,<4.0a0
+conda	/opt/conda	pybind11-abi	11	hc364b38_1	conda.anaconda.org/conda-forge	
+conda	/opt/conda	pycosat	0.6.6	py314h89acca1_5	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	pycosat	0.6.6	py314h89acca1_5	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	pycosat	0.6.6	py314h89acca1_5	conda.anaconda.org/conda-forge	python >=3.14,<3.15.0a0
+conda	/opt/conda	pycosat	0.6.6	py314h89acca1_5	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	pydantic	2.13.5	pyhcf101f3_0	conda.anaconda.org/conda-forge	typing-inspection >=0.4.2
+conda	/opt/conda	pydantic	2.13.5	pyhcf101f3_0	conda.anaconda.org/conda-forge	typing_extensions >=4.14.1
+conda	/opt/conda	pydantic	2.13.5	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	pydantic	2.13.5	pyhcf101f3_0	conda.anaconda.org/conda-forge	annotated-types >=0.6.0
+conda	/opt/conda	pydantic	2.13.5	pyhcf101f3_0	conda.anaconda.org/conda-forge	pydantic-core ==2.46.5
+conda	/opt/conda	pydantic	2.13.5	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	pydantic-core	2.46.5	py314h7e8cd81_1	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	pydantic-core	2.46.5	py314h7e8cd81_1	conda.anaconda.org/conda-forge	typing-extensions >=4.6.0,!=4.7.0
+conda	/opt/conda	pydantic-core	2.46.5	py314h7e8cd81_1	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	pydantic-core	2.46.5	py314h7e8cd81_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	pydantic-core	2.46.5	py314h7e8cd81_1	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	pyproject_hooks	1.2.0	pyhd8ed1ab_1	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	pyproject_hooks	1.2.0	pyhd8ed1ab_1	conda.anaconda.org/conda-forge	tomli >=1.1.0
+conda	/opt/conda	pysocks	1.7.1	pyha55dd90_7	conda.anaconda.org/conda-forge	__unix
+conda	/opt/conda	pysocks	1.7.1	pyha55dd90_7	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	bzip2 >=1.0.8,<2.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	ld_impl_linux-64 >=2.36.1
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	libexpat >=2.8.1,<3.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	libffi >=3.7.0,<3.8.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	liblzma >=5.8.3,<6.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	libmpdec >=4.0.0,<5.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	libpython 3.14.7 hdc7f604_106_cp314
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	libsqlite >=3.53.4,<4.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	libuuid >=2.42.3,<3.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	ncurses >=6.6,<7.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	openssl >=3.5.8,<4.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	readline >=8.3,<9.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	tk >=8.6.13,<8.7.0a0
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	tzdata
+conda	/opt/conda	python	3.14.7	hcd007b5_106_cp314	conda.anaconda.org/conda-forge	zstd >=1.5.7,<1.6.0a0
+conda	/opt/conda	python-build	1.6.0	pyhc364b38_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	python-build	1.6.0	pyhc364b38_0	conda.anaconda.org/conda-forge	colorama
+conda	/opt/conda	python-build	1.6.0	pyhc364b38_0	conda.anaconda.org/conda-forge	importlib-metadata >=4.6
+conda	/opt/conda	python-build	1.6.0	pyhc364b38_0	conda.anaconda.org/conda-forge	packaging >=24.0
+conda	/opt/conda	python-build	1.6.0	pyhc364b38_0	conda.anaconda.org/conda-forge	pyproject_hooks
+conda	/opt/conda	python-build	1.6.0	pyhc364b38_0	conda.anaconda.org/conda-forge	tomli >=1.1.0
+conda	/opt/conda	python-build	1.6.0	pyhc364b38_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	python-gil	3.14.7	h4df99d1_106	conda.anaconda.org/conda-forge	cpython 3.14.7.*
+conda	/opt/conda	python-gil	3.14.7	h4df99d1_106	conda.anaconda.org/conda-forge	python_abi * *_cp314
+conda	/opt/conda	python-installer	1.0.1	pyh332efcf_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	python_abi	3.14	9_cp314	conda.anaconda.org/conda-forge	
+conda	/opt/conda	readline	8.3	hd6e31c0_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	readline	8.3	hd6e31c0_1	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	readline	8.3	hd6e31c0_1	conda.anaconda.org/conda-forge	ncurses >=6.6,<7.0a0
+conda	/opt/conda	reproc	14.2.8.post0	hee9eb32_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	reproc	14.2.8.post0	hee9eb32_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	reproc-cpp	14.2.8.post0	h1c70be6_0	conda.anaconda.org/conda-forge	reproc ==14.2.8.post0 hee9eb32_0
+conda	/opt/conda	reproc-cpp	14.2.8.post0	h1c70be6_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	reproc-cpp	14.2.8.post0	h1c70be6_0	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	reproc-cpp	14.2.8.post0	h1c70be6_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	reproc-cpp	14.2.8.post0	h1c70be6_0	conda.anaconda.org/conda-forge	reproc >=14.2.8.post0,<14.3.0a0
+conda	/opt/conda	requests	2.34.2	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	requests	2.34.2	pyhcf101f3_0	conda.anaconda.org/conda-forge	certifi >=2023.5.7
+conda	/opt/conda	requests	2.34.2	pyhcf101f3_0	conda.anaconda.org/conda-forge	charset-normalizer >=2,<4
+conda	/opt/conda	requests	2.34.2	pyhcf101f3_0	conda.anaconda.org/conda-forge	idna >=2.5,<4
+conda	/opt/conda	requests	2.34.2	pyhcf101f3_0	conda.anaconda.org/conda-forge	urllib3 >=1.26,<3
+conda	/opt/conda	requests	2.34.2	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	ruamel.yaml	0.19.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	ruamel.yaml	0.19.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	ruamel.yaml.clib >=0.2.15
+conda	/opt/conda	ruamel.yaml	0.19.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	ruamel.yaml.clib	0.2.15	py314hfe1a184_5	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	ruamel.yaml.clib	0.2.15	py314hfe1a184_5	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	ruamel.yaml.clib	0.2.15	py314hfe1a184_5	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	ruamel.yaml.clib	0.2.15	py314hfe1a184_5	conda.anaconda.org/conda-forge	python_abi 3.14.* *_cp314
+conda	/opt/conda	setuptools	84.0.0	pyh332efcf_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	simdjson	4.6.11	h4dbf13b_0	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	simdjson	4.6.11	h4dbf13b_0	conda.anaconda.org/conda-forge	libstdcxx >=15
+conda	/opt/conda	simdjson	4.6.11	h4dbf13b_0	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	sniffio	1.3.1	pyhd8ed1ab_2	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	spdlog	1.17.0	hb6aa676_2	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	spdlog	1.17.0	hb6aa676_2	conda.anaconda.org/conda-forge	fmt >=12.1.0,<12.2.0a0
+conda	/opt/conda	spdlog	1.17.0	hb6aa676_2	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	spdlog	1.17.0	hb6aa676_2	conda.anaconda.org/conda-forge	libstdcxx >=14
+conda	/opt/conda	tk	8.6.13	noxft_h1df4ec4_4	conda.anaconda.org/conda-forge	libgcc >=15
+conda	/opt/conda	tk	8.6.13	noxft_h1df4ec4_4	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	tk	8.6.13	noxft_h1df4ec4_4	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0
+conda	/opt/conda	tomli	2.4.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	tomli	2.4.1	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	tomli-w	1.2.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.9
+conda	/opt/conda	tqdm	4.70.0	pyh8f84b5b_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	tqdm	4.70.0	pyh8f84b5b_0	conda.anaconda.org/conda-forge	__unix
+conda	/opt/conda	tqdm	4.70.0	pyh8f84b5b_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	truststore	0.10.4	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10,<4
+conda	/opt/conda	truststore	0.10.4	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	typing-extensions	4.16.0	h69aa097_0	conda.anaconda.org/conda-forge	typing_extensions ==4.16.0 pyhcf101f3_0
+conda	/opt/conda	typing-inspection	0.4.4	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	typing-inspection	0.4.4	pyhcf101f3_0	conda.anaconda.org/conda-forge	typing_extensions >=4.15.0
+conda	/opt/conda	typing-inspection	0.4.4	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	typing_extensions	4.16.0	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	typing_extensions	4.16.0	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	tzdata	2026c	h151e31d_0	conda.anaconda.org/conda-forge	
+conda	/opt/conda	unearth	0.18.3	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	cached-property >=1.5.2
+conda	/opt/conda	unearth	0.18.3	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	httpx
+conda	/opt/conda	unearth	0.18.3	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	packaging >=20
+conda	/opt/conda	unearth	0.18.3	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	unearth	0.18.3	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	requests >=2.25
+conda	/opt/conda	urllib3	2.7.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	backports.zstd >=1.0.0
+conda	/opt/conda	urllib3	2.7.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	brotli-python >=1.2.0
+conda	/opt/conda	urllib3	2.7.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	h2 >=4,<5
+conda	/opt/conda	urllib3	2.7.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	pysocks >=1.5.6,<2.0,!=1.5.7
+conda	/opt/conda	urllib3	2.7.0	pyhd8ed1ab_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	yaml-cpp	0.8.0	h54a6638_1	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	yaml-cpp	0.8.0	h54a6638_1	conda.anaconda.org/conda-forge	libgcc >=14
+conda	/opt/conda	yaml-cpp	0.8.0	h54a6638_1	conda.anaconda.org/conda-forge	libstdcxx >=14
+conda	/opt/conda	zipp	4.1.0	pyhcf101f3_0	conda.anaconda.org/conda-forge	python >=3.10
+conda	/opt/conda	zipp	4.1.0	pyhcf101f3_0	conda.anaconda.org/conda-forge	python
+conda	/opt/conda	zstd	1.5.7	hb78ec9c_7	conda.anaconda.org/conda-forge	__glibc >=2.17,<3.0.a0
+conda	/opt/conda	zstd	1.5.7	hb78ec9c_7	conda.anaconda.org/conda-forge	libzlib >=1.3.2,<2.0a0

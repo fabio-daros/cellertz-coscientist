@@ -1,0 +1,12 @@
+{
+  "binder_chain": "B",
+  "contig": "A1-54/0 50-50",
+  "design": "backbone_only_0",
+  "diffusion_parameters": {
+    "final_step": 50,
+    "noise_scale_ca": 1.0,
+    "noise_scale_frame": 1.0
+  },
+  "seed": 0,
+  "target": "BCMA"
+}

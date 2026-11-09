@@ -1,0 +1,572 @@
+{
+  "contract_version": "vhh-campaign-6c1",
+  "provenance_kind": "operational_reference",
+  "campaigns": [
+    {
+      "contract_version": "vhh-campaign-6c1",
+      "campaign_id": "cd22-operational",
+      "target_id": "CD22",
+      "session_id": "session_vhh_operational_reference",
+      "modality": "vhh",
+      "source_identifier": "7O52",
+      "source_type": "pdb",
+      "source_target_chain_ids": [
+        "U"
+      ],
+      "source_partner_chain_ids": [
+        "H",
+        "L"
+      ],
+      "prepared_target_chain_ids": [
+        "A"
+      ],
+      "chain_mapping": [
+        {
+          "source_chain_id": "U",
+          "prepared_chain_id": "A"
+        }
+      ],
+      "preparation_status": "recorded",
+      "preparation_note": "Operational reference from the recorded VHH campaign configuration. Not scientifically validated and not experimental proof of binding.",
+      "original_artifact": "pdb:7O52",
+      "prepared_artifact": "pdb:7O52-chain-a",
+      "prepared_content_digest": null,
+      "preparation": [
+        {
+          "order": 1,
+          "operation": "remove_solvent",
+          "parameters": {}
+        },
+        {
+          "order": 2,
+          "operation": "extract_chain",
+          "parameters": {
+            "chain_id": "U"
+          }
+        },
+        {
+          "order": 3,
+          "operation": "relabel_chain",
+          "parameters": {
+            "from_chain": "U",
+            "to_chain": "A"
+          }
+        },
+        {
+          "order": 4,
+          "operation": "set_segid",
+          "parameters": {
+            "chain_id": "A",
+            "segid": "A"
+          }
+        }
+      ],
+      "epitope": {
+        "derivation_method": "structure_contact",
+        "source_structure_identifier": "7O52",
+        "contact_cutoff_angstrom": 4.5,
+        "verification_status": "operational_reference",
+        "partner_chains": [
+          {
+            "namespace": "source",
+            "chain_id": "H"
+          },
+          {
+            "namespace": "source",
+            "chain_id": "L"
+          }
+        ],
+        "residues": [
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 624
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 625
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 626
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 627
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 628
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 631
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 632
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 633
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 635
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 636
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 637
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 638
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 639
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 640
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 641
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 642
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 645
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 646
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 647
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 648
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 650
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 652
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 653
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 657
+          }
+        ],
+        "biological_rationale": "Membrane-proximal CD22 domains 6-7 contacted by the m971 Fab in PDB 7O52. Residue numbers were measured on original chain U and kept after that chain was relabeled to A."
+      },
+      "scaffold": {
+        "design_modality": "vhh",
+        "scaffold_id": "operational-vhh-masked-framework",
+        "scaffold_version": null,
+        "masked_sequence": "EVQLVESGGGLVQPGGSLRLSCAAS**********WFRQAPGKEREFV*****************RFTISRDNAKNTLYLQMNSLRAEDTAVYYC**************WGQGTLVTVSS",
+        "mutable_regions": [
+          {
+            "name": "mutable_1",
+            "start": 26,
+            "end": 35
+          },
+          {
+            "name": "mutable_2",
+            "start": 49,
+            "end": 65
+          },
+          {
+            "name": "mutable_3",
+            "start": 96,
+            "end": 109
+          }
+        ],
+        "cdr_regions": [
+          {
+            "name": "cdr1",
+            "start": 26,
+            "end": 35
+          },
+          {
+            "name": "cdr2",
+            "start": 49,
+            "end": 65
+          },
+          {
+            "name": "cdr3",
+            "start": 96,
+            "end": 109
+          }
+        ],
+        "provenance_kind": "operational_reference"
+      },
+      "generator_name": "mber",
+      "protocol_id": "mber-vhh-operational",
+      "protocol_version": null,
+      "generator_version": null,
+      "generator_version_status": "not_recorded",
+      "metrics": [
+        {
+          "metric_name": "i_ptm",
+          "direction": "gte",
+          "threshold": 0.75,
+          "role": "generator_filter"
+        },
+        {
+          "metric_name": "plddt",
+          "direction": "gte",
+          "threshold": 0.7,
+          "role": "generator_filter"
+        }
+      ],
+      "accepted_design_target": 5000,
+      "max_trajectories": 50000,
+      "evidence": [
+        {
+          "stage": "generated",
+          "recorded": false
+        },
+        {
+          "stage": "generator_accepted",
+          "recorded": false
+        },
+        {
+          "stage": "independently_evaluated",
+          "recorded": false
+        },
+        {
+          "stage": "developability_screened",
+          "recorded": false
+        },
+        {
+          "stage": "off_target_screened",
+          "recorded": false
+        },
+        {
+          "stage": "scientifically_reviewed",
+          "recorded": false
+        }
+      ],
+      "completeness": "incomplete",
+      "issues": [
+        "missing_generator_version"
+      ],
+      "reproducible_readiness": "not_ready",
+      "execution_authorized": false,
+      "executable": false,
+      "provenance_kind": "operational_reference",
+      "provenance_note": "Operational reference from the recorded VHH campaign configuration. Not scientifically validated and not experimental proof of binding.",
+      "candidate_count": null
+    },
+    {
+      "contract_version": "vhh-campaign-6c1",
+      "campaign_id": "taci-operational",
+      "target_id": "TACI",
+      "session_id": "session_vhh_operational_reference",
+      "modality": "vhh",
+      "source_identifier": "1XU1",
+      "source_type": "pdb",
+      "source_target_chain_ids": [
+        "R"
+      ],
+      "source_partner_chain_ids": [
+        "A",
+        "B",
+        "D"
+      ],
+      "prepared_target_chain_ids": [
+        "A"
+      ],
+      "chain_mapping": [
+        {
+          "source_chain_id": "R",
+          "prepared_chain_id": "A"
+        }
+      ],
+      "preparation_status": "recorded",
+      "preparation_note": "Operational reference from the recorded VHH campaign configuration. Not scientifically validated and not experimental proof of binding. Source partner chain A in PDB 1XU1 is the ligand. Prepared target chain A is source chain R after relabel, not that ligand.",
+      "original_artifact": "pdb:1XU1",
+      "prepared_artifact": "pdb:1XU1-chain-a",
+      "prepared_content_digest": null,
+      "preparation": [
+        {
+          "order": 1,
+          "operation": "remove_solvent",
+          "parameters": {}
+        },
+        {
+          "order": 2,
+          "operation": "remove_selected_heteroatoms",
+          "parameters": {
+            "resname": "NI"
+          }
+        },
+        {
+          "order": 3,
+          "operation": "extract_chain",
+          "parameters": {
+            "chain_id": "R"
+          }
+        },
+        {
+          "order": 4,
+          "operation": "relabel_chain",
+          "parameters": {
+            "from_chain": "R",
+            "to_chain": "A"
+          }
+        },
+        {
+          "order": 5,
+          "operation": "set_segid",
+          "parameters": {
+            "chain_id": "A",
+            "segid": "A"
+          }
+        }
+      ],
+      "epitope": {
+        "derivation_method": "structure_contact",
+        "source_structure_identifier": "1XU1",
+        "contact_cutoff_angstrom": 4.5,
+        "verification_status": "operational_reference",
+        "partner_chains": [
+          {
+            "namespace": "source",
+            "chain_id": "A"
+          },
+          {
+            "namespace": "source",
+            "chain_id": "B"
+          },
+          {
+            "namespace": "source",
+            "chain_id": "D"
+          }
+        ],
+        "residues": [
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 78
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 80
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 81
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 82
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 83
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 84
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 87
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 91
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 92
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 93
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 94
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 95
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 96
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 97
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 98
+          },
+          {
+            "chain_namespace": "prepared",
+            "chain_id": "A",
+            "residue_number": 99
+          }
+        ],
+        "biological_rationale": "APRIL-binding face of TACI CRD2 in PDB 1XU1. Residue numbers were measured on original chain R and kept after relabel to A."
+      },
+      "scaffold": {
+        "design_modality": "vhh",
+        "scaffold_id": "operational-vhh-masked-framework",
+        "scaffold_version": null,
+        "masked_sequence": "EVQLVESGGGLVQPGGSLRLSCAAS**********WFRQAPGKEREFV*****************RFTISRDNAKNTLYLQMNSLRAEDTAVYYC**************WGQGTLVTVSS",
+        "mutable_regions": [
+          {
+            "name": "mutable_1",
+            "start": 26,
+            "end": 35
+          },
+          {
+            "name": "mutable_2",
+            "start": 49,
+            "end": 65
+          },
+          {
+            "name": "mutable_3",
+            "start": 96,
+            "end": 109
+          }
+        ],
+        "cdr_regions": [
+          {
+            "name": "cdr1",
+            "start": 26,
+            "end": 35
+          },
+          {
+            "name": "cdr2",
+            "start": 49,
+            "end": 65
+          },
+          {
+            "name": "cdr3",
+            "start": 96,
+            "end": 109
+          }
+        ],
+        "provenance_kind": "operational_reference"
+      },
+      "generator_name": "mber",
+      "protocol_id": "mber-vhh-operational",
+      "protocol_version": null,
+      "generator_version": null,
+      "generator_version_status": "not_recorded",
+      "metrics": [
+        {
+          "metric_name": "i_ptm",
+          "direction": "gte",
+          "threshold": 0.75,
+          "role": "generator_filter"
+        },
+        {
+          "metric_name": "plddt",
+          "direction": "gte",
+          "threshold": 0.7,
+          "role": "generator_filter"
+        }
+      ],
+      "accepted_design_target": 5000,
+      "max_trajectories": 50000,
+      "evidence": [
+        {
+          "stage": "generated",
+          "recorded": false
+        },
+        {
+          "stage": "generator_accepted",
+          "recorded": false
+        },
+        {
+          "stage": "independently_evaluated",
+          "recorded": false
+        },
+        {
+          "stage": "developability_screened",
+          "recorded": false
+        },
+        {
+          "stage": "off_target_screened",
+          "recorded": false
+        },
+        {
+          "stage": "scientifically_reviewed",
+          "recorded": false
+        }
+      ],
+      "completeness": "incomplete",
+      "issues": [
+        "missing_generator_version"
+      ],
+      "reproducible_readiness": "not_ready",
+      "execution_authorized": false,
+      "executable": false,
+      "provenance_kind": "operational_reference",
+      "provenance_note": "Operational reference from the recorded VHH campaign configuration. Not scientifically validated and not experimental proof of binding.",
+      "candidate_count": null
+    }
+  ]
+}

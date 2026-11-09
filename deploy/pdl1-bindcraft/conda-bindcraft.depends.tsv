@@ -1,0 +1,1900 @@
+# BindCraft prefix dependency specs. One conda spec per row.
+# A comment is not closure. Virtual packages stay in the spec text.
+# pip rows are observations and do not close a conda dependency.
+conda	_openmp_mutex	__glibc >=2.17,<3.0.a0
+conda	_openmp_mutex	libgomp >=7.5.0
+conda	absl-py	python >=3.10
+conda	alsa-lib	__glibc >=2.17,<3.0.a0
+conda	alsa-lib	libgcc >=15
+conda	anyio	exceptiongroup >=1.0.2
+conda	anyio	idna >=2.8
+conda	anyio	python >=3.10
+conda	anyio	typing_extensions >=4.5
+conda	anyio	python
+conda	aom	libgcc-ng >=12
+conda	aom	libstdcxx-ng >=12
+conda	argon2-cffi	argon2-cffi-bindings
+conda	argon2-cffi	python >=3.9
+conda	argon2-cffi	typing-extensions
+conda	argon2-cffi-bindings	__glibc >=2.17,<3.0.a0
+conda	argon2-cffi-bindings	cffi >=1.0.1
+conda	argon2-cffi-bindings	libgcc >=15
+conda	argon2-cffi-bindings	python >=3.10,<3.11.0a0
+conda	argon2-cffi-bindings	python_abi 3.10.* *_cp310
+conda	arrow	python >=3.10
+conda	arrow	python-dateutil >=2.7.0
+conda	arrow	python-tzdata
+conda	arrow	python
+conda	asttokens	python >=3.10
+conda	async-lru	python >=3.10
+conda	async-lru	typing_extensions >=4.0.0
+conda	async-lru	python
+conda	attrs	python >=3.10
+conda	attrs	python
+conda	babel	python >=3.10
+conda	babel	python
+conda	beautifulsoup4	python >=3.10
+conda	beautifulsoup4	soupsieve >=1.2
+conda	beautifulsoup4	typing-extensions
+conda	binutils_impl_linux-64	ld_impl_linux-64 2.46.1 default_hbd61a6d_102
+conda	binutils_impl_linux-64	sysroot_linux-64
+conda	binutils_impl_linux-64	zstd >=1.5.7,<1.6.0a0
+conda	binutils_linux-64	binutils_impl_linux-64 2.46.1 default_hfdba357_102
+conda	biopython	__glibc >=2.17,<3.0.a0
+conda	biopython	libgcc >=14
+conda	biopython	numpy
+conda	biopython	python >=3.10,<3.11.0a0
+conda	biopython	python_abi 3.10.* *_cp310
+conda	bleach	python >=3.10
+conda	bleach	webencodings
+conda	bleach	python
+conda	bleach-with-css	bleach ==6.4.0 pyhcf101f3_0
+conda	bleach-with-css	tinycss2
+conda	blosc	__glibc >=2.17,<3.0.a0
+conda	blosc	libgcc >=13
+conda	blosc	libstdcxx >=13
+conda	blosc	libzlib >=1.3.1,<2.0a0
+conda	blosc	lz4-c >=1.10.0,<1.11.0a0
+conda	blosc	snappy >=1.2.1,<1.3.0a0
+conda	blosc	zstd >=1.5.6,<1.6.0a0
+conda	brotli	__glibc >=2.17,<3.0.a0
+conda	brotli	brotli-bin 1.2.0 h9908984_4
+conda	brotli	libbrotlidec 1.2.0 ha411449_4
+conda	brotli	libbrotlienc 1.2.0 h018ffa1_4
+conda	brotli	libgcc >=15
+conda	brotli-bin	__glibc >=2.17,<3.0.a0
+conda	brotli-bin	libbrotlidec 1.2.0 ha411449_4
+conda	brotli-bin	libbrotlienc 1.2.0 h018ffa1_4
+conda	brotli-bin	libgcc >=15
+conda	brotli-python	libgcc-ng >=12
+conda	brotli-python	libstdcxx-ng >=12
+conda	brotli-python	python >=3.10,<3.11.0a0
+conda	brotli-python	python_abi 3.10.* *_cp310
+conda	bzip2	__glibc >=2.17,<3.0.a0
+conda	bzip2	libgcc >=14
+conda	c-ares	libgcc >=15
+conda	c-ares	__glibc >=2.17,<3.0.a0
+conda	ca-certificates	__unix
+conda	cached-property	cached_property >=2.0.1,<2.0.2.0a0
+conda	cached_property	python >=3.10
+conda	cached_property	python
+conda	cairo	__glibc >=2.17,<3.0.a0
+conda	cairo	fontconfig >=2.18.3,<3.0a0
+conda	cairo	fonts-conda-ecosystem
+conda	cairo	icu >=78.3,<79.0a0
+conda	cairo	libexpat >=2.8.1,<3.0a0
+conda	cairo	libfreetype >=2.14.3
+conda	cairo	libfreetype6 >=2.14.3
+conda	cairo	libgcc >=15
+conda	cairo	libglib >=2.88.3,<3.0a0
+conda	cairo	libpng >=1.6.58,<1.7.0a0
+conda	cairo	libstdcxx >=15
+conda	cairo	libxcb >=1.17.0,<2.0a0
+conda	cairo	libzlib >=1.3.2,<2.0a0
+conda	cairo	pixman >=0.46.4,<1.0a0
+conda	cairo	xorg-libice >=1.1.2,<2.0a0
+conda	cairo	xorg-libsm >=1.2.6,<2.0a0
+conda	cairo	xorg-libx11 >=1.8.13,<2.0a0
+conda	cairo	xorg-libxext >=1.3.7,<2.0a0
+conda	cairo	xorg-libxrender >=0.9.12,<0.10.0a0
+conda	certifi	python >=3.10
+conda	cffi	__glibc >=2.17,<3.0.a0
+conda	cffi	libffi >=3.7.0,<3.8.0a0
+conda	cffi	libgcc >=15
+conda	cffi	pycparser
+conda	cffi	python >=3.10,<3.11.0a0
+conda	cffi	python_abi 3.10.* *_cp310
+conda	charset-normalizer	python >=3.10
+conda	chex	absl-py >=0.9.0
+conda	chex	jax >=0.4.27
+conda	chex	jaxlib >=0.4.27
+conda	chex	numpy >=1.24.1
+conda	chex	python >=3.9
+conda	chex	toolz >=0.9.0
+conda	chex	typing-extensions >=4.2.0
+conda	chex	typing_extensions >=4.2.0
+conda	cloudpickle	python >=3.10
+conda	cloudpickle	python
+conda	comm	python >=3.9
+conda	comm	python
+conda	contourpy	__glibc >=2.17,<3.0.a0
+conda	contourpy	libgcc >=13
+conda	contourpy	libstdcxx >=13
+conda	contourpy	numpy >=1.23
+conda	contourpy	python >=3.10,<3.11.0a0
+conda	contourpy	python_abi 3.10.* *_cp310
+conda	cuda-cccl_linux-64	cuda-version >=12.9,<12.10.0a0
+conda	cuda-crt-dev_linux-64	cuda-version >=12.9,<12.10.0a0
+conda	cuda-crt-tools	cuda-version >=12.9,<12.10.0a0
+conda	cuda-cudart	__glibc >=2.17,<3.0.a0
+conda	cuda-cudart	cuda-cudart_linux-64 12.9.79 h3f2d84a_0
+conda	cuda-cudart	cuda-version >=12.9,<12.10.0a0
+conda	cuda-cudart	libgcc >=13
+conda	cuda-cudart	libstdcxx >=13
+conda	cuda-cudart-dev	__glibc >=2.17,<3.0.a0
+conda	cuda-cudart-dev	cuda-cudart 12.9.79 h5888daf_0
+conda	cuda-cudart-dev	cuda-cudart-dev_linux-64 12.9.79 h3f2d84a_0
+conda	cuda-cudart-dev	cuda-cudart-static 12.9.79 h5888daf_0
+conda	cuda-cudart-dev	cuda-version >=12.9,<12.10.0a0
+conda	cuda-cudart-dev	libgcc >=13
+conda	cuda-cudart-dev	libstdcxx >=13
+conda	cuda-cudart-dev_linux-64	cuda-cccl_linux-64
+conda	cuda-cudart-dev_linux-64	cuda-cudart-static_linux-64
+conda	cuda-cudart-dev_linux-64	cuda-cudart_linux-64
+conda	cuda-cudart-dev_linux-64	cuda-version >=12.9,<12.10.0a0
+conda	cuda-cudart-static	__glibc >=2.17,<3.0.a0
+conda	cuda-cudart-static	cuda-cudart-static_linux-64 12.9.79 h3f2d84a_0
+conda	cuda-cudart-static	cuda-version >=12.9,<12.10.0a0
+conda	cuda-cudart-static	libgcc >=13
+conda	cuda-cudart-static	libstdcxx >=13
+conda	cuda-cudart-static_linux-64	cuda-version >=12.9,<12.10.0a0
+conda	cuda-cudart_linux-64	cuda-version >=12.9,<12.10.0a0
+conda	cuda-cupti	__glibc >=2.28,<3.0.a0
+conda	cuda-cupti	cuda-version >=12.9,<12.10.0a0
+conda	cuda-cupti	libgcc >=14
+conda	cuda-cupti	libstdcxx >=14
+conda	cuda-cupti-dev	__glibc >=2.28,<3.0.a0
+conda	cuda-cupti-dev	cuda-cupti 12.9.79 h676940d_2
+conda	cuda-cupti-dev	cuda-version >=12.9,<12.10.0a0
+conda	cuda-cupti-dev	libgcc >=14
+conda	cuda-cupti-dev	libstdcxx >=14
+conda	cuda-driver-dev_linux-64	cuda-version >=12.9,<12.10.0a0
+conda	cuda-nvcc	cuda-nvcc_linux-64 12.9.86.*
+conda	cuda-nvcc	gcc_linux-64
+conda	cuda-nvcc	gxx_linux-64
+conda	cuda-nvcc-dev_linux-64	cuda-crt-dev_linux-64 12.9.86 ha770c72_2
+conda	cuda-nvcc-dev_linux-64	cuda-nvvm-dev_linux-64 12.9.86 ha770c72_2
+conda	cuda-nvcc-dev_linux-64	cuda-version >=12.9,<12.10.0a0
+conda	cuda-nvcc-dev_linux-64	libgcc >=6
+conda	cuda-nvcc-dev_linux-64	libnvptxcompiler-dev_linux-64 12.9.86 ha770c72_2
+conda	cuda-nvcc-impl	cuda-cudart >=12.9.79,<13.0a0
+conda	cuda-nvcc-impl	cuda-cudart-dev
+conda	cuda-nvcc-impl	cuda-nvcc-dev_linux-64 12.9.86 he91c749_2
+conda	cuda-nvcc-impl	cuda-nvcc-tools 12.9.86 he02047a_2
+conda	cuda-nvcc-impl	cuda-nvvm-impl 12.9.86 h4bc722e_2
+conda	cuda-nvcc-impl	cuda-version >=12.9,<12.10.0a0
+conda	cuda-nvcc-impl	libnvptxcompiler-dev 12.9.86 ha770c72_2
+conda	cuda-nvcc-tools	__glibc >=2.17,<3.0.a0
+conda	cuda-nvcc-tools	cuda-crt-tools 12.9.86 ha770c72_2
+conda	cuda-nvcc-tools	cuda-nvvm-tools 12.9.86 h4bc722e_2
+conda	cuda-nvcc-tools	cuda-version >=12.9,<12.10.0a0
+conda	cuda-nvcc-tools	libgcc >=12
+conda	cuda-nvcc-tools	libstdcxx >=12
+conda	cuda-nvcc_linux-64	__glibc >=2.17,<3.0.a0
+conda	cuda-nvcc_linux-64	cuda-cudart-dev_linux-64 12.9.*
+conda	cuda-nvcc_linux-64	cuda-driver-dev_linux-64 12.9.*
+conda	cuda-nvcc_linux-64	cuda-nvcc-dev_linux-64 12.9.86.*
+conda	cuda-nvcc_linux-64	cuda-nvcc-impl 12.9.86.*
+conda	cuda-nvcc_linux-64	cuda-nvcc-tools 12.9.86.*
+conda	cuda-nvcc_linux-64	sysroot_linux-64 >=2.17,<3.0a0
+conda	cuda-nvrtc	__glibc >=2.17,<3.0.a0
+conda	cuda-nvrtc	cuda-version >=12.9,<12.10.0a0
+conda	cuda-nvrtc	libgcc >=14
+conda	cuda-nvrtc	libstdcxx >=14
+conda	cuda-nvtx	__glibc >=2.17,<3.0.a0
+conda	cuda-nvtx	cuda-version >=12.9,<12.10.0a0
+conda	cuda-nvtx	libgcc >=14
+conda	cuda-nvtx	libstdcxx >=14
+conda	cuda-nvvm-dev_linux-64	cuda-version >=12.9,<12.10.0a0
+conda	cuda-nvvm-impl	__glibc >=2.17,<3.0.a0
+conda	cuda-nvvm-impl	cuda-version >=12.9,<12.10.0a0
+conda	cuda-nvvm-impl	libgcc >=12
+conda	cuda-nvvm-tools	__glibc >=2.17,<3.0.a0
+conda	cuda-nvvm-tools	cuda-version >=12.9,<12.10.0a0
+conda	cuda-nvvm-tools	libgcc >=12
+conda	cuda-version	
+conda	cudnn	__glibc >=2.28,<3.0.a0
+conda	cudnn	cuda-version >=12,<13.0a0
+conda	cudnn	libcudnn-dev 9.10.2.21 h58dd1b1_0
+conda	cudnn	libgcc >=14
+conda	cudnn	libstdcxx >=14
+conda	cycler	python >=3.10
+conda	cycler	python
+conda	cyrus-sasl	__glibc >=2.17,<3.0.a0
+conda	cyrus-sasl	krb5 >=1.22.2,<1.23.0a0
+conda	cyrus-sasl	libgcc >=13
+conda	cyrus-sasl	libntlm >=1.8,<2.0a0
+conda	cyrus-sasl	libstdcxx >=13
+conda	cyrus-sasl	libxcrypt >=4.4.36
+conda	cyrus-sasl	openssl >=3.5.5,<4.0a0
+conda	dataclasses	python >=3.7
+conda	dav1d	libgcc-ng >=12
+conda	dbus	__glibc >=2.17,<3.0.a0
+conda	dbus	libgcc >=15
+conda	dbus	libstdcxx >=15
+conda	dbus	libexpat >=2.8.1,<3.0a0
+conda	dbus	libzlib >=1.3.2,<2.0a0
+conda	dbus	libglib >=2.88.3,<3.0a0
+conda	debugpy	python
+conda	debugpy	libgcc >=15
+conda	debugpy	libstdcxx >=15
+conda	debugpy	__glibc >=2.17,<3.0.a0
+conda	debugpy	python_abi 3.10.* *_cp310
+conda	decorator	python >=3.10
+conda	defusedxml	python >=3.6
+conda	dm-haiku	python >=3.10
+conda	dm-haiku	absl-py >=0.7.1
+conda	dm-haiku	jmp >=0.0.2
+conda	dm-haiku	numpy >=1.18.0
+conda	dm-haiku	tabulate >=0.8.9
+conda	dm-haiku	python
+conda	dm-tree	__glibc >=2.17,<3.0.a0
+conda	dm-tree	absl-py >=0.6.1
+conda	dm-tree	attrs >=18.2.0
+conda	dm-tree	libabseil * cxx17*
+conda	dm-tree	libabseil >=20250127.0,<20250128.0a0
+conda	dm-tree	libgcc >=13
+conda	dm-tree	libstdcxx >=13
+conda	dm-tree	numpy >=1.21
+conda	dm-tree	python >=3.10,<3.11.0a0
+conda	dm-tree	python_abi 3.10.* *_cp310
+conda	dm-tree	wrapt >=1.11.2
+conda	double-conversion	__glibc >=2.17,<3.0.a0
+conda	double-conversion	libgcc >=14
+conda	double-conversion	libstdcxx >=14
+conda	etils	python >=3.10
+conda	exceptiongroup	python >=3.10
+conda	exceptiongroup	typing_extensions >=4.6.0
+conda	executing	python >=3.10
+conda	ffmpeg	__glibc >=2.17,<3.0.a0
+conda	ffmpeg	alsa-lib >=1.2.14,<1.3.0a0
+conda	ffmpeg	aom >=3.9.1,<3.10.0a0
+conda	ffmpeg	bzip2 >=1.0.8,<2.0a0
+conda	ffmpeg	dav1d >=1.2.1,<1.2.2.0a0
+conda	ffmpeg	fontconfig >=2.15.0,<3.0a0
+conda	ffmpeg	fonts-conda-ecosystem
+conda	ffmpeg	gmp >=6.3.0,<7.0a0
+conda	ffmpeg	harfbuzz >=12.2.0
+conda	ffmpeg	lame >=3.100,<3.101.0a0
+conda	ffmpeg	libass >=0.17.4,<0.17.5.0a0
+conda	ffmpeg	libexpat >=2.7.3,<3.0a0
+conda	ffmpeg	libfreetype >=2.14.1
+conda	ffmpeg	libfreetype6 >=2.14.1
+conda	ffmpeg	libgcc >=14
+conda	ffmpeg	libiconv >=1.18,<2.0a0
+conda	ffmpeg	liblzma >=5.8.1,<6.0a0
+conda	ffmpeg	libopenvino >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-auto-batch-plugin >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-auto-plugin >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-hetero-plugin >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-intel-cpu-plugin >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-intel-gpu-plugin >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-intel-npu-plugin >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-ir-frontend >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-onnx-frontend >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-paddle-frontend >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-pytorch-frontend >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-tensorflow-frontend >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopenvino-tensorflow-lite-frontend >=2025.2.0,<2025.2.1.0a0
+conda	ffmpeg	libopus >=1.5.2,<2.0a0
+conda	ffmpeg	librsvg >=2.60.0,<3.0a0
+conda	ffmpeg	libstdcxx >=14
+conda	ffmpeg	libva >=2.22.0,<3.0a0
+conda	ffmpeg	libvorbis >=1.3.7,<1.4.0a0
+conda	ffmpeg	libvpl >=2.15.0,<2.16.0a0
+conda	ffmpeg	libvpx >=1.15.2,<1.16.0a0
+conda	ffmpeg	libvulkan-loader >=1.4.328.1,<2.0a0
+conda	ffmpeg	libxcb >=1.17.0,<2.0a0
+conda	ffmpeg	libxml2
+conda	ffmpeg	libxml2-16 >=2.14.6
+conda	ffmpeg	libzlib >=1.3.1,<2.0a0
+conda	ffmpeg	openh264 >=2.6.0,<2.6.1.0a0
+conda	ffmpeg	openssl >=3.5.4,<4.0a0
+conda	ffmpeg	pulseaudio-client >=17.0,<17.1.0a0
+conda	ffmpeg	sdl2 >=2.32.56,<3.0a0
+conda	ffmpeg	shaderc >=2025.5,<2025.6.0a0
+conda	ffmpeg	svt-av1 >=3.1.2,<3.1.3.0a0
+conda	ffmpeg	x264 >=1!164.3095,<1!165
+conda	ffmpeg	x265 >=3.5,<3.6.0a0
+conda	ffmpeg	xorg-libx11 >=1.8.12,<2.0a0
+conda	flax	jax >=0.4.27
+conda	flax	matplotlib-base
+conda	flax	msgpack-python
+conda	flax	numpy >=1.23.2
+conda	flax	optax
+conda	flax	orbax-checkpoint
+conda	flax	python >=3.10
+conda	flax	pyyaml >=5.4.1
+conda	flax	rich >=11.1.0
+conda	flax	tensorstore
+conda	flax	typing_extensions >=4.2.0
+conda	font-ttf-dejavu-sans-mono	
+conda	font-ttf-inconsolata	
+conda	font-ttf-source-code-pro	
+conda	font-ttf-ubuntu	
+conda	fontconfig	__glibc >=2.17,<3.0.a0
+conda	fontconfig	libexpat >=2.8.1,<3.0a0
+conda	fontconfig	libfreetype >=2.14.3
+conda	fontconfig	libfreetype6 >=2.14.3
+conda	fontconfig	libgcc >=15
+conda	fontconfig	libuuid >=2.42.2,<3.0a0
+conda	fontconfig	libzlib >=1.3.2,<2.0a0
+conda	fonts-conda-ecosystem	fonts-conda-forge
+conda	fonts-conda-forge	font-ttf-ubuntu
+conda	fonts-conda-forge	font-ttf-inconsolata
+conda	fonts-conda-forge	font-ttf-dejavu-sans-mono
+conda	fonts-conda-forge	font-ttf-source-code-pro
+conda	fonttools	__glibc >=2.17,<3.0.a0
+conda	fonttools	brotli
+conda	fonttools	libgcc >=14
+conda	fonttools	munkres
+conda	fonttools	python >=3.10,<3.11.0a0
+conda	fonttools	python_abi 3.10.* *_cp310
+conda	fonttools	unicodedata2 >=15.1.0
+conda	formulaic	interface_meta >=1.2
+conda	formulaic	narwhals >=1.17
+conda	formulaic	numpy >=1.20
+conda	formulaic	pandas >=1.3
+conda	formulaic	python >=3.10
+conda	formulaic	scipy >=1.6
+conda	formulaic	typing-extensions >=4.2
+conda	formulaic	wrapt >=1.17
+conda	fqdn	cached-property >=1.3.0
+conda	fqdn	python >=3.9,<4
+conda	freetype	libfreetype 2.14.3 ha770c72_2
+conda	freetype	libfreetype6 2.14.3 h5e6c136_2
+conda	fribidi	__glibc >=2.17,<3.0.a0
+conda	fribidi	libgcc >=15
+conda	fsspec	python >=3.10
+conda	gcc_impl_linux-64	binutils_impl_linux-64 >=2.46.1
+conda	gcc_impl_linux-64	libgcc >=14.4.0
+conda	gcc_impl_linux-64	libgcc-devel_linux-64 14.4.0 hd9a9cd0_105
+conda	gcc_impl_linux-64	libgomp >=14.4.0
+conda	gcc_impl_linux-64	libsanitizer 14.4.0 hf39dbba_5
+conda	gcc_impl_linux-64	libstdcxx >=14.4.0
+conda	gcc_impl_linux-64	libstdcxx-devel_linux-64 14.4.0 ha5b54cb_105
+conda	gcc_impl_linux-64	sysroot_linux-64
+conda	gcc_linux-64	gcc_impl_linux-64 14.4.0.*
+conda	gcc_linux-64	binutils_linux-64
+conda	gcc_linux-64	sysroot_linux-64
+conda	gdk-pixbuf	__glibc >=2.17,<3.0.a0
+conda	gdk-pixbuf	libgcc >=15
+conda	gdk-pixbuf	libglib >=2.88.3,<3.0a0
+conda	gdk-pixbuf	libjpeg-turbo >=3.2.0,<4.0a0
+conda	gdk-pixbuf	liblzma >=5.8.3,<6.0a0
+conda	gdk-pixbuf	libpng >=1.6.58,<1.7.0a0
+conda	gdk-pixbuf	libtiff >=4.7.2,<4.8.0a0
+conda	glslang	__glibc >=2.17,<3.0.a0
+conda	glslang	libgcc >=15
+conda	glslang	libstdcxx >=15
+conda	glslang	spirv-tools >=2026,<2027.0a0
+conda	gmp	__glibc >=2.17,<3.0.a0
+conda	gmp	libgcc >=14
+conda	gmp	libstdcxx >=14
+conda	graphite2	__glibc >=2.17,<3.0.a0
+conda	graphite2	libstdcxx >=14
+conda	graphite2	libgcc >=14
+conda	gxx_impl_linux-64	gcc_impl_linux-64 14.4.0 h33e224c_5
+conda	gxx_impl_linux-64	libstdcxx-devel_linux-64 14.4.0 ha5b54cb_105
+conda	gxx_impl_linux-64	sysroot_linux-64
+conda	gxx_impl_linux-64	tzdata
+conda	gxx_linux-64	gxx_impl_linux-64 14.4.0.*
+conda	gxx_linux-64	gcc_linux-64 ==14.4.0 hc469d41_2
+conda	gxx_linux-64	binutils_linux-64
+conda	gxx_linux-64	sysroot_linux-64
+conda	h11	python >=3.10
+conda	h11	typing_extensions
+conda	h11	python
+conda	h2	python >=3.10
+conda	h2	hyperframe >=6.1,<7
+conda	h2	hpack >=4.2,<5
+conda	h2	python
+conda	harfbuzz	libharfbuzz-devel 14.4.0 h23af247_1
+conda	hpack	python >=3.10
+conda	httpcore	python >=3.9
+conda	httpcore	h11 >=0.16
+conda	httpcore	h2 >=3,<5
+conda	httpcore	sniffio 1.*
+conda	httpcore	anyio >=4.0,<5.0
+conda	httpcore	certifi
+conda	httpcore	python
+conda	httpx	anyio
+conda	httpx	certifi
+conda	httpx	httpcore 1.*
+conda	httpx	idna
+conda	httpx	python >=3.9
+conda	humanize	python >=3.10
+conda	hyperframe	python >=3.9
+conda	icu	__glibc >=2.17,<3.0.a0
+conda	icu	libstdcxx >=14
+conda	icu	libgcc >=14
+conda	idna	python >=3.10
+conda	idna	python
+conda	immutabledict	python >=3.10
+conda	importlib-metadata	python >=3.10
+conda	importlib-metadata	zipp >=3.20
+conda	importlib-metadata	python
+conda	importlib_resources	python >=3.10
+conda	importlib_resources	zipp >=3.1.0
+conda	intel-gmmlib	__glibc >=2.17,<3.0.a0
+conda	intel-gmmlib	libgcc >=15
+conda	intel-gmmlib	libstdcxx >=15
+conda	intel-media-driver	__glibc >=2.17,<3.0.a0
+conda	intel-media-driver	intel-gmmlib >=22.8.1,<23.0a0
+conda	intel-media-driver	libgcc >=14
+conda	intel-media-driver	libstdcxx >=14
+conda	intel-media-driver	libva >=2.22.0,<3.0a0
+conda	interface_meta	python >=3.9
+conda	ipykernel	__linux
+conda	ipykernel	comm >=0.1.1
+conda	ipykernel	debugpy >=1.6.5
+conda	ipykernel	ipython >=7.23.1
+conda	ipykernel	jupyter_client >=8.9.0
+conda	ipykernel	jupyter_core >=5.1,!=6.0.*
+conda	ipykernel	matplotlib-inline >=0.1
+conda	ipykernel	nest-asyncio2 >=1.7.0
+conda	ipykernel	packaging >=22
+conda	ipykernel	psutil >=5.7
+conda	ipykernel	python >=3.10
+conda	ipykernel	pyzmq >=25
+conda	ipykernel	tornado >=6.4.1
+conda	ipykernel	traitlets >=5.4.0
+conda	ipykernel	python
+conda	ipython	__unix
+conda	ipython	pexpect >4.3
+conda	ipython	decorator
+conda	ipython	exceptiongroup
+conda	ipython	jedi >=0.16
+conda	ipython	matplotlib-inline
+conda	ipython	pickleshare
+conda	ipython	prompt-toolkit >=3.0.41,<3.1.0
+conda	ipython	pygments >=2.4.0
+conda	ipython	python >=3.10
+conda	ipython	stack_data
+conda	ipython	traitlets >=5.13.0
+conda	ipython	typing_extensions >=4.6
+conda	ipython	python
+conda	ipywidgets	comm >=0.1.3
+conda	ipywidgets	ipython >=6.1.0
+conda	ipywidgets	jupyterlab_widgets >=3.0.17,<3.1.0
+conda	ipywidgets	python >=3.10
+conda	ipywidgets	traitlets >=4.3.1
+conda	ipywidgets	widgetsnbextension >=4.0.16,<4.1.0
+conda	isoduration	arrow >=0.15.0
+conda	isoduration	python >=3.9
+conda	jax	importlib-metadata >=4.6
+conda	jax	jaxlib >=0.6.0,<=0.6.0
+conda	jax	ml_dtypes >=0.5.0
+conda	jax	numpy >=1.25
+conda	jax	opt_einsum
+conda	jax	python >=3.10
+conda	jax	scipy >=1.11.1
+conda	jaxlib	__cuda
+conda	jaxlib	__glibc >=2.17,<3.0.a0
+conda	jaxlib	cuda-cudart >=12.6.77,<13.0a0
+conda	jaxlib	cuda-cupti >=12.6.80,<13.0a0
+conda	jaxlib	cuda-cupti-dev
+conda	jaxlib	cuda-nvcc-tools
+conda	jaxlib	cuda-nvtx >=12.6.77,<13.0a0
+conda	jaxlib	cuda-version >=12.6,<13
+conda	jaxlib	cudnn >=9.10.1.4,<10.0a0
+conda	jaxlib	libabseil * cxx17*
+conda	jaxlib	libabseil >=20250127.1,<20250128.0a0
+conda	jaxlib	libcublas >=12.6.4.1,<13.0a0
+conda	jaxlib	libcublas-dev
+conda	jaxlib	libcufft >=11.3.0.4,<12.0a0
+conda	jaxlib	libcufft-dev
+conda	jaxlib	libcurand >=10.3.7.77,<11.0a0
+conda	jaxlib	libcurand-dev
+conda	jaxlib	libcusolver >=11.7.1.2,<12.0a0
+conda	jaxlib	libcusolver-dev
+conda	jaxlib	libcusparse >=12.5.4.2,<13.0a0
+conda	jaxlib	libcusparse-dev
+conda	jaxlib	libgcc >=13
+conda	jaxlib	libgrpc >=1.71.0,<1.72.0a0
+conda	jaxlib	libstdcxx >=13
+conda	jaxlib	libzlib >=1.3.1,<2.0a0
+conda	jaxlib	ml_dtypes >=0.2.0
+conda	jaxlib	nccl >=2.26.6.1,<3.0a0
+conda	jaxlib	numpy >=1.19,<3
+conda	jaxlib	openssl >=3.5.0,<4.0a0
+conda	jaxlib	python >=3.10,<3.11.0a0
+conda	jaxlib	python_abi 3.10.* *_cp310
+conda	jaxlib	scipy >=1.9
+conda	jedi	python >=3.10
+conda	jedi	parso >=0.8.6,<0.9.0
+conda	jedi	python
+conda	jinja2	markupsafe >=2.0
+conda	jinja2	python >=3.10
+conda	jinja2	python
+conda	jmp	dataclasses >=0.7
+conda	jmp	numpy >=1.19.5
+conda	jmp	python >=3.10
+conda	jmp	jax
+conda	jmp	python
+conda	joblib	python >=3.10
+conda	joblib	cloudpickle >=3.0
+conda	joblib	python
+conda	json5	python >=3.10
+conda	jsonpointer	python >=3.10
+conda	jsonpointer	python
+conda	jsonschema	attrs >=22.2.0
+conda	jsonschema	jsonschema-specifications >=2023.3.6
+conda	jsonschema	python >=3.10
+conda	jsonschema	referencing >=0.28.4
+conda	jsonschema	rpds-py >=0.25.0
+conda	jsonschema	python
+conda	jsonschema-specifications	python >=3.10
+conda	jsonschema-specifications	referencing >=0.31.0
+conda	jsonschema-specifications	python
+conda	jsonschema-with-format-nongpl	jsonschema >=4.26.0,<4.26.1.0a0
+conda	jsonschema-with-format-nongpl	fqdn
+conda	jsonschema-with-format-nongpl	idna
+conda	jsonschema-with-format-nongpl	isoduration
+conda	jsonschema-with-format-nongpl	jsonpointer >1.13
+conda	jsonschema-with-format-nongpl	rfc3339-validator
+conda	jsonschema-with-format-nongpl	rfc3986-validator >0.1.0
+conda	jsonschema-with-format-nongpl	rfc3987-syntax >=1.1.0
+conda	jsonschema-with-format-nongpl	uri-template
+conda	jsonschema-with-format-nongpl	webcolors >=24.6.0
+conda	jupyter	ipykernel
+conda	jupyter	ipywidgets
+conda	jupyter	jupyter_console
+conda	jupyter	jupyterlab
+conda	jupyter	nbconvert-core
+conda	jupyter	notebook
+conda	jupyter	python >=3.9
+conda	jupyter-builder	jupyter_core
+conda	jupyter-builder	python >=3.10
+conda	jupyter-builder	tomli
+conda	jupyter-builder	traitlets
+conda	jupyter-builder	python
+conda	jupyter-lsp	importlib-metadata >=4.8.3
+conda	jupyter-lsp	jupyter_server >=1.1.2
+conda	jupyter-lsp	python >=3.10
+conda	jupyter-lsp	python
+conda	jupyter_client	jupyter_core >=5.1
+conda	jupyter_client	python >=3.10
+conda	jupyter_client	python-dateutil >=2.8.2
+conda	jupyter_client	pyzmq >=25.0
+conda	jupyter_client	tornado >=6.4.1
+conda	jupyter_client	traitlets >=5.3
+conda	jupyter_client	typing_extensions >=4.13.0
+conda	jupyter_client	python
+conda	jupyter_console	ipykernel >=6.14
+conda	jupyter_console	ipython
+conda	jupyter_console	jupyter_client >=7.0.0
+conda	jupyter_console	jupyter_core >=4.12,!=5.0.*
+conda	jupyter_console	prompt_toolkit >=3.0.30
+conda	jupyter_console	pygments
+conda	jupyter_console	python >=3.9
+conda	jupyter_console	pyzmq >=17
+conda	jupyter_console	traitlets >=5.4
+conda	jupyter_core	__unix
+conda	jupyter_core	python
+conda	jupyter_core	platformdirs >=2.5
+conda	jupyter_core	python >=3.10
+conda	jupyter_core	traitlets >=5.3
+conda	jupyter_events	jsonschema-with-format-nongpl >=4.18.0
+conda	jupyter_events	packaging
+conda	jupyter_events	python >=3.10
+conda	jupyter_events	python-json-logger >=2.0.4
+conda	jupyter_events	pyyaml >=5.3
+conda	jupyter_events	referencing
+conda	jupyter_events	rfc3339-validator
+conda	jupyter_events	rfc3986-validator >=0.1.1
+conda	jupyter_events	traitlets >=5.3
+conda	jupyter_events	python
+conda	jupyter_server	anyio >=3.1.0
+conda	jupyter_server	argon2-cffi >=21.1
+conda	jupyter_server	jinja2 >=3.0.3
+conda	jupyter_server	jupyter_client >=7.4.4
+conda	jupyter_server	jupyter_core >=4.12,!=5.0.*
+conda	jupyter_server	jupyter_events >=0.11.0
+conda	jupyter_server	jupyter_server_terminals >=0.4.4
+conda	jupyter_server	nbconvert-core >=6.4.4
+conda	jupyter_server	nbformat >=5.3.0
+conda	jupyter_server	overrides >=5.0
+conda	jupyter_server	packaging >=22.0
+conda	jupyter_server	prometheus_client >=0.9
+conda	jupyter_server	python >=3.10
+conda	jupyter_server	pyzmq >=24
+conda	jupyter_server	send2trash >=1.8.2
+conda	jupyter_server	terminado >=0.8.3
+conda	jupyter_server	tornado >=6.2.0
+conda	jupyter_server	traitlets >=5.6.0
+conda	jupyter_server	websocket-client >=1.7
+conda	jupyter_server	python
+conda	jupyter_server_terminals	python >=3.10
+conda	jupyter_server_terminals	terminado >=0.8.3
+conda	jupyter_server_terminals	python
+conda	jupyterlab	async-lru >=1.0.0
+conda	jupyterlab	httpx >=0.25.0,<1
+conda	jupyterlab	ipykernel >=6.5.0,!=6.30.0
+conda	jupyterlab	jinja2 >=3.0.3
+conda	jupyterlab	jupyter-builder >=1.0.2
+conda	jupyterlab	jupyter-lsp >=2.0.0
+conda	jupyterlab	jupyter_core
+conda	jupyterlab	jupyter_server >=2.19.0,<3
+conda	jupyterlab	jupyterlab_server >=2.28.0,<3
+conda	jupyterlab	notebook-shim >=0.2
+conda	jupyterlab	packaging >=23.2
+conda	jupyterlab	python >=3.10
+conda	jupyterlab	tomli >=1.2.2
+conda	jupyterlab	tornado >=6.2.0
+conda	jupyterlab	traitlets
+conda	jupyterlab	typing_extensions >=4.4.0
+conda	jupyterlab_pygments	pygments >=2.4.1,<3
+conda	jupyterlab_pygments	python >=3.9
+conda	jupyterlab_server	babel >=2.10
+conda	jupyterlab_server	jinja2 >=3.0.3
+conda	jupyterlab_server	json5 >=0.9.0
+conda	jupyterlab_server	jsonschema >=4.18
+conda	jupyterlab_server	jupyter_server >=1.21,<3
+conda	jupyterlab_server	packaging >=21.3
+conda	jupyterlab_server	python >=3.10
+conda	jupyterlab_server	requests >=2.31
+conda	jupyterlab_server	python
+conda	jupyterlab_widgets	python >=3.10
+conda	jupyterlab_widgets	python
+conda	kernel-headers_linux-64	
+conda	keyutils	__glibc >=2.17,<3.0.a0
+conda	keyutils	libgcc >=15
+conda	kiwisolver	python
+conda	kiwisolver	__glibc >=2.17,<3.0.a0
+conda	kiwisolver	libstdcxx >=15
+conda	kiwisolver	libgcc >=15
+conda	kiwisolver	python_abi 3.10.* *_cp310
+conda	krb5	__glibc >=2.17,<3.0.a0
+conda	krb5	keyutils >=1.6.3,<2.0a0
+conda	krb5	libedit >=3.1.20250104,<3.2.0a0
+conda	krb5	libedit >=3.1.20250104,<4.0a0
+conda	krb5	libgcc >=15
+conda	krb5	libstdcxx >=15
+conda	krb5	openssl >=3.5.7,<4.0a0
+conda	lame	libgcc-ng >=12
+conda	lark	python >=3.10
+conda	lcms2	__glibc >=2.17,<3.0.a0
+conda	lcms2	libgcc >=15
+conda	lcms2	libjpeg-turbo >=3.2.0,<4.0a0
+conda	lcms2	libtiff >=4.7.2,<4.8.0a0
+conda	ld_impl_linux-64	__glibc >=2.17,<3.0.a0
+conda	ld_impl_linux-64	zstd >=1.5.7,<1.6.0a0
+conda	legacy-cgi	python >=3.10,<3.13
+conda	legacy-cgi	python
+conda	lerc	__glibc >=2.17,<3.0.a0
+conda	lerc	libgcc >=14
+conda	lerc	libstdcxx >=14
+conda	level-zero	__glibc >=2.17,<3.0.a0
+conda	level-zero	libgcc >=15
+conda	level-zero	libstdcxx >=15
+conda	libabseil	__glibc >=2.17,<3.0.a0
+conda	libabseil	libgcc >=13
+conda	libabseil	libstdcxx >=13
+conda	libass	libgcc >=13
+conda	libass	__glibc >=2.17,<3.0.a0
+conda	libass	libzlib >=1.3.1,<2.0a0
+conda	libass	libfreetype >=2.13.3
+conda	libass	libfreetype6 >=2.13.3
+conda	libass	fribidi >=1.0.10,<2.0a0
+conda	libass	libiconv >=1.18,<2.0a0
+conda	libass	fontconfig >=2.15.0,<3.0a0
+conda	libass	fonts-conda-ecosystem
+conda	libass	harfbuzz >=11.0.1
+conda	libavif16	__glibc >=2.17,<3.0.a0
+conda	libavif16	aom >=3.9.1,<3.10.0a0
+conda	libavif16	dav1d >=1.2.1,<1.2.2.0a0
+conda	libavif16	libgcc >=14
+conda	libavif16	rav1e >=0.7.1,<0.8.0a0
+conda	libavif16	svt-av1 >=3.1.2,<3.1.3.0a0
+conda	libblas	libopenblas >=0.3.34,<0.3.35.0a0
+conda	libblas	libopenblas >=0.3.34,<1.0a0
+conda	libbrotlicommon	__glibc >=2.17,<3.0.a0
+conda	libbrotlicommon	libgcc >=15
+conda	libbrotlidec	__glibc >=2.17,<3.0.a0
+conda	libbrotlidec	libbrotlicommon 1.2.0 h39a168f_4
+conda	libbrotlidec	libgcc >=15
+conda	libbrotlienc	__glibc >=2.17,<3.0.a0
+conda	libbrotlienc	libbrotlicommon 1.2.0 h39a168f_4
+conda	libbrotlienc	libgcc >=15
+conda	libcap	__glibc >=2.17,<3.0.a0
+conda	libcap	libgcc >=14
+conda	libcblas	libblas 3.11.0 11_h4a7cf45_openblas
+conda	libclang-cpp23.1	libstdcxx >=15
+conda	libclang-cpp23.1	libgcc >=15
+conda	libclang-cpp23.1	__glibc >=2.17,<3.0.a0
+conda	libclang-cpp23.1	libxml2
+conda	libclang-cpp23.1	libxml2-16 >=2.15.4
+conda	libclang-cpp23.1	zstd >=1.5.7,<1.6.0a0
+conda	libclang-cpp23.1	libzlib >=1.3.2,<2.0a0
+conda	libclang-cpp23.1	libllvm23 >=23.1.1,<23.2.0a0
+conda	libclang13	libclang-cpp23.1 ==23.1.1 default_h0acdd01_0
+conda	libclang13	libstdcxx >=15
+conda	libclang13	libgcc >=15
+conda	libclang13	__glibc >=2.17,<3.0.a0
+conda	libclang13	libxml2
+conda	libclang13	libxml2-16 >=2.15.4
+conda	libclang13	zstd >=1.5.7,<1.6.0a0
+conda	libclang13	libzlib >=1.3.2,<2.0a0
+conda	libclang13	libllvm23 >=23.1.1,<23.2.0a0
+conda	libcublas	__glibc >=2.28,<3.0.a0
+conda	libcublas	cuda-nvrtc
+conda	libcublas	cuda-version >=12.9,<12.10.0a0
+conda	libcublas	libgcc >=14
+conda	libcublas	libstdcxx >=14
+conda	libcublas-dev	__glibc >=2.28,<3.0.a0
+conda	libcublas-dev	cuda-crt-dev_linux-64
+conda	libcublas-dev	cuda-cudart-dev_linux-64
+conda	libcublas-dev	cuda-version >=12.9,<12.10.0a0
+conda	libcublas-dev	libcublas 12.9.2.10 h676940d_0
+conda	libcublas-dev	libgcc >=14
+conda	libcublas-dev	libstdcxx >=14
+conda	libcudnn	__glibc >=2.28,<3.0.a0
+conda	libcudnn	cuda-nvrtc
+conda	libcudnn	cuda-version >=12,<13.0a0
+conda	libcudnn	libcublas
+conda	libcudnn	libgcc >=14
+conda	libcudnn	libstdcxx >=14
+conda	libcudnn	libzlib >=1.3.1,<2.0a0
+conda	libcudnn-dev	__glibc >=2.28,<3.0.a0
+conda	libcudnn-dev	cuda-version >=12,<13.0a0
+conda	libcudnn-dev	libcudnn 9.10.2.21 hf7e9902_0
+conda	libcudnn-dev	libgcc >=14
+conda	libcudnn-dev	libstdcxx >=14
+conda	libcufft	__glibc >=2.17,<3.0.a0
+conda	libcufft	cuda-version >=12.9,<12.10.0a0
+conda	libcufft	libgcc >=14
+conda	libcufft	libstdcxx >=14
+conda	libcufft-dev	__glibc >=2.17,<3.0.a0
+conda	libcufft-dev	cuda-version >=12.9,<12.10.0a0
+conda	libcufft-dev	libcufft 11.4.1.4 hecca717_1
+conda	libcufft-dev	libgcc >=14
+conda	libcufft-dev	libstdcxx >=14
+conda	libcups	__glibc >=2.17,<3.0.a0
+conda	libcups	krb5 >=1.22.2,<1.23.0a0
+conda	libcups	libgcc >=14
+conda	libcups	libstdcxx >=14
+conda	libcups	libzlib >=1.3.1,<2.0a0
+conda	libcurand	__glibc >=2.28,<3.0.a0
+conda	libcurand	cuda-version >=12.9,<12.10.0a0
+conda	libcurand	libgcc >=14
+conda	libcurand	libstdcxx >=14
+conda	libcurand-dev	__glibc >=2.28,<3.0.a0
+conda	libcurand-dev	cuda-version >=12.9,<12.10.0a0
+conda	libcurand-dev	libcurand 10.3.10.19 h676940d_1
+conda	libcurand-dev	libgcc >=14
+conda	libcurand-dev	libstdcxx >=14
+conda	libcurl	__glibc >=2.17,<3.0.a0
+conda	libcurl	krb5 >=1.22.2,<1.23.0a0
+conda	libcurl	libgcc >=15
+conda	libcurl	libnghttp2 >=1.68.1,<2.0a0
+conda	libcurl	libpsl >=0.23.1,<0.24.0a0
+conda	libcurl	libssh2 >=1.11.1,<2.0a0
+conda	libcurl	libzlib >=1.3.2,<2.0a0
+conda	libcurl	openssl >=3.5.8,<4.0a0
+conda	libcurl	zstd >=1.5.7,<1.6.0a0
+conda	libcusolver	__glibc >=2.28,<3.0.a0
+conda	libcusolver	cuda-version >=12.9,<12.10.0a0
+conda	libcusolver	libcublas >=12.9.1.4,<12.10.0a0
+conda	libcusolver	libcusparse >=12.5.10.65,<12.6.0a0
+conda	libcusolver	libgcc >=14
+conda	libcusolver	libnvjitlink >=12.9.86,<13.0a0
+conda	libcusolver	libstdcxx >=14
+conda	libcusolver-dev	__glibc >=2.28,<3.0.a0
+conda	libcusolver-dev	cuda-version >=12.9,<12.10.0a0
+conda	libcusolver-dev	libcusolver 11.7.5.82 h676940d_2
+conda	libcusolver-dev	libgcc >=14
+conda	libcusolver-dev	libstdcxx >=14
+conda	libcusparse	__glibc >=2.17,<3.0.a0
+conda	libcusparse	cuda-version >=12.9,<12.10.0a0
+conda	libcusparse	libgcc >=14
+conda	libcusparse	libnvjitlink >=12.9.86,<13.0a0
+conda	libcusparse	libstdcxx >=14
+conda	libcusparse-dev	__glibc >=2.17,<3.0.a0
+conda	libcusparse-dev	cuda-version >=12.9,<12.10.0a0
+conda	libcusparse-dev	libcusparse 12.5.10.65 hecca717_2
+conda	libcusparse-dev	libgcc >=14
+conda	libcusparse-dev	libnvjitlink >=12.9.86,<13.0a0
+conda	libcusparse-dev	libstdcxx >=14
+conda	libdeflate	__glibc >=2.17,<3.0.a0
+conda	libdeflate	libgcc >=14
+conda	libdrm	__glibc >=2.17,<3.0.a0
+conda	libdrm	libgcc >=15
+conda	libdrm	libpciaccess >=0.19,<0.20.0a0
+conda	libedit	ncurses
+conda	libedit	libgcc >=14
+conda	libedit	__glibc >=2.17,<3.0.a0
+conda	libedit	ncurses >=6.6,<7.0a0
+conda	libegl	__glibc >=2.17,<3.0.a0
+conda	libegl	libglvnd 1.7.0 ha4b6fd6_5
+conda	libegl-devel	__glibc >=2.17,<3.0.a0
+conda	libegl-devel	libegl 1.7.0 ha4b6fd6_5
+conda	libegl-devel	libgl-devel 1.7.0 ha4b6fd6_5
+conda	libegl-devel	xorg-libx11
+conda	libev	libgcc >=14
+conda	libev	__glibc >=2.17,<3.0.a0
+conda	libexpat	__glibc >=2.17,<3.0.a0
+conda	libexpat	libgcc >=14
+conda	libffi	__glibc >=2.17,<3.0.a0
+conda	libffi	libgcc >=15
+conda	libflac	__glibc >=2.17,<3.0.a0
+conda	libflac	libgcc >=14
+conda	libflac	libiconv >=1.18,<2.0a0
+conda	libflac	libogg >=1.3.5,<1.4.0a0
+conda	libflac	libstdcxx >=14
+conda	libfreetype	libfreetype6 >=2.14.3
+conda	libfreetype6	__glibc >=2.17,<3.0.a0
+conda	libfreetype6	libgcc >=15
+conda	libfreetype6	libpng >=1.6.58,<1.7.0a0
+conda	libfreetype6	libzlib >=1.3.2,<2.0a0
+conda	libgcc	__glibc >=2.17,<3.0.a0
+conda	libgcc	_openmp_mutex >=4.5
+conda	libgcc-devel_linux-64	__unix
+conda	libgcc-ng	libgcc 16.2.0 ha9f2e26_5
+conda	libgfortran	libgfortran5 16.2.0 h6b99dfc_5
+conda	libgfortran5	__glibc >=2.17,<3.0.a0
+conda	libgfortran5	libgcc >=16.2.0
+conda	libgl	__glibc >=2.17,<3.0.a0
+conda	libgl	libglvnd 1.7.0 ha4b6fd6_5
+conda	libgl	libglx 1.7.0 ha4b6fd6_5
+conda	libgl-devel	__glibc >=2.17,<3.0.a0
+conda	libgl-devel	libgl 1.7.0 ha4b6fd6_5
+conda	libgl-devel	libglx-devel 1.7.0 ha4b6fd6_5
+conda	libglib	libgcc >=15
+conda	libglib	__glibc >=2.17,<3.0.a0
+conda	libglib	libiconv >=1.18,<2.0a0
+conda	libglib	pcre2 >=10.47,<10.48.0a0
+conda	libglib	libffi >=3.7.0,<3.8.0a0
+conda	libglib	libzlib >=1.3.2,<2.0a0
+conda	libglvnd	__glibc >=2.17,<3.0.a0
+conda	libglx	__glibc >=2.17,<3.0.a0
+conda	libglx	libglvnd 1.7.0 ha4b6fd6_5
+conda	libglx	xorg-libx11 >=1.8.13,<2.0a0
+conda	libglx-devel	__glibc >=2.17,<3.0.a0
+conda	libglx-devel	libglx 1.7.0 ha4b6fd6_5
+conda	libglx-devel	xorg-libx11 >=1.8.13,<2.0a0
+conda	libglx-devel	xorg-xorgproto
+conda	libgomp	__glibc >=2.17,<3.0.a0
+conda	libgrpc	__glibc >=2.17,<3.0.a0
+conda	libgrpc	c-ares >=1.34.5,<2.0a0
+conda	libgrpc	libabseil * cxx17*
+conda	libgrpc	libabseil >=20250127.1,<20250128.0a0
+conda	libgrpc	libgcc >=13
+conda	libgrpc	libprotobuf >=5.29.3,<5.29.4.0a0
+conda	libgrpc	libre2-11 >=2024.7.2
+conda	libgrpc	libstdcxx >=13
+conda	libgrpc	libzlib >=1.3.1,<2.0a0
+conda	libgrpc	openssl >=3.5.0,<4.0a0
+conda	libgrpc	re2
+conda	libharfbuzz	__glibc >=2.17,<3.0.a0
+conda	libharfbuzz	cairo >=1.18.4,<2.0a0
+conda	libharfbuzz	graphite2 >=1.3.15,<2.0a0
+conda	libharfbuzz	icu >=78.3,<79.0a0
+conda	libharfbuzz	libfreetype >=2.14.3
+conda	libharfbuzz	libfreetype6 >=2.14.3
+conda	libharfbuzz	libgcc >=15
+conda	libharfbuzz	libglib >=2.88.3,<3.0a0
+conda	libharfbuzz	libpng >=1.6.58,<1.7.0a0
+conda	libharfbuzz	libstdcxx >=15
+conda	libharfbuzz	libzlib >=1.3.2,<2.0a0
+conda	libharfbuzz-devel	__glibc >=2.17,<3.0.a0
+conda	libharfbuzz-devel	cairo >=1.18.4,<2.0a0
+conda	libharfbuzz-devel	freetype
+conda	libharfbuzz-devel	graphite2 >=1.3.15,<2.0a0
+conda	libharfbuzz-devel	icu >=78.3,<79.0a0
+conda	libharfbuzz-devel	libfreetype >=2.14.3
+conda	libharfbuzz-devel	libfreetype6 >=2.14.3
+conda	libharfbuzz-devel	libgcc >=15
+conda	libharfbuzz-devel	libglib >=2.88.3,<3.0a0
+conda	libharfbuzz-devel	libharfbuzz 14.4.0 h23af247_1
+conda	libharfbuzz-devel	libpng >=1.6.58,<1.7.0a0
+conda	libharfbuzz-devel	libstdcxx >=15
+conda	libharfbuzz-devel	libzlib >=1.3.2,<2.0a0
+conda	libhwloc	__glibc >=2.17,<3.0.a0
+conda	libhwloc	libgcc >=14
+conda	libhwloc	libstdcxx >=14
+conda	libhwloc	libxml2
+conda	libhwloc	libxml2-16 >=2.14.6
+conda	libiconv	__glibc >=2.17,<3.0.a0
+conda	libiconv	libgcc >=15
+conda	libjpeg-turbo	__glibc >=2.17,<3.0.a0
+conda	libjpeg-turbo	libgcc >=14
+conda	liblapack	libblas 3.11.0 11_h4a7cf45_openblas
+conda	libllvm23	__glibc >=2.17,<3.0.a0
+conda	libllvm23	libgcc >=15
+conda	libllvm23	libstdcxx >=15
+conda	libllvm23	libxml2
+conda	libllvm23	libxml2-16 >=2.15.4
+conda	libllvm23	libzlib >=1.3.2,<2.0a0
+conda	libllvm23	zstd >=1.5.7,<1.6.0a0
+conda	liblzma	__glibc >=2.17,<3.0.a0
+conda	liblzma	libgcc >=14
+conda	libnghttp2	__glibc >=2.17,<3.0.a0
+conda	libnghttp2	c-ares >=1.34.8,<2.0a0
+conda	libnghttp2	libev >=4.33,<4.34.0a0
+conda	libnghttp2	libev >=4.33,<5.0a0
+conda	libnghttp2	libgcc >=15
+conda	libnghttp2	libstdcxx >=15
+conda	libnghttp2	libzlib >=1.3.2,<2.0a0
+conda	libnghttp2	openssl >=3.5.7,<4.0a0
+conda	libnsl	__glibc >=2.17,<3.0.a0
+conda	libnsl	libgcc >=13
+conda	libntlm	__glibc >=2.17,<3.0.a0
+conda	libntlm	libgcc >=13
+conda	libnvjitlink	__glibc >=2.17,<3.0.a0
+conda	libnvjitlink	cuda-version >=12,<12.10.0a0
+conda	libnvjitlink	libgcc >=14
+conda	libnvjitlink	libstdcxx >=14
+conda	libnvptxcompiler-dev	cuda-version >=12.9,<12.10.0a0
+conda	libnvptxcompiler-dev	libnvptxcompiler-dev_linux-64 12.9.86 ha770c72_2
+conda	libnvptxcompiler-dev_linux-64	cuda-version >=12.9,<12.10.0a0
+conda	libogg	libgcc >=13
+conda	libogg	__glibc >=2.17,<3.0.a0
+conda	libopenblas	libgfortran5 >=15.3.0
+conda	libopenblas	libgfortran
+conda	libopenblas	libgcc >=15
+conda	libopenblas	__glibc >=2.17,<3.0.a0
+conda	libopengl	__glibc >=2.17,<3.0.a0
+conda	libopengl	libglvnd 1.7.0 ha4b6fd6_5
+conda	libopenvino	__glibc >=2.17,<3.0.a0
+conda	libopenvino	libgcc >=13
+conda	libopenvino	libstdcxx >=13
+conda	libopenvino	pugixml >=1.15,<1.16.0a0
+conda	libopenvino	tbb >=2021.13.0
+conda	libopenvino-auto-batch-plugin	__glibc >=2.17,<3.0.a0
+conda	libopenvino-auto-batch-plugin	libgcc >=13
+conda	libopenvino-auto-batch-plugin	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-auto-batch-plugin	libstdcxx >=13
+conda	libopenvino-auto-batch-plugin	tbb >=2021.13.0
+conda	libopenvino-auto-plugin	__glibc >=2.17,<3.0.a0
+conda	libopenvino-auto-plugin	libgcc >=13
+conda	libopenvino-auto-plugin	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-auto-plugin	libstdcxx >=13
+conda	libopenvino-auto-plugin	tbb >=2021.13.0
+conda	libopenvino-hetero-plugin	__glibc >=2.17,<3.0.a0
+conda	libopenvino-hetero-plugin	libgcc >=13
+conda	libopenvino-hetero-plugin	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-hetero-plugin	libstdcxx >=13
+conda	libopenvino-hetero-plugin	pugixml >=1.15,<1.16.0a0
+conda	libopenvino-intel-cpu-plugin	__glibc >=2.17,<3.0.a0
+conda	libopenvino-intel-cpu-plugin	libgcc >=13
+conda	libopenvino-intel-cpu-plugin	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-intel-cpu-plugin	libstdcxx >=13
+conda	libopenvino-intel-cpu-plugin	pugixml >=1.15,<1.16.0a0
+conda	libopenvino-intel-cpu-plugin	tbb >=2021.13.0
+conda	libopenvino-intel-gpu-plugin	__glibc >=2.17,<3.0.a0
+conda	libopenvino-intel-gpu-plugin	libgcc >=13
+conda	libopenvino-intel-gpu-plugin	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-intel-gpu-plugin	libstdcxx >=13
+conda	libopenvino-intel-gpu-plugin	ocl-icd >=2.3.3,<3.0a0
+conda	libopenvino-intel-gpu-plugin	pugixml >=1.15,<1.16.0a0
+conda	libopenvino-intel-gpu-plugin	tbb >=2021.13.0
+conda	libopenvino-intel-npu-plugin	__glibc >=2.17,<3.0.a0
+conda	libopenvino-intel-npu-plugin	level-zero >=1.22.5,<2.0a0
+conda	libopenvino-intel-npu-plugin	libgcc >=13
+conda	libopenvino-intel-npu-plugin	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-intel-npu-plugin	libstdcxx >=13
+conda	libopenvino-intel-npu-plugin	pugixml >=1.15,<1.16.0a0
+conda	libopenvino-intel-npu-plugin	tbb >=2021.13.0
+conda	libopenvino-ir-frontend	__glibc >=2.17,<3.0.a0
+conda	libopenvino-ir-frontend	libgcc >=13
+conda	libopenvino-ir-frontend	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-ir-frontend	libstdcxx >=13
+conda	libopenvino-ir-frontend	pugixml >=1.15,<1.16.0a0
+conda	libopenvino-onnx-frontend	__glibc >=2.17,<3.0.a0
+conda	libopenvino-onnx-frontend	libabseil * cxx17*
+conda	libopenvino-onnx-frontend	libabseil >=20250127.1,<20250128.0a0
+conda	libopenvino-onnx-frontend	libgcc >=13
+conda	libopenvino-onnx-frontend	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-onnx-frontend	libprotobuf >=5.29.3,<5.29.4.0a0
+conda	libopenvino-onnx-frontend	libstdcxx >=13
+conda	libopenvino-paddle-frontend	__glibc >=2.17,<3.0.a0
+conda	libopenvino-paddle-frontend	libabseil * cxx17*
+conda	libopenvino-paddle-frontend	libabseil >=20250127.1,<20250128.0a0
+conda	libopenvino-paddle-frontend	libgcc >=13
+conda	libopenvino-paddle-frontend	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-paddle-frontend	libprotobuf >=5.29.3,<5.29.4.0a0
+conda	libopenvino-paddle-frontend	libstdcxx >=13
+conda	libopenvino-pytorch-frontend	__glibc >=2.17,<3.0.a0
+conda	libopenvino-pytorch-frontend	libgcc >=13
+conda	libopenvino-pytorch-frontend	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-pytorch-frontend	libstdcxx >=13
+conda	libopenvino-tensorflow-frontend	__glibc >=2.17,<3.0.a0
+conda	libopenvino-tensorflow-frontend	libabseil * cxx17*
+conda	libopenvino-tensorflow-frontend	libabseil >=20250127.1,<20250128.0a0
+conda	libopenvino-tensorflow-frontend	libgcc >=13
+conda	libopenvino-tensorflow-frontend	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-tensorflow-frontend	libprotobuf >=5.29.3,<5.29.4.0a0
+conda	libopenvino-tensorflow-frontend	libstdcxx >=13
+conda	libopenvino-tensorflow-frontend	snappy >=1.2.1,<1.3.0a0
+conda	libopenvino-tensorflow-lite-frontend	__glibc >=2.17,<3.0.a0
+conda	libopenvino-tensorflow-lite-frontend	libgcc >=13
+conda	libopenvino-tensorflow-lite-frontend	libopenvino 2025.2.0 hdc3f47d_0
+conda	libopenvino-tensorflow-lite-frontend	libstdcxx >=13
+conda	libopus	__glibc >=2.17,<3.0.a0
+conda	libopus	libgcc >=15
+conda	libpciaccess	__glibc >=2.17,<3.0.a0
+conda	libpciaccess	libgcc >=14
+conda	libpng	__glibc >=2.17,<3.0.a0
+conda	libpng	libgcc >=15
+conda	libpng	libzlib >=1.3.2,<2.0a0
+conda	libpq	__glibc >=2.17,<3.0.a0
+conda	libpq	icu >=78.3,<79.0a0
+conda	libpq	krb5 >=1.22.2,<1.23.0a0
+conda	libpq	libgcc >=15
+conda	libpq	openldap >=2.6.13,<2.7.0a0
+conda	libpq	openssl >=3.5.8,<4.0a0
+conda	libprotobuf	__glibc >=2.17,<3.0.a0
+conda	libprotobuf	libabseil * cxx17*
+conda	libprotobuf	libabseil >=20250127.1,<20250128.0a0
+conda	libprotobuf	libgcc >=14
+conda	libprotobuf	libstdcxx >=14
+conda	libprotobuf	libzlib >=1.3.1,<2.0a0
+conda	libpsl	libstdcxx >=15
+conda	libpsl	libgcc >=15
+conda	libpsl	__glibc >=2.17,<3.0.a0
+conda	libpsl	icu >=78.3,<79.0a0
+conda	libre2-11	__glibc >=2.17,<3.0.a0
+conda	libre2-11	libabseil * cxx17*
+conda	libre2-11	libabseil >=20250127.1,<20250128.0a0
+conda	libre2-11	libgcc >=13
+conda	libre2-11	libstdcxx >=13
+conda	librsvg	__glibc >=2.17,<3.0.a0
+conda	librsvg	cairo >=1.18.4,<2.0a0
+conda	librsvg	fontconfig >=2.18.0,<3.0a0
+conda	librsvg	fonts-conda-ecosystem
+conda	librsvg	gdk-pixbuf >=2.44.6,<3.0a0
+conda	librsvg	harfbuzz >=14.2.0
+conda	librsvg	libgcc >=14
+conda	librsvg	libglib >=2.88.1,<3.0a0
+conda	librsvg	libxml2-16 >=2.14.6
+conda	librsvg	pango >=1.56.4,<2.0a0
+conda	libsanitizer	__glibc >=2.17,<3.0.a0
+conda	libsanitizer	libgcc >=14.4.0
+conda	libsanitizer	libstdcxx >=14.4.0
+conda	libsndfile	__glibc >=2.17,<3.0.a0
+conda	libsndfile	lame >=3.100,<3.101.0a0
+conda	libsndfile	libflac >=1.5.0,<1.6.0a0
+conda	libsndfile	libgcc >=14
+conda	libsndfile	libogg >=1.3.5,<1.4.0a0
+conda	libsndfile	libopus >=1.5.2,<2.0a0
+conda	libsndfile	libstdcxx >=14
+conda	libsndfile	libvorbis >=1.3.7,<1.4.0a0
+conda	libsndfile	mpg123 >=1.32.9,<1.33.0a0
+conda	libsodium	__glibc >=2.17,<3.0.a0
+conda	libsodium	libgcc >=15
+conda	libsqlite	__glibc >=2.17,<3.0.a0
+conda	libsqlite	icu >=78.3,<79.0a0
+conda	libsqlite	libgcc >=15
+conda	libsqlite	libzlib >=1.3.2,<2.0a0
+conda	libssh2	__glibc >=2.17,<3.0.a0
+conda	libssh2	libgcc >=14
+conda	libssh2	libzlib >=1.3.2,<2.0a0
+conda	libssh2	openssl >=3.5.7,<4.0a0
+conda	libstdcxx	__glibc >=2.17,<3.0.a0
+conda	libstdcxx	libgcc 16.2.0 ha9f2e26_5
+conda	libstdcxx-devel_linux-64	__unix
+conda	libstdcxx-ng	libstdcxx 16.2.0 h934c35e_5
+conda	libsystemd0	__glibc >=2.17,<3.0.a0
+conda	libsystemd0	libcap >=2.78,<2.79.0a0
+conda	libsystemd0	libgcc >=15
+conda	libtiff	__glibc >=2.17,<3.0.a0
+conda	libtiff	lerc >=4.2.0,<5.0a0
+conda	libtiff	libdeflate >=1.25,<1.26.0a0
+conda	libtiff	libgcc >=15
+conda	libtiff	libjpeg-turbo >=3.2.0,<4.0a0
+conda	libtiff	liblzma >=5.8.3,<6.0a0
+conda	libtiff	libstdcxx >=15
+conda	libtiff	libwebp-base >=1.6.0,<2.0a0
+conda	libtiff	libzlib >=1.3.2,<2.0a0
+conda	libtiff	zstd >=1.5.7,<1.6.0a0
+conda	libudev1	__glibc >=2.17,<3.0.a0
+conda	libudev1	libcap >=2.78,<2.79.0a0
+conda	libudev1	libgcc >=15
+conda	libunwind	__glibc >=2.17,<3.0.a0
+conda	libunwind	libgcc >=14
+conda	libunwind	libstdcxx >=14
+conda	liburing	__glibc >=2.17,<3.0.a0
+conda	liburing	libgcc >=14
+conda	liburing	libstdcxx >=14
+conda	libusb	__glibc >=2.17,<3.0.a0
+conda	libusb	libgcc >=13
+conda	libusb	libudev1 >=257.4
+conda	libuuid	__glibc >=2.17,<3.0.a0
+conda	libuuid	libgcc >=15
+conda	libva	__glibc >=2.17,<3.0.a0
+conda	libva	libdrm >=2.4.129,<2.5.0a0
+conda	libva	libegl >=1.7.0,<2.0a0
+conda	libva	libgcc >=15
+conda	libva	libgl >=1.7.0,<2.0a0
+conda	libva	libglx >=1.7.0,<2.0a0
+conda	libva	libxcb >=1.17.0,<2.0a0
+conda	libva	wayland >=1.26.0,<2.0a0
+conda	libva	wayland-protocols
+conda	libva	xorg-libx11 >=1.8.13,<2.0a0
+conda	libva	xorg-libxext >=1.3.7,<2.0a0
+conda	libva	xorg-libxfixes >=6.0.2,<7.0a0
+conda	libvorbis	libogg
+conda	libvorbis	libgcc >=14
+conda	libvorbis	__glibc >=2.17,<3.0.a0
+conda	libvorbis	libstdcxx >=14
+conda	libvorbis	libogg >=1.3.5,<1.4.0a0
+conda	libvpl	libstdcxx >=14
+conda	libvpl	libgcc >=14
+conda	libvpl	__glibc >=2.17,<3.0.a0
+conda	libvpl	intel-media-driver >=25.3.3,<25.4.0a0
+conda	libvpl	libva >=2.22.0,<3.0a0
+conda	libvpx	__glibc >=2.17,<3.0.a0
+conda	libvpx	libgcc >=15
+conda	libvpx	libstdcxx >=15
+conda	libvulkan-loader	__glibc >=2.17,<3.0.a0
+conda	libvulkan-loader	libstdcxx >=15
+conda	libvulkan-loader	libgcc >=15
+conda	libvulkan-loader	xorg-libxrandr >=1.5.5,<2.0a0
+conda	libvulkan-loader	xorg-libx11 >=1.8.13,<2.0a0
+conda	libwebp-base	__glibc >=2.17,<3.0.a0
+conda	libwebp-base	libgcc >=14
+conda	libxcb	__glibc >=2.17,<3.0.a0
+conda	libxcb	libgcc >=15
+conda	libxcb	pthread-stubs
+conda	libxcb	xorg-libxau >=1.0.12,<2.0a0
+conda	libxcb	xorg-libxdmcp >=1.1.5,<2.0a0
+conda	libxcrypt	libgcc >=14
+conda	libxcrypt	__glibc >=2.17,<3.0.a0
+conda	libxkbcommon	xkeyboard-config
+conda	libxkbcommon	libstdcxx >=14
+conda	libxkbcommon	libgcc >=14
+conda	libxkbcommon	__glibc >=2.17,<3.0.a0
+conda	libxkbcommon	libxcb >=1.17.0,<2.0a0
+conda	libxkbcommon	xorg-libxau >=1.0.12,<2.0a0
+conda	libxkbcommon	libxml2
+conda	libxkbcommon	libxml2-16 >=2.14.6
+conda	libxml2	__glibc >=2.17,<3.0.a0
+conda	libxml2	icu >=78.3,<79.0a0
+conda	libxml2	libgcc >=15
+conda	libxml2	libiconv >=1.18,<2.0a0
+conda	libxml2	liblzma >=5.8.3,<6.0a0
+conda	libxml2	libxml2-16 2.15.4 hf3af7cc_0
+conda	libxml2	libzlib >=1.3.2,<2.0a0
+conda	libxml2-16	__glibc >=2.17,<3.0.a0
+conda	libxml2-16	icu >=78.3,<79.0a0
+conda	libxml2-16	libgcc >=15
+conda	libxml2-16	libiconv >=1.18,<2.0a0
+conda	libxml2-16	liblzma >=5.8.3,<6.0a0
+conda	libxml2-16	libzlib >=1.3.2,<2.0a0
+conda	libxslt	__glibc >=2.17,<3.0.a0
+conda	libxslt	libgcc >=15
+conda	libxslt	libxml2
+conda	libxslt	libxml2-16 >=2.15.3
+conda	libzlib	__glibc >=2.17,<3.0.a0
+conda	lz4-c	libgcc >=15
+conda	lz4-c	libstdcxx >=15
+conda	lz4-c	__glibc >=2.17,<3.0.a0
+conda	markdown-it-py	mdurl >=0.1,<1
+conda	markdown-it-py	python >=3.10
+conda	markupsafe	__glibc >=2.17,<3.0.a0
+conda	markupsafe	libgcc >=14
+conda	markupsafe	python >=3.10,<3.11.0a0
+conda	markupsafe	python_abi 3.10.* *_cp310
+conda	matplotlib	matplotlib-base >=3.10.9,<3.10.10.0a0
+conda	matplotlib	pyside6 >=6.7.2
+conda	matplotlib	python >=3.10,<3.11.0a0
+conda	matplotlib	python_abi 3.10.* *_cp310
+conda	matplotlib	tornado >=5
+conda	matplotlib-base	__glibc >=2.17,<3.0.a0
+conda	matplotlib-base	contourpy >=1.0.1
+conda	matplotlib-base	cycler >=0.10
+conda	matplotlib-base	fonttools >=4.22.0
+conda	matplotlib-base	freetype
+conda	matplotlib-base	kiwisolver >=1.3.1
+conda	matplotlib-base	libfreetype >=2.14.3
+conda	matplotlib-base	libfreetype6 >=2.14.3
+conda	matplotlib-base	libgcc >=14
+conda	matplotlib-base	libstdcxx >=14
+conda	matplotlib-base	numpy >=1.21,<3
+conda	matplotlib-base	numpy >=1.23
+conda	matplotlib-base	packaging >=20.0
+conda	matplotlib-base	pillow >=8
+conda	matplotlib-base	pyparsing >=2.3.1
+conda	matplotlib-base	python >=3.10,<3.11.0a0
+conda	matplotlib-base	python-dateutil >=2.7
+conda	matplotlib-base	python_abi 3.10.* *_cp310
+conda	matplotlib-base	qhull >=2020.2,<2020.3.0a0
+conda	matplotlib-base	tk >=8.6.13,<8.7.0a0
+conda	matplotlib-inline	python >=3.10
+conda	matplotlib-inline	traitlets
+conda	mdurl	python >=3.9
+conda	mistune	python >=3.10
+conda	mistune	typing_extensions
+conda	mistune	python
+conda	ml-collections	python >=3.10
+conda	ml-collections	absl-py
+conda	ml-collections	pyyaml
+conda	ml-collections	six
+conda	ml-collections	python
+conda	ml_dtypes	python
+conda	ml_dtypes	libgcc >=14
+conda	ml_dtypes	__glibc >=2.17,<3.0.a0
+conda	ml_dtypes	libstdcxx >=14
+conda	ml_dtypes	python_abi 3.10.* *_cp310
+conda	ml_dtypes	numpy >=1.21,<3
+conda	mpg123	__glibc >=2.17,<3.0.a0
+conda	mpg123	libgcc >=14
+conda	mpg123	libstdcxx >=14
+conda	msgpack-python	python
+conda	msgpack-python	__glibc >=2.17,<3.0.a0
+conda	msgpack-python	libstdcxx >=15
+conda	msgpack-python	libgcc >=15
+conda	msgpack-python	python_abi 3.10.* *_cp310
+conda	munkres	python >=3.9
+conda	narwhals	python >=3.10
+conda	narwhals	python
+conda	nbclient	python >=3.10
+conda	nbclient	jupyter_client >=7.0.0
+conda	nbclient	jupyter_core >=5.4
+conda	nbclient	nbformat >=5.2.0
+conda	nbclient	traitlets >=5.13
+conda	nbclient	python
+conda	nbconvert-core	beautifulsoup4
+conda	nbconvert-core	bleach-with-css !=5.0.0
+conda	nbconvert-core	defusedxml
+conda	nbconvert-core	importlib-metadata >=3.6
+conda	nbconvert-core	jinja2 >=3.0
+conda	nbconvert-core	jupyter_core >=4.7
+conda	nbconvert-core	jupyterlab_pygments
+conda	nbconvert-core	markupsafe >=2.0
+conda	nbconvert-core	mistune >=2.0.3,<4
+conda	nbconvert-core	nbclient >=0.5.0
+conda	nbconvert-core	nbformat >=5.7
+conda	nbconvert-core	packaging
+conda	nbconvert-core	pandocfilters >=1.4.1
+conda	nbconvert-core	pygments >=2.4.1
+conda	nbconvert-core	python >=3.10
+conda	nbconvert-core	traitlets >=5.1
+conda	nbconvert-core	python
+conda	nbformat	jsonschema >=2.6
+conda	nbformat	jupyter_core >=4.12,!=5.0.*
+conda	nbformat	python >=3.10
+conda	nbformat	python-fastjsonschema >=2.15
+conda	nbformat	traitlets >=5.1
+conda	nbformat	python
+conda	nccl	__glibc >=2.28,<3.0.a0
+conda	nccl	cuda-version >=12,<13.0a0
+conda	nccl	libgcc >=14
+conda	nccl	libstdcxx >=14
+conda	ncurses	__glibc >=2.17,<3.0.a0
+conda	ncurses	libgcc >=14
+conda	nest-asyncio	python >=3.9
+conda	nest-asyncio2	python >=3.10
+conda	nest-asyncio2	python
+conda	notebook	jupyter_server >=2.19.0,<3
+conda	notebook	jupyter-builder >=1.0.2,<2
+conda	notebook	jupyterlab >=4.6.3,<4.7
+conda	notebook	jupyterlab_server >=2.28.0,<3
+conda	notebook	notebook-shim >=0.2,<0.3
+conda	notebook	python >=3.10
+conda	notebook	tornado >=6.2.0
+conda	notebook	python
+conda	notebook-shim	jupyter_server >=1.8,<3
+conda	notebook-shim	python >=3.9
+conda	numpy	libblas >=3.9.0,<4.0a0
+conda	numpy	libcblas >=3.9.0,<4.0a0
+conda	numpy	libgcc-ng >=12
+conda	numpy	liblapack >=3.9.0,<4.0a0
+conda	numpy	libstdcxx-ng >=12
+conda	numpy	python >=3.10,<3.11.0a0
+conda	numpy	python_abi 3.10.* *_cp310
+conda	ocl-icd	__glibc >=2.17,<3.0.a0
+conda	ocl-icd	libgcc >=14
+conda	ocl-icd	opencl-headers >=2025.6.13
+conda	ocl-icd-system	ocl-icd
+conda	opencl-headers	__glibc >=2.17,<3.0.a0
+conda	opencl-headers	libgcc >=14
+conda	opencl-headers	libstdcxx >=14
+conda	openh264	__glibc >=2.17,<3.0.a0
+conda	openh264	libgcc >=15
+conda	openh264	libstdcxx >=15
+conda	openjpeg	libgcc >=15
+conda	openjpeg	__glibc >=2.17,<3.0.a0
+conda	openjpeg	libstdcxx >=15
+conda	openjpeg	libtiff >=4.7.2,<4.8.0a0
+conda	openjpeg	libzlib >=1.3.2,<2.0a0
+conda	openjpeg	libpng >=1.6.58,<1.7.0a0
+conda	openldap	__glibc >=2.17,<3.0.a0
+conda	openldap	cyrus-sasl >=2.1.28,<3.0a0
+conda	openldap	krb5 >=1.22.2,<1.23.0a0
+conda	openldap	libgcc >=14
+conda	openldap	libstdcxx >=14
+conda	openldap	openssl >=3.5.6,<4.0a0
+conda	openmm	__glibc >=2.17,<3.0.a0
+conda	openmm	cuda-nvrtc >=12.9.86,<13.0a0
+conda	openmm	cuda-version >=12.9,<13
+conda	openmm	libcufft >=11.4.1.4,<12.0a0
+conda	openmm	libgcc >=14
+conda	openmm	libstdcxx >=14
+conda	openmm	numpy >=1.21,<3
+conda	openmm	ocl-icd >=2.3.4,<3.0a0
+conda	openmm	ocl-icd-system
+conda	openmm	python >=3.10,<3.11.0a0
+conda	openmm	python_abi 3.10.* *_cp310
+conda	openmm	rocm-core >=7.2.4,<7.3.0a0
+conda	openmm	scipy
+conda	openssl	__glibc >=2.17,<3.0.a0
+conda	openssl	ca-certificates
+conda	openssl	libgcc >=15
+conda	opt_einsum	python >=3.9
+conda	optax	absl-py >=0.7.1
+conda	optax	chex >=0.1.86
+conda	optax	etils
+conda	optax	jax >=0.5.3
+conda	optax	jaxlib >=0.5.3
+conda	optax	numpy >=1.18.0
+conda	optax	python >=3.10
+conda	optax	typing_extensions >=3.10
+conda	orbax-checkpoint	python >=3.10
+conda	orbax-checkpoint	absl-py
+conda	orbax-checkpoint	etils
+conda	orbax-checkpoint	typing_extensions
+conda	orbax-checkpoint	msgpack-python
+conda	orbax-checkpoint	jax >=0.4.35
+conda	orbax-checkpoint	numpy
+conda	orbax-checkpoint	pyyaml
+conda	orbax-checkpoint	tensorstore >=0.1.60
+conda	orbax-checkpoint	nest-asyncio
+conda	orbax-checkpoint	protobuf
+conda	orbax-checkpoint	humanize
+conda	orbax-checkpoint	importlib_resources
+conda	orbax-checkpoint	python
+conda	overrides	python >=3.9
+conda	overrides	typing_utils
+conda	packaging	python >=3.9
+conda	packaging	python
+conda	pandas	__glibc >=2.17,<3.0.a0
+conda	pandas	libgcc >=14
+conda	pandas	libstdcxx >=14
+conda	pandas	numpy >=1.21,<3
+conda	pandas	numpy >=1.22.4
+conda	pandas	python >=3.10,<3.11.0a0
+conda	pandas	python-dateutil >=2.8.2
+conda	pandas	python-tzdata >=2022.7
+conda	pandas	python_abi 3.10.* *_cp310
+conda	pandas	pytz >=2020.1
+conda	pandocfilters	python !=3.0,!=3.1,!=3.2,!=3.3
+conda	pango	__glibc >=2.17,<3.0.a0
+conda	pango	cairo >=1.18.4,<2.0a0
+conda	pango	fontconfig >=2.18.3,<3.0a0
+conda	pango	fonts-conda-ecosystem
+conda	pango	fribidi >=1.0.16,<2.0a0
+conda	pango	libexpat >=2.8.1,<3.0a0
+conda	pango	libfreetype >=2.14.3
+conda	pango	libfreetype6 >=2.14.3
+conda	pango	libgcc >=15
+conda	pango	libglib >=2.88.3,<3.0a0
+conda	pango	libharfbuzz >=14.4.0
+conda	pango	libpng >=1.6.58,<1.7.0a0
+conda	pango	libzlib >=1.3.2,<2.0a0
+conda	parso	python >=3.10
+conda	parso	python
+conda	patsy	numpy >=1.4.0
+conda	patsy	packaging
+conda	patsy	python >=3.10
+conda	patsy	python
+conda	pcre2	__glibc >=2.17,<3.0.a0
+conda	pcre2	bzip2 >=1.0.8,<2.0a0
+conda	pcre2	libgcc >=15
+conda	pcre2	libzlib >=1.3.2,<2.0a0
+conda	pdbfixer	legacy-cgi
+conda	pdbfixer	numpy
+conda	pdbfixer	openmm >=8.2
+conda	pdbfixer	python >=3.10
+conda	pdbfixer	setuptools
+conda	pexpect	ptyprocess >=0.5
+conda	pexpect	python >=3.9
+conda	pickleshare	python >=3.9
+conda	pillow	python
+conda	pillow	__glibc >=2.17,<3.0.a0
+conda	pillow	libgcc >=14
+conda	pillow	tk >=8.6.13,<8.7.0a0
+conda	pillow	python_abi 3.10.* *_cp310
+conda	pillow	libwebp-base >=1.6.0,<2.0a0
+conda	pillow	lcms2 >=2.19.1,<3.0a0
+conda	pillow	openjpeg >=2.5.4,<3.0a0
+conda	pillow	libfreetype >=2.14.3
+conda	pillow	libfreetype6 >=2.14.3
+conda	pillow	libjpeg-turbo >=3.1.4.1,<4.0a0
+conda	pillow	zlib-ng >=2.3.3,<2.4.0a0
+conda	pillow	libxcb >=1.17.0,<2.0a0
+conda	pillow	libtiff >=4.7.1,<4.8.0a0
+conda	pip	python >=3.10,<3.13.0a0
+conda	pip	setuptools
+conda	pip	wheel
+conda	pixman	libstdcxx >=14
+conda	pixman	libgcc >=14
+conda	pixman	__glibc >=2.17,<3.0.a0
+conda	platformdirs	python >=3.10
+conda	platformdirs	python
+conda	prometheus_client	python >=3.10
+conda	prompt-toolkit	python >=3.10
+conda	prompt-toolkit	wcwidth
+conda	prompt_toolkit	prompt-toolkit >=3.0.53,<3.0.54.0a0
+conda	protobuf	__glibc >=2.17,<3.0.a0
+conda	protobuf	libabseil * cxx17*
+conda	protobuf	libabseil >=20250127.0,<20250128.0a0
+conda	protobuf	libgcc >=13
+conda	protobuf	libstdcxx >=13
+conda	protobuf	libzlib >=1.3.1,<2.0a0
+conda	protobuf	python >=3.10,<3.11.0a0
+conda	protobuf	python_abi 3.10.* *_cp310
+conda	psutil	python
+conda	psutil	__glibc >=2.17,<3.0.a0
+conda	psutil	libgcc >=15
+conda	psutil	python_abi 3.10.* *_cp310
+conda	pthread-stubs	__glibc >=2.17,<3.0.a0
+conda	pthread-stubs	libgcc >=15
+conda	ptyprocess	python >=3.9
+conda	pugixml	__glibc >=2.17,<3.0.a0
+conda	pugixml	libgcc >=13
+conda	pugixml	libstdcxx >=13
+conda	pulseaudio-client	__glibc >=2.17,<3.0.a0
+conda	pulseaudio-client	dbus >=1.16.2,<2.0a0
+conda	pulseaudio-client	libgcc >=14
+conda	pulseaudio-client	libglib >=2.86.1,<3.0a0
+conda	pulseaudio-client	libiconv >=1.18,<2.0a0
+conda	pulseaudio-client	libsndfile >=1.2.2,<1.3.0a0
+conda	pulseaudio-client	libsystemd0 >=257.10
+conda	pulseaudio-client	libxcb >=1.17.0,<2.0a0
+conda	pure_eval	python >=3.9
+conda	py3dmol	ipython
+conda	py3dmol	python >=3.10
+conda	pybind11-abi	
+conda	pycparser	python >=3.10
+conda	pycparser	python
+conda	pygments	python >=3.10
+conda	pygments	python
+conda	pyparsing	python >=3.10
+conda	pyparsing	python
+conda	pyside6	python
+conda	pyside6	qt6-main 6.11.2.*
+conda	pyside6	libgcc >=15
+conda	pyside6	libstdcxx >=15
+conda	pyside6	__glibc >=2.17,<3.0.a0
+conda	pyside6	libxslt >=1.1.43,<2.0a0
+conda	pyside6	qt6-main >=6.11.2,<7.0a0
+conda	pyside6	libxml2
+conda	pyside6	libxml2-16 >=2.14.6
+conda	pyside6	python_abi 3.10.* *_cp310
+conda	pyside6	libvulkan-loader >=1.4.357.0,<2.0a0
+conda	pyside6	libgl >=1.7.0,<2.0a0
+conda	pyside6	libopengl >=1.7.0,<2.0a0
+conda	pyside6	libegl >=1.7.0,<2.0a0
+conda	pyside6	libclang13 >=22.1.8
+conda	pysocks	__unix
+conda	pysocks	python >=3.9
+conda	python	__glibc >=2.17,<3.0.a0
+conda	python	bzip2 >=1.0.8,<2.0a0
+conda	python	ld_impl_linux-64 >=2.36.1
+conda	python	libexpat >=2.8.1,<3.0a0
+conda	python	libffi >=3.4,<4.0a0
+conda	python	libgcc >=14
+conda	python	liblzma >=5.8.3,<6.0a0
+conda	python	libnsl >=2.0.1,<2.1.0a0
+conda	python	libsqlite >=3.53.4,<4.0a0
+conda	python	libuuid >=2.42.2,<3.0a0
+conda	python	libxcrypt >=4.4.38
+conda	python	libzlib >=1.3.2,<2.0a0
+conda	python	ncurses >=6.6,<7.0a0
+conda	python	openssl >=3.5.7,<4.0a0
+conda	python	readline >=8.3,<9.0a0
+conda	python	tk >=8.6.13,<8.7.0a0
+conda	python	tzdata
+conda	python	pip
+conda	python-dateutil	python >=3.9
+conda	python-dateutil	six >=1.5
+conda	python-dateutil	python
+conda	python-fastjsonschema	python >=3.10
+conda	python-fastjsonschema	python
+conda	python-json-logger	python >=3.10
+conda	python-json-logger	typing_extensions
+conda	python-tzdata	python >=3.10
+conda	python_abi	
+conda	pytz	python >=3.10
+conda	pytz	python
+conda	pyyaml	__glibc >=2.17,<3.0.a0
+conda	pyyaml	libgcc >=14
+conda	pyyaml	python >=3.10,<3.11.0a0
+conda	pyyaml	python_abi 3.10.* *_cp310
+conda	pyyaml	yaml >=0.2.5,<0.3.0a0
+conda	pyzmq	python
+conda	pyzmq	libstdcxx >=15
+conda	pyzmq	libgcc >=15
+conda	pyzmq	__glibc >=2.17,<3.0.a0
+conda	pyzmq	zeromq >=4.3.5,<4.4.0a0
+conda	pyzmq	python_abi 3.10.* *_cp310
+conda	qhull	__glibc >=2.17,<3.0.a0
+conda	qhull	libgcc-ng >=12
+conda	qhull	libstdcxx-ng >=12
+conda	qt6-main	libxcb
+conda	qt6-main	xcb-util
+conda	qt6-main	xcb-util-wm
+conda	qt6-main	xcb-util-keysyms
+conda	qt6-main	xcb-util-image
+conda	qt6-main	xcb-util-renderutil
+conda	qt6-main	xcb-util-cursor
+conda	qt6-main	libgl-devel
+conda	qt6-main	libegl-devel
+conda	qt6-main	libgcc >=15
+conda	qt6-main	libstdcxx >=15
+conda	qt6-main	__glibc >=2.17,<3.0.a0
+conda	qt6-main	libglib >=2.88.3,<3.0a0
+conda	qt6-main	libbrotlicommon >=1.2.0,<1.3.0a0
+conda	qt6-main	libbrotlienc >=1.2.0,<1.3.0a0
+conda	qt6-main	libbrotlidec >=1.2.0,<1.3.0a0
+conda	qt6-main	libvulkan-loader >=1.4.357.0,<2.0a0
+conda	qt6-main	wayland >=1.26.0,<2.0a0
+conda	qt6-main	xorg-libx11 >=1.8.13,<2.0a0
+conda	qt6-main	libcups >=2.3.3,<2.4.0a0
+conda	qt6-main	alsa-lib >=1.2.16.1,<1.3.0a0
+conda	qt6-main	zstd >=1.5.7,<1.6.0a0
+conda	qt6-main	libtiff >=4.7.2,<4.8.0a0
+conda	qt6-main	libxml2
+conda	qt6-main	libxml2-16 >=2.14.6
+conda	qt6-main	dbus >=1.16.2,<2.0a0
+conda	qt6-main	libegl >=1.7.0,<2.0a0
+conda	qt6-main	xorg-libsm >=1.2.6,<2.0a0
+conda	qt6-main	xcb-util-wm >=0.4.2,<0.5.0a0
+conda	qt6-main	xorg-libice >=1.1.2,<2.0a0
+conda	qt6-main	xorg-libxxf86vm >=1.1.7,<2.0a0
+conda	qt6-main	double-conversion >=3.4.0,<3.5.0a0
+conda	qt6-main	icu >=78.3,<79.0a0
+conda	qt6-main	libwebp-base >=1.6.0,<2.0a0
+conda	qt6-main	krb5 >=1.22.2,<1.23.0a0
+conda	qt6-main	xorg-libxcursor >=1.2.3,<2.0a0
+conda	qt6-main	pcre2 >=10.47,<10.48.0a0
+conda	qt6-main	openssl >=3.5.7,<4.0a0
+conda	qt6-main	xorg-libxcomposite >=0.4.7,<1.0a0
+conda	qt6-main	libpng >=1.6.58,<1.7.0a0
+conda	qt6-main	libjpeg-turbo >=3.2.0,<4.0a0
+conda	qt6-main	libpq >=18.6,<19.0a0
+conda	qt6-main	libxcb >=1.17.0,<2.0a0
+conda	qt6-main	xcb-util >=0.4.1,<0.5.0a0
+conda	qt6-main	xcb-util-keysyms >=0.4.1,<0.5.0a0
+conda	qt6-main	xcb-util-renderutil >=0.3.10,<0.4.0a0
+conda	qt6-main	xcb-util-image >=0.4.0,<0.5.0a0
+conda	qt6-main	libharfbuzz >=14.3.1
+conda	qt6-main	fontconfig >=2.18.3,<3.0a0
+conda	qt6-main	fonts-conda-ecosystem
+conda	qt6-main	xorg-libxdamage >=1.1.6,<2.0a0
+conda	qt6-main	libzlib >=1.3.2,<2.0a0
+conda	qt6-main	libgl >=1.7.0,<2.0a0
+conda	qt6-main	xorg-libxrandr >=1.5.5,<2.0a0
+conda	qt6-main	libsqlite >=3.53.4,<4.0a0
+conda	qt6-main	xcb-util-cursor >=0.1.6,<0.2.0a0
+conda	qt6-main	libxkbcommon >=1.13.2,<2.0a0
+conda	qt6-main	libfreetype >=2.14.3
+conda	qt6-main	libfreetype6 >=2.14.3
+conda	qt6-main	libdrm >=2.4.129,<2.5.0a0
+conda	qt6-main	xorg-libxext >=1.3.7,<2.0a0
+conda	qt6-main	xorg-libxtst >=1.2.5,<2.0a0
+conda	rav1e	__glibc >=2.17,<3.0.a0
+conda	rav1e	libgcc >=13
+conda	re2	libre2-11 2025.06.26 hba17884_0
+conda	readline	__glibc >=2.17,<3.0.a0
+conda	readline	libgcc >=15
+conda	readline	ncurses >=6.6,<7.0a0
+conda	referencing	attrs >=22.2.0
+conda	referencing	python >=3.10
+conda	referencing	rpds-py >=0.7.0
+conda	referencing	typing_extensions >=4.4.0
+conda	referencing	python
+conda	requests	python >=3.10
+conda	requests	certifi >=2023.5.7
+conda	requests	charset-normalizer >=2,<4
+conda	requests	idna >=2.5,<4
+conda	requests	urllib3 >=1.26,<3
+conda	requests	python
+conda	rfc3339-validator	python >=3.9
+conda	rfc3339-validator	six
+conda	rfc3986-validator	python
+conda	rfc3987-syntax	python >=3.9
+conda	rfc3987-syntax	lark >=1.2.2
+conda	rfc3987-syntax	python
+conda	rich	markdown-it-py >=2.2.0
+conda	rich	pygments >=2.13.0,<3.0.0
+conda	rich	python >=3.10
+conda	rich	typing_extensions >=4.0.0,<5.0.0
+conda	rich	python
+conda	rocm-core	__glibc >=2.17,<3.0.a0
+conda	rocm-core	libstdcxx >=14
+conda	rocm-core	libgcc >=14
+conda	rpds-py	python
+conda	rpds-py	libgcc >=14
+conda	rpds-py	__glibc >=2.17,<3.0.a0
+conda	rpds-py	python_abi 3.10.* *_cp310
+conda	scipy	__glibc >=2.17,<3.0.a0
+conda	scipy	libblas >=3.9.0,<4.0a0
+conda	scipy	libcblas >=3.9.0,<4.0a0
+conda	scipy	libgcc >=13
+conda	scipy	libgfortran
+conda	scipy	libgfortran5 >=13.3.0
+conda	scipy	liblapack >=3.9.0,<4.0a0
+conda	scipy	libstdcxx >=13
+conda	scipy	numpy <2.5
+conda	scipy	numpy >=1.19,<3
+conda	scipy	numpy >=1.23.5
+conda	scipy	python >=3.10,<3.11.0a0
+conda	scipy	python_abi 3.10.* *_cp310
+conda	sdl2	libstdcxx >=14
+conda	sdl2	libgcc >=14
+conda	sdl2	__glibc >=2.17,<3.0.a0
+conda	sdl2	libgl >=1.7.0,<2.0a0
+conda	sdl2	sdl3 >=3.2.22,<4.0a0
+conda	sdl2	libegl >=1.7.0,<2.0a0
+conda	sdl3	libstdcxx >=15
+conda	sdl3	libgcc >=15
+conda	sdl3	__glibc >=2.17,<3.0.a0
+conda	sdl3	xorg-libxcursor >=1.2.3,<2.0a0
+conda	sdl3	libegl >=1.7.0,<2.0a0
+conda	sdl3	dbus >=1.16.2,<2.0a0
+conda	sdl3	xorg-libxext >=1.3.7,<2.0a0
+conda	sdl3	libxkbcommon >=1.13.2,<2.0a0
+conda	sdl3	libunwind >=1.8.3,<1.9.0a0
+conda	sdl3	libgl >=1.7.0,<2.0a0
+conda	sdl3	liburing >=2.14,<2.15.0a0
+conda	sdl3	libvulkan-loader >=1.4.357.0,<2.0a0
+conda	sdl3	libusb >=1.0.29,<2.0a0
+conda	sdl3	xorg-libxtst >=1.2.5,<2.0a0
+conda	sdl3	wayland >=1.26.0,<2.0a0
+conda	sdl3	xorg-libxi >=1.8.3,<2.0a0
+conda	sdl3	libdrm >=2.4.129,<2.5.0a0
+conda	sdl3	xorg-libxscrnsaver >=1.2.4,<2.0a0
+conda	sdl3	xorg-libxfixes >=6.0.2,<7.0a0
+conda	sdl3	xorg-libx11 >=1.8.13,<2.0a0
+conda	sdl3	libudev1 >=257.13
+conda	sdl3	pulseaudio-client >=17.0,<17.1.0a0
+conda	seaborn	seaborn-base 0.13.2 pyhd8ed1ab_3
+conda	seaborn	statsmodels >=0.12
+conda	seaborn-base	matplotlib-base >=3.4,!=3.6.1
+conda	seaborn-base	numpy >=1.20,!=1.24.0
+conda	seaborn-base	pandas >=1.2
+conda	seaborn-base	python >=3.9
+conda	seaborn-base	scipy >=1.7
+conda	send2trash	__linux
+conda	send2trash	python >=3.10
+conda	send2trash	python
+conda	setuptools	python >=3.10
+conda	shaderc	__glibc >=2.17,<3.0.a0
+conda	shaderc	glslang >=16,<17.0a0
+conda	shaderc	libgcc >=14
+conda	shaderc	libstdcxx >=14
+conda	shaderc	spirv-tools >=2026,<2027.0a0
+conda	six	python >=3.9
+conda	six	python
+conda	snappy	libgcc >=14
+conda	snappy	__glibc >=2.17,<3.0.a0
+conda	snappy	libstdcxx >=14
+conda	sniffio	python >=3.10
+conda	soupsieve	python >=3.10
+conda	spirv-tools	__glibc >=2.17,<3.0.a0
+conda	spirv-tools	libgcc >=15
+conda	spirv-tools	libstdcxx >=15
+conda	stack_data	asttokens
+conda	stack_data	executing
+conda	stack_data	pure_eval
+conda	stack_data	python >=3.9
+conda	statsmodels	python
+conda	statsmodels	numpy >=1.23.5,<3
+conda	statsmodels	scipy >=1.8,!=1.9.2
+conda	statsmodels	pandas >=1.4,!=2.1.0
+conda	statsmodels	patsy >=0.5.6
+conda	statsmodels	packaging >=21.3
+conda	statsmodels	formulaic >=1.1.0
+conda	statsmodels	libgcc >=15
+conda	statsmodels	__glibc >=2.17,<3.0.a0
+conda	statsmodels	numpy >=1.21,<3
+conda	statsmodels	python_abi 3.10.* *_cp310
+conda	svt-av1	__glibc >=2.17,<3.0.a0
+conda	svt-av1	libgcc >=14
+conda	svt-av1	libstdcxx >=14
+conda	sysroot_linux-64	__glibc >=2.34
+conda	sysroot_linux-64	kernel-headers_linux-64 5.14.0 he073ed8_3
+conda	sysroot_linux-64	tzdata
+conda	tabulate	python >=3.10
+conda	tabulate	python
+conda	tbb	__glibc >=2.17,<3.0.a0
+conda	tbb	libgcc >=15
+conda	tbb	libhwloc >=2.13.0,<2.13.1.0a0
+conda	tbb	libstdcxx >=15
+conda	tensorstore	__glibc >=2.17,<3.0.a0
+conda	tensorstore	blosc >=1.21.6,<2.0a0
+conda	tensorstore	bzip2 >=1.0.8,<2.0a0
+conda	tensorstore	libavif16 >=1.3.0,<2.0a0
+conda	tensorstore	libcurl >=8.17.0,<9.0a0
+conda	tensorstore	libgcc >=14
+conda	tensorstore	libjpeg-turbo >=3.1.2,<4.0a0
+conda	tensorstore	liblzma >=5.8.1,<6.0a0
+conda	tensorstore	libpng >=1.6.50,<1.7.0a0
+conda	tensorstore	libprotobuf >=5.29.3,<5.29.4.0a0
+conda	tensorstore	libstdcxx >=14
+conda	tensorstore	libwebp-base >=1.6.0,<2.0a0
+conda	tensorstore	libzlib >=1.3.1,<2.0a0
+conda	tensorstore	ml_dtypes
+conda	tensorstore	numpy >=1.21,<3
+conda	tensorstore	openssl >=3.5.4,<4.0a0
+conda	tensorstore	pybind11-abi 4
+conda	tensorstore	python >=3.10,<3.11.0a0
+conda	tensorstore	python_abi 3.10.* *_cp310
+conda	terminado	__unix
+conda	terminado	ptyprocess
+conda	terminado	python >=3.10
+conda	terminado	tornado >=6.1.0
+conda	terminado	python
+conda	tinycss2	python >=3.5
+conda	tinycss2	webencodings >=0.4
+conda	tk	libgcc >=15
+conda	tk	__glibc >=2.17,<3.0.a0
+conda	tk	libzlib >=1.3.2,<2.0a0
+conda	tomli	python >=3.10
+conda	tomli	python
+conda	toolz	python >=3.10
+conda	tornado	__glibc >=2.17,<3.0.a0
+conda	tornado	libgcc >=14
+conda	tornado	python >=3.10,<3.11.0a0
+conda	tornado	python_abi 3.10.* *_cp310
+conda	tqdm	python >=3.10
+conda	tqdm	__unix
+conda	tqdm	python
+conda	traitlets	python >=3.10
+conda	traitlets	python
+conda	typing-extensions	typing_extensions ==4.16.0 pyhcf101f3_0
+conda	typing_extensions	python >=3.10
+conda	typing_extensions	python
+conda	typing_utils	python >=3.9
+conda	tzdata	
+conda	unicodedata2	__glibc >=2.17,<3.0.a0
+conda	unicodedata2	libgcc >=14
+conda	unicodedata2	python >=3.10,<3.11.0a0
+conda	unicodedata2	python_abi 3.10.* *_cp310
+conda	uri-template	python >=3.9
+conda	urllib3	brotli-python >=1.0.9
+conda	urllib3	h2 >=4,<5
+conda	urllib3	pysocks >=1.5.6,<2.0,!=1.5.7
+conda	urllib3	python >=3.9
+conda	urllib3	zstandard >=0.18.0
+conda	wayland	__glibc >=2.17,<3.0.a0
+conda	wayland	libexpat >=2.8.1,<3.0a0
+conda	wayland	libffi >=3.7.0,<3.8.0a0
+conda	wayland	libgcc >=15
+conda	wayland	libstdcxx >=15
+conda	wayland-protocols	
+conda	wcwidth	python >=3.10
+conda	wcwidth	python
+conda	webcolors	python >=3.10
+conda	webencodings	python >=3.9
+conda	websocket-client	python >=3.10
+conda	wheel	packaging >=24.0
+conda	wheel	python >=3.10
+conda	widgetsnbextension	python >=3.10
+conda	wrapt	python
+conda	wrapt	libgcc >=15
+conda	wrapt	__glibc >=2.17,<3.0.a0
+conda	wrapt	python_abi 3.10.* *_cp310
+conda	x264	__glibc >=2.17,<3.0.a0
+conda	x264	libgcc >=15
+conda	x265	__glibc >=2.17,<3.0.a0
+conda	x265	libgcc >=15
+conda	x265	libstdcxx >=15
+conda	xcb-util	__glibc >=2.17,<3.0.a0
+conda	xcb-util	libgcc >=13
+conda	xcb-util	libxcb >=1.17.0,<2.0a0
+conda	xcb-util-cursor	__glibc >=2.17,<3.0.a0
+conda	xcb-util-cursor	libgcc >=14
+conda	xcb-util-cursor	libxcb >=1.13
+conda	xcb-util-cursor	libxcb >=1.17.0,<2.0a0
+conda	xcb-util-cursor	xcb-util-image >=0.4.0,<0.5.0a0
+conda	xcb-util-cursor	xcb-util-renderutil >=0.3.10,<0.4.0a0
+conda	xcb-util-image	libgcc-ng >=12
+conda	xcb-util-image	libxcb >=1.16,<2.0.0a0
+conda	xcb-util-image	xcb-util >=0.4.1,<0.5.0a0
+conda	xcb-util-keysyms	libgcc-ng >=12
+conda	xcb-util-keysyms	libxcb >=1.16,<2.0.0a0
+conda	xcb-util-renderutil	libgcc-ng >=12
+conda	xcb-util-renderutil	libxcb >=1.16,<2.0.0a0
+conda	xcb-util-wm	libgcc-ng >=12
+conda	xcb-util-wm	libxcb >=1.16,<2.0.0a0
+conda	xkeyboard-config	libgcc >=14
+conda	xkeyboard-config	__glibc >=2.17,<3.0.a0
+conda	xkeyboard-config	xorg-libx11 >=1.8.13,<2.0a0
+conda	xorg-libice	libgcc >=14
+conda	xorg-libice	__glibc >=2.17,<3.0.a0
+conda	xorg-libsm	__glibc >=2.17,<3.0.a0
+conda	xorg-libsm	libgcc >=14
+conda	xorg-libsm	xorg-libice >=1.1.2,<2.0a0
+conda	xorg-libsm	libuuid >=2.42.2,<3.0a0
+conda	xorg-libx11	__glibc >=2.17,<3.0.a0
+conda	xorg-libx11	libgcc >=14
+conda	xorg-libx11	libxcb >=1.17.0,<2.0a0
+conda	xorg-libxau	__glibc >=2.17,<3.0.a0
+conda	xorg-libxau	libgcc >=15
+conda	xorg-libxcomposite	__glibc >=2.17,<3.0.a0
+conda	xorg-libxcomposite	libgcc >=14
+conda	xorg-libxcomposite	xorg-libx11 >=1.8.12,<2.0a0
+conda	xorg-libxcomposite	xorg-libxfixes >=6.0.2,<7.0a0
+conda	xorg-libxcursor	__glibc >=2.17,<3.0.a0
+conda	xorg-libxcursor	libgcc >=13
+conda	xorg-libxcursor	xorg-libx11 >=1.8.10,<2.0a0
+conda	xorg-libxcursor	xorg-libxfixes >=6.0.1,<7.0a0
+conda	xorg-libxcursor	xorg-libxrender >=0.9.11,<0.10.0a0
+conda	xorg-libxdamage	__glibc >=2.17,<3.0.a0
+conda	xorg-libxdamage	libgcc >=13
+conda	xorg-libxdamage	xorg-libx11 >=1.8.10,<2.0a0
+conda	xorg-libxdamage	xorg-libxext >=1.3.6,<2.0a0
+conda	xorg-libxdamage	xorg-libxfixes >=6.0.1,<7.0a0
+conda	xorg-libxdmcp	__glibc >=2.17,<3.0.a0
+conda	xorg-libxdmcp	libgcc >=15
+conda	xorg-libxext	__glibc >=2.17,<3.0.a0
+conda	xorg-libxext	libgcc >=15
+conda	xorg-libxext	xorg-libx11 >=1.8.13,<2.0a0
+conda	xorg-libxfixes	__glibc >=2.17,<3.0.a0
+conda	xorg-libxfixes	libgcc >=15
+conda	xorg-libxfixes	xorg-libx11 >=1.8.13,<2.0a0
+conda	xorg-libxi	__glibc >=2.17,<3.0.a0
+conda	xorg-libxi	libgcc >=15
+conda	xorg-libxi	xorg-libx11 >=1.8.13,<2.0a0
+conda	xorg-libxi	xorg-libxext >=1.3.7,<2.0a0
+conda	xorg-libxi	xorg-libxfixes >=6.0.2,<7.0a0
+conda	xorg-libxrandr	__glibc >=2.17,<3.0.a0
+conda	xorg-libxrandr	libgcc >=15
+conda	xorg-libxrandr	xorg-libx11 >=1.8.13,<2.0a0
+conda	xorg-libxrandr	xorg-libxext >=1.3.7,<2.0a0
+conda	xorg-libxrandr	xorg-libxrender >=0.9.12,<0.10.0a0
+conda	xorg-libxrender	__glibc >=2.17,<3.0.a0
+conda	xorg-libxrender	libgcc >=14
+conda	xorg-libxrender	xorg-libx11 >=1.8.13,<2.0a0
+conda	xorg-libxscrnsaver	__glibc >=2.17,<3.0.a0
+conda	xorg-libxscrnsaver	libgcc >=13
+conda	xorg-libxscrnsaver	xorg-libx11 >=1.8.10,<2.0a0
+conda	xorg-libxscrnsaver	xorg-libxext >=1.3.6,<2.0a0
+conda	xorg-libxtst	__glibc >=2.17,<3.0.a0
+conda	xorg-libxtst	libgcc >=15
+conda	xorg-libxtst	xorg-libx11 >=1.8.13,<2.0a0
+conda	xorg-libxtst	xorg-libxext >=1.3.7,<2.0a0
+conda	xorg-libxtst	xorg-libxi >=1.8.3,<2.0a0
+conda	xorg-libxxf86vm	__glibc >=2.17,<3.0.a0
+conda	xorg-libxxf86vm	libgcc >=14
+conda	xorg-libxxf86vm	xorg-libx11 >=1.8.12,<2.0a0
+conda	xorg-libxxf86vm	xorg-libxext >=1.3.6,<2.0a0
+conda	xorg-xorgproto	libgcc >=15
+conda	xorg-xorgproto	__glibc >=2.17,<3.0.a0
+conda	yaml	__glibc >=2.17,<3.0.a0
+conda	yaml	libgcc >=15
+conda	zeromq	__glibc >=2.17,<3.0.a0
+conda	zeromq	libgcc >=15
+conda	zeromq	libstdcxx >=15
+conda	zeromq	libsodium >=1.0.22,<1.0.23.0a0
+conda	zeromq	krb5 >=1.22.2,<1.23.0a0
+conda	zipp	python >=3.10
+conda	zipp	python
+conda	zlib-ng	__glibc >=2.17,<3.0.a0
+conda	zlib-ng	libgcc >=15
+conda	zlib-ng	libstdcxx >=15
+conda	zstandard	python
+conda	zstandard	cffi >=1.11
+conda	zstandard	zstd >=1.5.7,<1.5.8.0a0
+conda	zstandard	__glibc >=2.17,<3.0.a0
+conda	zstandard	libgcc >=15
+conda	zstandard	zstd >=1.5.7,<1.6.0a0
+conda	zstandard	python_abi 3.10.* *_cp310
+conda	zstd	__glibc >=2.17,<3.0.a0
+conda	zstd	libzlib >=1.3.2,<2.0a0
+pip	colabdesign	1.1.3	
+pip	pyrosetta	2026.29+releasequarterly.80a0635615	

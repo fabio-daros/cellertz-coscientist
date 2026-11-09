@@ -1,0 +1,4 @@
+# Pip observations from the BindCraft interpreter. Commits absent here stay absent.
+# The ColabDesign commit is kept in historical-observations.json.
+pip	/opt/conda/envs/BindCraft	colabdesign	1.1.3	
+pip	/opt/conda/envs/BindCraft	pyrosetta	2026.29+releasequarterly.80a0635615	

@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data
+data/external/*
+!data/external/.gitkeep
+
+# Outputs
+outputs/
+artifacts/
+logs/
+
+# Secrets
+*.pem
+*.key
+credentials.json
+
+# Obsidian vault preferences; scientific notes stay in Git
+second_brain/.obsidian/
+
+# Local agent tooling outputs
+graphify-out/
+.cursor/hooks.json.pre-claude-mem
+
+# Protein Design workspace prototype
+apps/protein-design-workspace/node_modules/
+apps/protein-design-workspace/dist/
+
+# Node dependencies anywhere, not only in the workspace
+node_modules/
+
+# macOS AppleDouble sidecars; they are binary and break source scans
+._*
+
+# Django runtime state: database, collected static
+var/

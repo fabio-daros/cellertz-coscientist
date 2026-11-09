@@ -1,0 +1,149 @@
+{
+  "agents": [
+    {
+      "agent_id": "supervisor",
+      "display_status": "idle",
+      "role": "Stage display"
+    },
+    {
+      "agent_id": "ranking",
+      "display_status": "shown",
+      "role": "raw ipSAE label"
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "artifact_pdl1_smoke_metadata",
+      "candidate_id": "bindcraft_PDL1_l65_s585903_mpnn1",
+      "kind": "run_metadata",
+      "media_type": "application/vnd.cellertz.artifact-metadata",
+      "uri": "artifact://protein_run_pdl1_smoke/bindcraft_PDL1_l65_s585903_mpnn1"
+    }
+  ],
+  "budget": {
+    "action_on_limit": "stop",
+    "authorizes_execution": false,
+    "currency": null,
+    "human_override_required": true,
+    "model_cost_ceiling": null,
+    "scientific_tool_cost_ceiling": null,
+    "token_ceiling": null,
+    "warning_threshold": null
+  },
+  "candidates": [
+    {
+      "candidate_id": "bindcraft_PDL1_l65_s585903_mpnn1",
+      "candidate_kind": "observed_identity",
+      "epistemic_status": "observed",
+      "is_probability": false,
+      "provenance": "Identity from the recorded episodic smoke run. This prototype does not republish a score.",
+      "rank": null,
+      "ranking_score": null,
+      "ranking_signal": "raw_ipsae",
+      "recommended_as_hard_filter": false,
+      "score_label": "raw ipSAE (not a probability; not a hard lab filter)"
+    },
+    {
+      "candidate_id": "fixture_display_slot",
+      "candidate_kind": "placeholder",
+      "epistemic_status": "unknown",
+      "is_probability": false,
+      "provenance": "Display slot only. Not an observed or validated candidate.",
+      "rank": null,
+      "ranking_score": null,
+      "ranking_signal": "raw_ipsae",
+      "recommended_as_hard_filter": false,
+      "score_label": "raw ipSAE (not a probability; not a hard lab filter)"
+    }
+  ],
+  "draft": {
+    "design_goal": "Binder display for the recorded smoke identity.",
+    "draft_id": "draft_pdl1_prototype",
+    "executable": false,
+    "status": "incomplete",
+    "target_id": "PDL1"
+  },
+  "evidence": [
+    {
+      "candidate_id": "bindcraft_PDL1_l65_s585903_mpnn1",
+      "epistemic_status": "observed",
+      "evidence_id": "evidence_pdl1_smoke_record",
+      "kind": "execution_record",
+      "summary": "protein_run_pdl1_smoke is an observed computational execution. It is not a validated biological conclusion."
+    },
+    {
+      "candidate_id": "bindcraft_PDL1_l65_s585903_mpnn1",
+      "epistemic_status": "unknown",
+      "evidence_id": "evidence_pdl1_provenance",
+      "kind": "provenance",
+      "summary": "Provenance is separate from the raw ipSAE label."
+    }
+  ],
+  "execution_authorized": false,
+  "messages": [
+    {
+      "content": "Show the recorded PDL1 smoke identity in this workspace.",
+      "created_at": "2026-09-23T18:00:00+00:00",
+      "message_id": "msg_scientist_1",
+      "role": "scientist"
+    },
+    {
+      "content": "This panel is a local fixture. It does not call Hermes, MCP, the Supervisor, or BindCraft.",
+      "created_at": "2026-09-23T18:00:00+00:00",
+      "message_id": "msg_system_1",
+      "role": "system"
+    }
+  ],
+  "pipeline": [
+    {
+      "detail": "Local messages only. Not scientific memory.",
+      "display_status": "shown",
+      "label": "Scientist conversation",
+      "stage_id": "conversation"
+    },
+    {
+      "detail": "Incomplete draft. Not an approved request.",
+      "display_status": "shown",
+      "label": "ProteinDesignDraft",
+      "stage_id": "draft"
+    },
+    {
+      "detail": "Phase 6D. Not available in this prototype.",
+      "display_status": "future",
+      "label": "Review and approval",
+      "stage_id": "approval"
+    },
+    {
+      "detail": "Phase 6D. This prototype does not start a run.",
+      "display_status": "not_executed",
+      "label": "Supervisor execution",
+      "stage_id": "supervisor"
+    }
+  ],
+  "project": {
+    "design_goal": "Show a recorded BindCraft smoke identity without executing it.",
+    "project_id": "protein_design_prototype",
+    "prototype_label": "Phase 6A prototype. Fixture only. Read only.",
+    "target_id": "PDL1"
+  },
+  "prototype_only": true,
+  "runs": [
+    {
+      "display_status": "Recorded execution. Not opened by this prototype.",
+      "epistemic_status": "observed",
+      "memory_house": "episodic",
+      "run_id": "protein_run_pdl1_smoke",
+      "target_id": "PDL1"
+    }
+  ],
+  "session_id": "session_pdl1_prototype",
+  "usage": [],
+  "usage_snapshot": {
+    "currency": null,
+    "estimated_model_cost": null,
+    "infrastructure_cost_known": false,
+    "model_cost_known": false,
+    "scientific_infrastructure_cost": null,
+    "session_id": "session_pdl1_prototype"
+  }
+}

@@ -1,0 +1,676 @@
+{
+  "attempt_id": "attempt.2LUTUOX4",
+  "design": "PDL1_l65_s585903_mpnn1",
+  "execution": "manual",
+  "filter_policy": "no_filters",
+  "scientific_evaluation": "pending",
+  "platform_scientific_execution": "disabled",
+  "platform_ipsae_ranking": false,
+  "experimental_validation": false,
+  "source_manifest_sha256": "2b80c45d6aebe72a5814c96279192ee3395631ee1da1bfcf01fdd11bb514545a",
+  "representative": {
+    "model": "model2",
+    "rule": "highest pLDDT",
+    "accepted_order_rule": "Average_i_pTM",
+    "ranking_preserves_representative_pdb": true,
+    "global_plddt_model1": "0.83",
+    "global_plddt_model2": "0.89",
+    "binder_plddt_model1": "0.83",
+    "binder_plddt_model2": "0.61"
+  },
+  "chains": {
+    "target": "A",
+    "binder": "B"
+  },
+  "models": {
+    "model1": {
+      "id": "model1",
+      "pdb_url": "/manual-review/attempt.2LUTUOX4/model1.pdb",
+      "sha256": "c8759e31fb323246b5f60c18dca551935800c11666974acec345e54633971ae8",
+      "representative": false,
+      "target_chain": "A",
+      "binder_chain": "B",
+      "target_residues": 115,
+      "binder_residues": 65,
+      "binder_sequence_matches_csv": true,
+      "contacts": {
+        "cutoff_angstrom": 5.0,
+        "atoms": "non-hydrogen",
+        "binder_residues_in_contact": 15,
+        "target_residues_in_contact": 17,
+        "residue_pairs": 37,
+        "minimum_heavy_atom_distance_angstrom": 2.561,
+        "binder_heavy_atoms": 542,
+        "target_heavy_atoms": 922
+      }
+    },
+    "model2": {
+      "id": "model2",
+      "pdb_url": "/manual-review/attempt.2LUTUOX4/model2.pdb",
+      "sha256": "46eade1cab9073387d76aed9405b53759bea76f5c9cf4fc3ae3be15dfb43a50f",
+      "representative": true,
+      "target_chain": "A",
+      "binder_chain": "B",
+      "target_residues": 115,
+      "binder_residues": 65,
+      "binder_sequence_matches_csv": true,
+      "contacts": {
+        "cutoff_angstrom": 5.0,
+        "atoms": "non-hydrogen",
+        "binder_residues_in_contact": 0,
+        "target_residues_in_contact": 0,
+        "residue_pairs": 0,
+        "minimum_heavy_atom_distance_angstrom": 7.457,
+        "binder_heavy_atoms": 542,
+        "target_heavy_atoms": 922
+      }
+    }
+  },
+  "interface_residues": {
+    "kind": "empty_field"
+  },
+  "metrics": [
+    {
+      "metric": "pLDDT",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.83"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.89"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.86"
+      }
+    },
+    {
+      "metric": "pTM",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.62"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.59"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.6"
+      }
+    },
+    {
+      "metric": "i_pTM",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.16"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.05"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.11"
+      }
+    },
+    {
+      "metric": "pAE",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.54"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.63"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.58"
+      }
+    },
+    {
+      "metric": "i_pAE",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.75"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.91"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.83"
+      }
+    },
+    {
+      "metric": "i_pLDDT",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.8"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.4"
+      }
+    },
+    {
+      "metric": "ss_pLDDT",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.87"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.92"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.9"
+      }
+    },
+    {
+      "metric": "Unrelaxed_Clashes",
+      "model1": {
+        "kind": "recorded",
+        "text": "1"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.5"
+      }
+    },
+    {
+      "metric": "Relaxed_Clashes",
+      "model1": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "average": {
+        "kind": "recorded_zero",
+        "text": "0.0"
+      }
+    },
+    {
+      "metric": "Binder_Energy_Score",
+      "model1": {
+        "kind": "recorded",
+        "text": "-164.63"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "-147.31"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "-155.97"
+      }
+    },
+    {
+      "metric": "Surface_Hydrophobicity",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.42"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.41"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.41"
+      }
+    },
+    {
+      "metric": "ShapeComplementarity",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.52"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0.0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.26"
+      }
+    },
+    {
+      "metric": "PackStat",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.74"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.55"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.65"
+      }
+    },
+    {
+      "metric": "dG",
+      "model1": {
+        "kind": "recorded",
+        "text": "-23.64"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "-0.0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "-11.82"
+      }
+    },
+    {
+      "metric": "dSASA",
+      "model1": {
+        "kind": "recorded",
+        "text": "1193.94"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0.0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "596.97"
+      }
+    },
+    {
+      "metric": "dG/dSASA",
+      "model1": {
+        "kind": "recorded",
+        "text": "-1.98"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0.0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "-0.99"
+      }
+    },
+    {
+      "metric": "Interface_SASA_%",
+      "model1": {
+        "kind": "recorded",
+        "text": "27.63"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0.0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "13.81"
+      }
+    },
+    {
+      "metric": "Interface_Hydrophobicity",
+      "model1": {
+        "kind": "recorded",
+        "text": "60.0"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "30.0"
+      }
+    },
+    {
+      "metric": "n_InterfaceResidues",
+      "model1": {
+        "kind": "recorded",
+        "text": "15"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "7.5"
+      }
+    },
+    {
+      "metric": "n_InterfaceHbonds",
+      "model1": {
+        "kind": "recorded",
+        "text": "3"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "1.5"
+      }
+    },
+    {
+      "metric": "InterfaceHbondsPercentage",
+      "model1": {
+        "kind": "recorded",
+        "text": "20.0"
+      },
+      "model2": {
+        "kind": "empty_field"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "10.0"
+      }
+    },
+    {
+      "metric": "n_InterfaceUnsatHbonds",
+      "model1": {
+        "kind": "recorded",
+        "text": "4.0"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0.0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "2.0"
+      }
+    },
+    {
+      "metric": "InterfaceUnsatHbondsPercentage",
+      "model1": {
+        "kind": "recorded",
+        "text": "26.67"
+      },
+      "model2": {
+        "kind": "empty_field"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "13.34"
+      }
+    },
+    {
+      "metric": "Interface_Helix%",
+      "model1": {
+        "kind": "recorded_zero",
+        "text": "0.0"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "average": {
+        "kind": "recorded_zero",
+        "text": "0.0"
+      }
+    },
+    {
+      "metric": "Interface_BetaSheet%",
+      "model1": {
+        "kind": "recorded",
+        "text": "60.0"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "30.0"
+      }
+    },
+    {
+      "metric": "Interface_Loop%",
+      "model1": {
+        "kind": "recorded",
+        "text": "40.0"
+      },
+      "model2": {
+        "kind": "recorded_zero",
+        "text": "0"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "20.0"
+      }
+    },
+    {
+      "metric": "Binder_Helix%",
+      "model1": {
+        "kind": "recorded",
+        "text": "33.85"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "33.85"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "33.85"
+      }
+    },
+    {
+      "metric": "Binder_BetaSheet%",
+      "model1": {
+        "kind": "recorded",
+        "text": "36.92"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "35.38"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "36.15"
+      }
+    },
+    {
+      "metric": "Binder_Loop%",
+      "model1": {
+        "kind": "recorded",
+        "text": "29.23"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "30.77"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "30.0"
+      }
+    },
+    {
+      "metric": "InterfaceAAs",
+      "model1": {
+        "kind": "recorded",
+        "text": "{'A': 1, 'C': 0, 'D': 0, 'E': 1, 'F': 1, 'G': 1, 'H': 1, 'I': 0, 'K': 1, 'L': 0, 'M': 1, 'N': 0, 'P': 2, 'Q': 0, 'R': 2, 'S': 0, 'T': 0, 'V': 1, 'W': 2, 'Y': 1}"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "{'A': 0, 'C': 0, 'D': 0, 'E': 0, 'F': 0, 'G': 0, 'H': 0, 'I': 0, 'K': 0, 'L': 0, 'M': 0, 'N': 0, 'P': 0, 'Q': 0, 'R': 0, 'S': 0, 'T': 0, 'V': 0, 'W': 0, 'Y': 0}"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "{'A': 0.5, 'C': 0.0, 'D': 0.0, 'E': 0.5, 'F': 0.5, 'G': 0.5, 'H': 0.5, 'I': 0.0, 'K': 0.5, 'L': 0.0, 'M': 0.5, 'N': 0.0, 'P': 1.0, 'Q': 0.0, 'R': 1.0, 'S': 0.0, 'T': 0.0, 'V': 0.5, 'W': 1.0, 'Y': 0.5}"
+      }
+    },
+    {
+      "metric": "Hotspot_RMSD",
+      "model1": {
+        "kind": "recorded",
+        "text": "8.37"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "18.18"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "13.27"
+      }
+    },
+    {
+      "metric": "Target_RMSD",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.32"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.27"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.3"
+      }
+    },
+    {
+      "metric": "Binder_pLDDT",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.83"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.61"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.72"
+      }
+    },
+    {
+      "metric": "Binder_pTM",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.6"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.35"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.47"
+      }
+    },
+    {
+      "metric": "Binder_pAE",
+      "model1": {
+        "kind": "recorded",
+        "text": "0.2"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "0.44"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "0.32"
+      }
+    },
+    {
+      "metric": "Binder_RMSD",
+      "model1": {
+        "kind": "recorded",
+        "text": "1.53"
+      },
+      "model2": {
+        "kind": "recorded",
+        "text": "9.75"
+      },
+      "average": {
+        "kind": "recorded",
+        "text": "5.64"
+      }
+    }
+  ],
+  "blank_model2_metrics": [
+    "InterfaceHbondsPercentage",
+    "InterfaceUnsatHbondsPercentage"
+  ],
+  "blank_model2_note": "InterfaceHbondsPercentage and InterfaceUnsatHbondsPercentage leave model 2 blank. Their averages equal half of model 1, which is the mean if the blank is treated as zero. The cell itself is empty, not the string 0.",
+  "numeric_averages_match_mean_of_filled_models_within_0_01": true,
+  "absent_models": [
+    {
+      "model": "model3",
+      "pLDDT": {
+        "kind": "absent"
+      }
+    },
+    {
+      "model": "model4",
+      "pLDDT": {
+        "kind": "absent"
+      }
+    },
+    {
+      "model": "model5",
+      "pLDDT": {
+        "kind": "absent"
+      }
+    }
+  ],
+  "geometric_contact_criterion": {
+    "distance_angstrom": 5.0,
+    "atoms": "non-hydrogen atoms",
+    "residue_in_contact": "at least one residue pair whose minimum heavy-atom distance is at most 5.0 angstrom",
+    "not_bindcraft_metric": "This count is independent of BindCraft InterfaceResidues, n_InterfaceResidues, dSASA and ShapeComplementarity."
+  },
+  "provenance": {
+    "host": "Bioturing",
+    "user": "fabio",
+    "uid": 1004,
+    "started_at": "2026-10-20T22:06:30Z",
+    "finished_at": "2026-10-20T22:12:15Z",
+    "exit_code": 0,
+    "gpu": "GPU-97f5740a-c88d-bb06-5fd5-5ed653035850",
+    "gpu_note": "device selection, without quota or isolation",
+    "cellertz_seed": 7,
+    "bindcraft_trajectory_seed": 585903,
+    "length": 65,
+    "number_of_final_designs": 1,
+    "target_hotspot_residues": "56",
+    "sif_sha256": "bec155fd18c4a0f6150b44328673fa18e10431b4567598eebf8e4ccb9930f0b6",
+    "launcher_sha256": "0dc1b74d2f0af3a261b220f8c1e268977cb8a1eb2c54c17fe75cace7efabed4a",
+    "advanced_profile_sha256": "0b4480203a61b3a75696abef46a83eca177d892224108894992c314cb5ccaf0b",
+    "filters_column": "no_filters",
+    "design_records_sha256": "6bf894fd74411ea26b777241d1c40b95ca7a8949a97f199f11bf3d9501b313b0",
+    "design_records_identical_to_final_design_stats": true,
+    "accepted_pdb_sha256": "46eade1cab9073387d76aed9405b53759bea76f5c9cf4fc3ae3be15dfb43a50f",
+    "ranked_pdb_sha256": "46eade1cab9073387d76aed9405b53759bea76f5c9cf4fc3ae3be15dfb43a50f",
+    "accepted_and_ranked_identical_to": "model2",
+    "starting_trajectory_lines": 1,
+    "starting_trajectory_text": "Starting trajectory: PDL1_l65_s585903",
+    "closing_line": "Finished all designs. Script execution for 2 trajectories took: 0 hours, 5 minutes, 37 seconds",
+    "trajectory_note": "One Starting trajectory line. The 2 in the closing sentence is not the count of started trajectories."
+  },
+  "served_pdb_urls": [
+    "/manual-review/attempt.2LUTUOX4/model1.pdb",
+    "/manual-review/attempt.2LUTUOX4/model2.pdb"
+  ]
+}

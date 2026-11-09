@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cellertz-ai-coscientist"
+version = "0.1.0"
+description = "AI Co-Scientist platform for mRNA and de novo protein design."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Fabio Daros" }
+]
+
+dependencies = [
+    # Web layer only: transport, persistence and admin.
+    # The `cellertz` package must not import Django.
+    "django>=5.1,<6",
+    "pandas>=2.2",
+    "openpyxl>=3.1",
+    "scikit-learn>=1.5",
+    "biopython>=1.87",
+    "mcp>=2.0,<3",
+]
+
+[project.optional-dependencies]
+databricks = [
+    "databricks-sql-connector>=3.0",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100

@@ -1,0 +1,44 @@
+{
+  "candidate_id": "PDL1_l65_s985772_mpnn1",
+  "reference": {
+    "name": "CARPNN ipsae_modified.py",
+    "commit": "82990b15e0d28b1d0b7702322dc5d39570a9688b",
+    "script_sha256": "ca6ca1180d18cf02ad8f064b024d4c53fdd02578a9fc012feda39641f6b98c05"
+  },
+  "protocol": {
+    "protocol_id": "CARPNN_2026_REFERENCE",
+    "pae_cutoff": 10.0,
+    "distance_cutoff": 10.0,
+    "chain_a": "A",
+    "chain_b": "B",
+    "aggregation": "max"
+  },
+  "models": {
+    "model1": {
+      "pae_file": "PDL1_l65_s985772_mpnn1_model1_pae.npz",
+      "pae_sha256": "dbf52bfd7910b49e5c87ec8569965be9a56ad53d4c65497584afbebd34b4e2a2",
+      "pdb_file": "PDL1_l65_s985772_mpnn1_model1.pdb",
+      "pdb_sha256": "3b2363eb9bf50840926db0af8acb2abfd170680d1f51bb8c4b5e75c9c5491a4d",
+      "reference_output": "PDL1_l65_s985772_mpnn1_model1_10_10.txt",
+      "reference_output_sha256": "7dee12e912f53c13da6880e2eb91f783b2ef4dcd35ec63dd3bba34287a45866e",
+      "expected": {
+        "ipsae_ab": 0.010173,
+        "ipsae_ba": 0.0,
+        "ipsae_max": 0.010173
+      }
+    },
+    "model2": {
+      "pae_file": "PDL1_l65_s985772_mpnn1_model2_pae.npz",
+      "pae_sha256": "7b14c58cee82945883adc1e5e5e17e13dd11a7672b52d9decfa5467a510ce9a2",
+      "pdb_file": "PDL1_l65_s985772_mpnn1_model2.pdb",
+      "pdb_sha256": "8fef359434a2fbdd7dc13f817295c5863b67484d830c097bf8f41fc915cfef9b",
+      "reference_output": "PDL1_l65_s985772_mpnn1_model2_10_10.txt",
+      "reference_output_sha256": "10080e9ecd78fa7179aa2ab53a6bae48d71bc0fa1472445bafd298347b1a15a8",
+      "expected": {
+        "ipsae_ab": 0.014648,
+        "ipsae_ba": 0.016941,
+        "ipsae_max": 0.016941
+      }
+    }
+  }
+}

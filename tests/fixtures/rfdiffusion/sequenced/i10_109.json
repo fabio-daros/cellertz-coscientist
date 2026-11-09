@@ -1,0 +1,15 @@
+{
+  "binder_chain": "B",
+  "contig": "A14,A18,A20/0 30-80",
+  "design": "BCMAE2_1xu2_R14-R18-R20_30-80_i10_109",
+  "diffusion_parameters": {
+    "final_step": 50,
+    "noise_scale_ca": 1.0,
+    "noise_scale_frame": 1.0
+  },
+  "plddt": 0.69,
+  "seed": 109,
+  "sequence_source": "proteinmpnn",
+  "sequence_source_version": "proteinmpnn_v1",
+  "target": "BCMA"
+}
