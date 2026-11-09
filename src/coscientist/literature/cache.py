@@ -14,7 +14,7 @@ from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from cellertz_web.literature.models import LiteratureSearchCacheEntry
+from coscientist.literature.models import LiteratureSearchCacheEntry
 
 DEFAULT_TTL = timedelta(days=7)
 

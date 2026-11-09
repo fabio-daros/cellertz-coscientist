@@ -4,6 +4,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cellertz_web.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "coscientist.settings")
 
 application = get_asgi_application()

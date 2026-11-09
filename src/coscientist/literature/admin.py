@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from cellertz_web.literature.models import LiteratureSearchCacheEntry
+from coscientist.literature.models import LiteratureSearchCacheEntry
 
 
 @admin.register(LiteratureSearchCacheEntry)

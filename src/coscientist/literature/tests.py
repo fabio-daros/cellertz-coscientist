@@ -13,8 +13,8 @@ from pathlib import Path
 from django.test import TestCase
 
 from cellertz.application.literature_search import SQLiteLiteratureCache
-from cellertz_web.literature.cache import DjangoLiteratureCache
-from cellertz_web.literature.models import LiteratureSearchCacheEntry
+from coscientist.literature.cache import DjangoLiteratureCache
+from coscientist.literature.models import LiteratureSearchCacheEntry
 
 TTL = timedelta(days=7)
 START = datetime(2026, 11, 9, 12, 0, tzinfo=UTC)

@@ -17,7 +17,7 @@ from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management.utils import get_random_secret_key
 
-# src/cellertz_web/settings.py -> repository root
+# src/coscientist/settings.py -> repository root
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -55,7 +55,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "cellertz_web.literature",
+    "coscientist.literature",
 ]
 
 MIDDLEWARE = [
@@ -68,14 +68,14 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "cellertz_web.urls"
-WSGI_APPLICATION = "cellertz_web.wsgi.application"
-ASGI_APPLICATION = "cellertz_web.asgi.application"
+ROOT_URLCONF = "coscientist.urls"
+WSGI_APPLICATION = "coscientist.wsgi.application"
+ASGI_APPLICATION = "coscientist.asgi.application"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "src" / "cellertz_web" / "templates"],
+        "DIRS": [BASE_DIR / "src" / "coscientist" / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
