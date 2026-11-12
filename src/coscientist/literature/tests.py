@@ -12,7 +12,11 @@ from pathlib import Path
 
 from django.test import TestCase
 
-from cellertz.application.literature_search import SQLiteLiteratureCache
+from cellertz.application.literature_search import (
+    SQLiteLiteratureCache,
+    open_literature_cache,
+    set_literature_cache_factory,
+)
 from coscientist.literature.cache import DjangoLiteratureCache
 from coscientist.literature.models import LiteratureSearchCacheEntry
 
@@ -100,3 +104,24 @@ class LiteratureCacheEquivalenceTests(TestCase):
         sqlite, django = self.both("pdl1 ")
         self.assertIsNone(sqlite)
         self.assertIsNone(django)
+
+
+class CompositionRootTests(TestCase):
+    """The entry point must hand the service the Django cache, not sqlite."""
+
+    def tearDown(self) -> None:
+        set_literature_cache_factory(None)
+
+    def test_registering_makes_the_search_open_the_django_cache(self) -> None:
+        set_literature_cache_factory(DjangoLiteratureCache)
+        self.assertIsInstance(open_literature_cache({}), DjangoLiteratureCache)
+
+    def test_without_the_entry_point_the_service_keeps_sqlite(self) -> None:
+        set_literature_cache_factory(None)
+        self.assertNotIsInstance(open_literature_cache({}), DjangoLiteratureCache)
+
+    def test_a_reply_cached_through_the_seam_lands_in_the_django_table(self) -> None:
+        set_literature_cache_factory(DjangoLiteratureCache)
+        open_literature_cache({}).put("a query", PAYLOAD)
+        self.assertEqual(LiteratureSearchCacheEntry.objects.count(), 1)
+        self.assertEqual(open_literature_cache({}).get("a query"), PAYLOAD)

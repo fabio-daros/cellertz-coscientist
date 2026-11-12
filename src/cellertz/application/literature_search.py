@@ -20,7 +20,7 @@ import urllib.request
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 ENDPOINT = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
 SOURCE_NAME = "Europe PMC Articles API"
@@ -106,7 +106,31 @@ class SQLiteLiteratureCache:
             self._conn.commit()
 
 
-def open_literature_cache(environ: Mapping[str, str] | None = None) -> MemoryLiteratureCache | SQLiteLiteratureCache:
+class LiteratureCache(Protocol):
+    """What this module needs from a cache. Structural, so a cache can live in
+    another package without this one importing it."""
+
+    def get(self, query: str) -> dict[str, Any] | None: ...
+
+    def put(self, query: str, payload: Mapping[str, Any]) -> None: ...
+
+
+# A host that owns persistence registers its cache here before the service
+# starts. The registration inverts the dependency: this module never imports
+# the host, so `cellertz` stays free of any framework.
+_cache_factory: Callable[[], LiteratureCache] | None = None
+
+
+def set_literature_cache_factory(factory: Callable[[], LiteratureCache] | None) -> None:
+    """Install the cache the host owns, or pass None to fall back to sqlite."""
+
+    global _cache_factory
+    _cache_factory = factory
+
+
+def open_literature_cache(environ: Mapping[str, str] | None = None) -> LiteratureCache:
+    if _cache_factory is not None:
+        return _cache_factory()
     env = os.environ if environ is None else environ
     if env.get("CELLERTZ_DESIGN_DRAFT_STORE", "memory").strip().lower() != "sqlite":
         return MemoryLiteratureCache()
@@ -135,7 +159,7 @@ class EuropePMCLiteratureSearch:
     def __init__(
         self,
         transport: Transport | None = None,
-        cache: MemoryLiteratureCache | SQLiteLiteratureCache | None = None,
+        cache: LiteratureCache | None = None,
         clock: Callable[[], datetime] | None = None,
         *,
         timeout: float = _TIMEOUT_SECONDS,
