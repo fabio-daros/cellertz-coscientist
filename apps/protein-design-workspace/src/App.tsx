@@ -136,6 +136,30 @@ function configuredDemonstrationJourneyId(): string | null {
   return trimmed ? trimmed : null;
 }
 
+// The Django admin runs as its own service on its own port, so the frontend
+// cannot derive its address: the pilot terminates TLS in nginx, where guessing
+// a port would publish a broken link. An unset value means this installation
+// does not offer the link, and no built-in address is substituted.
+function configuredAdminUrl(): string | null {
+  const value = import.meta.env.VITE_CELLERTZ_DJANGO_ADMIN_URL;
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  // The value arrives from the build environment. Only an absolute http(s)
+  // address becomes a link, so a `javascript:` URL cannot reach the header.
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : null;
+}
+
 function pilotWorkflowNotice(serverExecution: string | null): string {
   const workflow = "This pilot supports the configured PDL1 workflow.";
   if (serverExecution === "disabled") {
@@ -519,6 +543,25 @@ function HeaderIcon({ label, children, className }: { label: string; children: R
   );
 }
 
+// Unlike the tools beside it, this one is available: it leaves the prototype
+// for the Django admin, which is a separate service and opens in its own tab.
+function AdminLink() {
+  const url = configuredAdminUrl();
+  if (!url) {
+    return null;
+  }
+  return (
+    <a className="named-tool admin-link" href={url} target="_blank" rel="noreferrer noopener">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <ellipse cx="12" cy="6" rx="7.5" ry="3" />
+        <path d="M4.5 6v12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6" />
+        <path d="M4.5 12c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3" />
+      </svg>
+      <span>Admin</span>
+    </a>
+  );
+}
+
 function BrandMark() {
   const [ready, setReady] = useState(false);
   return (
@@ -580,6 +623,7 @@ export function App() {
               <circle cx="12" cy="12" r="9" />
               <path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9S14.5 18.2 12 21c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z" />
             </HeaderIcon>
+            <AdminLink />
             <HeaderIcon label="Account" className="avatar">
               <circle cx="12" cy="9" r="3.2" />
               <path d="M5.5 19.2c1.2-2.8 3.4-4.2 6.5-4.2s5.3 1.4 6.5 4.2" />
@@ -1154,6 +1198,7 @@ export function LegacyWorkspace({ legacyConsole = false }: { legacyConsole?: boo
               <circle cx="12" cy="12" r="9" />
               <path d="M3 12h18M12 3c2.5 2.8 3.8 5.8 3.8 9S14.5 18.2 12 21c-2.5-2.8-3.8-5.8-3.8-9S9.5 5.8 12 3z" />
             </HeaderIcon>
+            <AdminLink />
             <HeaderIcon label="Account" className="avatar">
               <circle cx="12" cy="9" r="3.2" />
               <path d="M5.5 19.2c1.2-2.8 3.4-4.2 6.5-4.2s5.3 1.4 6.5 4.2" />

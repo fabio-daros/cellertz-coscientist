@@ -252,6 +252,39 @@ code {
   padding: 0.2rem 0.55rem;
 }
 
+/* Sits among tools that are deliberately inert. It takes the same resting
+   colour as they do, because --accent is a dark teal that the dark theme does
+   not lighten, and shows that it leads somewhere on hover and focus instead. */
+.header-tools a.admin-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.header-tools a.admin-link:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+:root[data-theme="dark"] .header-tools a.admin-link:hover {
+  background: #111;
+  border-color: var(--muted);
+  color: #fff;
+}
+
+.header-tools a.admin-link:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

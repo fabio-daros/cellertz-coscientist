@@ -3037,3 +3037,39 @@ describe("vitest mock restoration", () => {
     await expect(fetch("/api/conversation")).rejects.toThrow(/unexpected fetch/);
   });
 });
+
+describe("django admin link", () => {
+  beforeEach(() => {
+    vi.spyOn(globalThis, "fetch");
+    vi.mocked(fetch).mockResolvedValue(emptyDraftList());
+  });
+
+  it("offers no admin entry when the installation configures no address", () => {
+    vi.stubEnv("VITE_CELLERTZ_DJANGO_ADMIN_URL", "  ");
+    render(<App />);
+    expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
+  });
+
+  it("opens the configured admin in its own tab without leaking the workspace address", () => {
+    vi.stubEnv("VITE_CELLERTZ_DJANGO_ADMIN_URL", "http://100.90.242.48:8000/admin/");
+    render(<App />);
+    const link = screen.getByRole("link", { name: "Admin" });
+    expect(link).toHaveAttribute("href", "http://100.90.242.48:8000/admin/");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link.getAttribute("rel")).toContain("noreferrer");
+  });
+
+  it("refuses an address that is not http or https", () => {
+    vi.stubEnv("VITE_CELLERTZ_DJANGO_ADMIN_URL", "javascript:alert(1)");
+    render(<App />);
+    expect(screen.queryByRole("link", { name: "Admin" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the admin entry out of the way of the inert header tools", () => {
+    vi.stubEnv("VITE_CELLERTZ_DJANGO_ADMIN_URL", "http://127.0.0.1:8000/admin/");
+    render(<App />);
+    expect(screen.getByRole("button", { name: "Language" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Account" })).toBeDisabled();
+    expect(screen.getByRole("link", { name: "Admin" })).toBeInTheDocument();
+  });
+});
