@@ -24,12 +24,18 @@ def install() -> None:
 
     django.setup()
 
+    from cellertz.application.agent_prompts import set_agent_prompt_provider
     from cellertz.application.literature_search import set_literature_cache_factory
+    from coscientist.agents.prompts import DjangoAgentPromptProvider
     from coscientist.literature.cache import DjangoLiteratureCache
 
     # A factory, not an instance: the service may build a cache per use, and a
     # model class must not be touched before django.setup() has run.
     set_literature_cache_factory(DjangoLiteratureCache)
+
+    # With no stored row the agents keep their built-in prompts, so this
+    # registration changes no text until someone adds a version.
+    set_agent_prompt_provider(DjangoAgentPromptProvider())
 
 
 def main() -> None:

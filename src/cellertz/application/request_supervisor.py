@@ -22,8 +22,9 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
+from cellertz.application.agent_prompts import ResolvedPrompt, resolve_prompt
 from cellertz.application.conversation import ConversationModel, ReadOnlyFact, RecordedFactsModel
-from cellertz.application.request_draft import GENERATORS, DesignDrafting, _QUESTIONS, _questions
+from cellertz.application.request_draft import _QUESTIONS, GENERATORS, DesignDrafting, _questions
 
 PATH = "/api/design-supervisor"
 AGENT = "Protein Design Supervisor"
@@ -32,9 +33,18 @@ DEFAULT_MAX_CALLS = 8
 DEFAULT_MAX_OUTPUT_TOKENS = 400
 DEFAULT_TOKEN_BUDGET = 2000
 DEFAULT_CALL_TIMEOUT_SECONDS = 30.0
-_QUESTION = (
+AGENT_KEY = "protein_design_supervisor"
+
+# What this agent is for. A host may store its own version of this half.
+_TASK_BODY = (
     "You are the Protein Design Supervisor. Write a short summary in English of the "
     "design objective you understand. Do not only repeat the saved text. "
+)
+
+# What it may never do, and the shape the reply must have for the parser to
+# read it. Not tunable: a stored body is appended before this, never instead
+# of it.
+_GOVERNANCE = (
     "The facts keep three sources separate. researcher_information is what the "
     "researcher supplied. server_configuration is the server's compatible "
     "configuration, such as BindCraft for the PDL1 pilot, and is not the "
@@ -52,7 +62,10 @@ _QUESTION = (
     "Put questions after a line that starts with 'Questions:'. If you have no question, write "
     "'Questions: none'. Do not plan, approve, authorize, or start a run."
 )
-_STALE = "The analysis was not run. The selected revision is not the current revision."
+
+# Kept so that nothing which reads the whole prompt has to compose it again.
+_QUESTION = _TASK_BODY + _GOVERNANCE
+_STALE ="The analysis was not run. The selected revision is not the current revision."
 _MAX_SUPERVISOR_QUESTIONS = 2
 _UNAVAILABLE = "The Supervisor model is not configured. No analysis was substituted."
 _FAILED = "The Supervisor could not analyze this request. No scientific action was taken."
@@ -384,11 +397,18 @@ def handle_design_supervisor(supervisor: DesignRequestSupervisor, body: bytes) -
     return status, result
 
 
+def resolved_prompt() -> ResolvedPrompt:
+    """The prompt this agent will send, and where its task half came from."""
+
+    return resolve_prompt(AGENT_KEY, _TASK_BODY, _GOVERNANCE)
+
+
 def _complete(model: ConversationModel, facts: tuple[ReadOnlyFact, ...], limits: SupervisorLimits) -> Any:
     parameters = inspect.signature(model.complete).parameters
-    arguments: dict[str, Any] = {"facts": facts, "question": _QUESTION}
+    question = resolved_prompt().text
+    arguments: dict[str, Any] = {"facts": facts, "question": question}
     if "instruction" in parameters:
-        arguments["instruction"] = _QUESTION
+        arguments["instruction"] = question
     if "max_tokens" in parameters:
         arguments["max_tokens"] = limits.max_output_tokens
     if "timeout" in parameters:
@@ -640,6 +660,10 @@ def _body(
         "limits": limits.to_dict(),
         "execution_authorized": False,
         "executable": False,
+        # Which words produced this reply. Two analyses written under
+        # different prompt versions are not comparable, and this is how a
+        # reader notices.
+        "prompt": resolved_prompt().provenance(),
         "model_call": call,
         "instrumentation": {
             "interaction_id": f"supervisor_{uuid4().hex}",
