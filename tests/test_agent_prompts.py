@@ -95,3 +95,18 @@ def test_two_bodies_give_two_different_hashes():
     first = resolve_prompt("a", "one. ", _GOVERNANCE).sha256
     second = resolve_prompt("a", "two. ", _GOVERNANCE).sha256
     assert first != second
+
+
+def test_the_supervisor_is_in_the_catalog_with_its_builtin_body():
+    from cellertz.application.agent_prompts import builtin_body, known_agents
+
+    keys = [key for key, _body in known_agents()]
+    assert AGENT_KEY in keys
+    assert builtin_body(AGENT_KEY) is not None
+    assert resolve_prompt(AGENT_KEY, builtin_body(AGENT_KEY), _GOVERNANCE).sha256 == RECORDED_SHA
+
+
+def test_an_unknown_agent_has_no_builtin_body():
+    from cellertz.application.agent_prompts import builtin_body
+
+    assert builtin_body("not_an_agent") is None

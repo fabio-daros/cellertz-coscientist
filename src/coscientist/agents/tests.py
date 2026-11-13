@@ -60,3 +60,33 @@ class StoredPromptTests(TestCase):
         text = resolved_prompt().text
         self.assertIn("Do not plan, approve, authorize, or start a run.", text)
         self.assertIn("Do not assume PD-1/PD-L1 blockade", text)
+
+
+class AdminFormTests(TestCase):
+    """A key that is never sent must not be storable."""
+
+    def setUp(self) -> None:
+        from coscientist.agents.admin import AgentPromptForm
+
+        self.form_class = AgentPromptForm
+
+    def test_only_registered_agents_can_be_chosen(self) -> None:
+        form = self.form_class()
+        choices = [value for value, _label in form.fields["agent_key"].choices]
+        self.assertIn(AGENT_KEY, choices)
+
+    def test_an_unregistered_key_is_refused(self) -> None:
+        form = self.form_class(data={"agent_key": "typo_in_the_key", "version": 1, "body": "x", "note": ""})
+        self.assertFalse(form.is_valid())
+        self.assertIn("agent_key", form.errors)
+
+    def test_the_form_offers_the_text_in_force_and_the_next_version(self) -> None:
+        form = self.form_class()
+        self.assertEqual(form.fields["version"].initial, 1)
+        self.assertTrue(str(form.fields["body"].initial).startswith("You are the Protein Design Supervisor."))
+
+    def test_after_a_stored_version_the_form_offers_that_body_next(self) -> None:
+        AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="Stored body. ")
+        form = self.form_class()
+        self.assertEqual(form.fields["version"].initial, 2)
+        self.assertEqual(form.fields["body"].initial, "Stored body. ")

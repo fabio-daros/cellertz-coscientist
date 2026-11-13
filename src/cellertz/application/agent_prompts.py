@@ -58,6 +58,28 @@ class AgentPromptProvider(Protocol):
         """The stored body and its version, or None to keep the built-in one."""
 
 
+# Agents that read a prompt through this module, each with the body it falls
+# back to. A host offering to store prompts reads this: an agent key that is
+# not here would be stored and never sent, which is a silent failure.
+_catalog: dict[str, str] = {}
+
+
+def register_agent(agent_key: str, builtin_body: str) -> None:
+    """Declare that this agent takes a prompt, and what it says by default."""
+
+    _catalog[agent_key] = builtin_body
+
+
+def known_agents() -> tuple[tuple[str, str], ...]:
+    """Every registered agent and its built-in body, ordered by key."""
+
+    return tuple(sorted(_catalog.items()))
+
+
+def builtin_body(agent_key: str) -> str | None:
+    return _catalog.get(agent_key)
+
+
 _provider: AgentPromptProvider | None = None
 
 
@@ -102,6 +124,9 @@ __all__: tuple[str, ...] = (
     "BUILTIN",
     "AgentPromptProvider",
     "ResolvedPrompt",
+    "builtin_body",
+    "known_agents",
+    "register_agent",
     "resolve_prompt",
     "set_agent_prompt_provider",
 )

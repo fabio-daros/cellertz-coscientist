@@ -22,7 +22,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
-from cellertz.application.agent_prompts import ResolvedPrompt, resolve_prompt
+from cellertz.application.agent_prompts import ResolvedPrompt, register_agent, resolve_prompt
 from cellertz.application.conversation import ConversationModel, ReadOnlyFact, RecordedFactsModel
 from cellertz.application.request_draft import _QUESTIONS, GENERATORS, DesignDrafting, _questions
 
@@ -65,6 +65,7 @@ _GOVERNANCE = (
 
 # Kept so that nothing which reads the whole prompt has to compose it again.
 _QUESTION = _TASK_BODY + _GOVERNANCE
+register_agent(AGENT_KEY, _TASK_BODY)
 _STALE ="The analysis was not run. The selected revision is not the current revision."
 _MAX_SUPERVISOR_QUESTIONS = 2
 _UNAVAILABLE = "The Supervisor model is not configured. No analysis was substituted."
