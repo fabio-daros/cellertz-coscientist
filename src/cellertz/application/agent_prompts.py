@@ -61,23 +61,28 @@ class AgentPromptProvider(Protocol):
 # Agents that read a prompt through this module, each with the body it falls
 # back to. A host offering to store prompts reads this: an agent key that is
 # not here would be stored and never sent, which is a silent failure.
-_catalog: dict[str, str] = {}
+# One agent may hold more than one prompt: the Protein Design Supervisor both
+# analyses a request and delegates a binding-region review, and those are
+# different words for different work. A key therefore names the agent and the
+# task, as `agent.task`, so the two never share a row.
+_catalog: dict[str, tuple[str, str]] = {}
 
 
-def register_agent(agent_key: str, builtin_body: str) -> None:
-    """Declare that this agent takes a prompt, and what it says by default."""
+def register_agent(agent_key: str, label: str, builtin_body: str) -> None:
+    """Declare a prompt this agent reads, and what it says by default."""
 
-    _catalog[agent_key] = builtin_body
+    _catalog[agent_key] = (label, builtin_body)
 
 
 def known_agents() -> tuple[tuple[str, str], ...]:
-    """Every registered agent and its built-in body, ordered by key."""
+    """Every registered key with the label a person reads, ordered by key."""
 
-    return tuple(sorted(_catalog.items()))
+    return tuple((key, label) for key, (label, _body) in sorted(_catalog.items()))
 
 
 def builtin_body(agent_key: str) -> str | None:
-    return _catalog.get(agent_key)
+    entry = _catalog.get(agent_key)
+    return None if entry is None else entry[1]
 
 
 _provider: AgentPromptProvider | None = None

@@ -33,7 +33,8 @@ DEFAULT_MAX_CALLS = 8
 DEFAULT_MAX_OUTPUT_TOKENS = 400
 DEFAULT_TOKEN_BUDGET = 2000
 DEFAULT_CALL_TIMEOUT_SECONDS = 30.0
-AGENT_KEY = "protein_design_supervisor"
+AGENT_KEY = "protein_design_supervisor.request_analysis"
+AGENT_LABEL = "Protein Design Supervisor — request analysis"
 
 # What this agent is for. A host may store its own version of this half.
 _TASK_BODY = (
@@ -65,7 +66,7 @@ _GOVERNANCE = (
 
 # Kept so that nothing which reads the whole prompt has to compose it again.
 _QUESTION = _TASK_BODY + _GOVERNANCE
-register_agent(AGENT_KEY, _TASK_BODY)
+register_agent(AGENT_KEY, AGENT_LABEL, _TASK_BODY)
 _STALE ="The analysis was not run. The selected revision is not the current revision."
 _MAX_SUPERVISOR_QUESTIONS = 2
 _UNAVAILABLE = "The Supervisor model is not configured. No analysis was substituted."

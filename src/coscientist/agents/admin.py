@@ -20,8 +20,8 @@ class AgentPromptForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         agents = known_agents()
         self.fields["agent_key"] = forms.ChoiceField(
-            choices=[(key, key) for key, _ in agents],
-            label="Agent",
+            choices=list(agents),
+            label="Agent and task",
             help_text="Only agents that read a stored prompt are listed.",
         )
         if self.instance.pk:

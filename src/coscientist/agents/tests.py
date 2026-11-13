@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
@@ -90,3 +91,28 @@ class AdminFormTests(TestCase):
         form = self.form_class()
         self.assertEqual(form.fields["version"].initial, 2)
         self.assertEqual(form.fields["body"].initial, "Stored body. ")
+
+
+class KeyShapeTests(TestCase):
+    """One agent may hold several prompts, so a key names the task too."""
+
+    def setUp(self) -> None:
+        set_agent_prompt_provider(DjangoAgentPromptProvider())
+        self.addCleanup(set_agent_prompt_provider, None)
+
+    def test_the_supervisor_key_names_agent_and_task(self) -> None:
+        self.assertEqual(AGENT_KEY, "protein_design_supervisor.request_analysis")
+
+    def test_a_key_with_spaces_is_refused(self) -> None:
+        row = AgentPrompt(agent_key="not a key", version=1, body="x")
+        with self.assertRaises(ValidationError):
+            row.full_clean()
+
+    def test_the_delegation_prompt_would_be_a_separate_key(self) -> None:
+        # The Supervisor also delegates to the Hotspot agent. That is other
+        # words for other work and must not overwrite this row.
+        AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="Analysis body. ")
+        AgentPrompt.objects.create(
+            agent_key="protein_design_supervisor.delegation", version=1, body="Delegation body. "
+        )
+        self.assertTrue(resolved_prompt().text.startswith("Analysis body. "))

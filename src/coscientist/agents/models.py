@@ -13,13 +13,21 @@ comparable when they are not.
 
 from __future__ import annotations
 
+from django.core.validators import RegexValidator
 from django.db import models
+
+# `agent.task`: one agent may hold several prompts, and each is its own key.
+AGENT_KEY = RegexValidator(
+    r"^[a-z0-9_]+(\.[a-z0-9_]+)*$",
+    "A key is lowercase words joined by underscores, with tasks after a dot.",
+)
 
 
 class AgentPrompt(models.Model):
-    agent_key = models.SlugField(
-        max_length=64,
-        help_text="The agent this body belongs to, as the code names it.",
+    agent_key = models.CharField(
+        max_length=96,
+        validators=[AGENT_KEY],
+        help_text="The agent and task this body belongs to, as the code names it.",
     )
     version = models.PositiveIntegerField(
         help_text="Higher wins. The highest version is the one that is sent.",
