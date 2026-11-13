@@ -110,3 +110,21 @@ def test_an_unknown_agent_has_no_builtin_body():
     from cellertz.application.agent_prompts import builtin_body
 
     assert builtin_body("not_an_agent") is None
+
+
+def test_a_body_saved_through_a_form_still_joins_with_a_space():
+    # A form strips trailing whitespace. Before the separator was explicit,
+    # this produced "saved text.The facts keep three sources separate."
+    from cellertz.application.request_supervisor import _TASK_BODY
+
+    set_agent_prompt_provider(StoredBody(1, _TASK_BODY.rstrip()))
+    text = resolved_prompt().text
+    assert "saved text. The facts" in text
+    assert "saved text.The facts" not in text
+    # Stripping is all that differed, so the sent text is the built-in one.
+    assert resolved_prompt().sha256 == RECORDED_SHA
+
+
+def test_a_body_with_extra_blank_space_does_not_double_the_separator():
+    set_agent_prompt_provider(StoredBody(1, "A tuned body.   "))
+    assert "A tuned body. The facts" in resolved_prompt().text

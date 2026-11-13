@@ -105,7 +105,19 @@ def resolve_prompt(agent_key: str, builtin_body: str, governance: str) -> Resolv
     if stored is not None:
         version, body = stored
         origin = "stored"
-    return ResolvedPrompt(agent_key=agent_key, origin=origin, version=version, text=body + governance)
+    return ResolvedPrompt(agent_key=agent_key, origin=origin, version=version, text=_joined(body, governance))
+
+
+def _joined(body: str, governance: str) -> str:
+    """One space between the halves, whatever the stored body ends with.
+
+    A form strips trailing whitespace, so a body that was saved through one
+    would otherwise run into the first governance clause: `saved text.The
+    facts keep`. The separator is added here instead of being carried by the
+    body, which no one editing a prompt should have to know about.
+    """
+
+    return f"{body.rstrip()} {governance.lstrip()}"
 
 
 def _stored_body(agent_key: str) -> tuple[int, str] | None:

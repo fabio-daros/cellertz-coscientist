@@ -116,3 +116,20 @@ class KeyShapeTests(TestCase):
             agent_key="protein_design_supervisor.delegation", version=1, body="Delegation body. "
         )
         self.assertTrue(resolved_prompt().text.startswith("Analysis body. "))
+
+
+class FormWhitespaceTests(TestCase):
+    """What the admin saves must read the same as what the code ships."""
+
+    def setUp(self) -> None:
+        set_agent_prompt_provider(DjangoAgentPromptProvider())
+        self.addCleanup(set_agent_prompt_provider, None)
+
+    def test_saving_the_builtin_body_through_the_admin_changes_no_text(self) -> None:
+        from cellertz.application.agent_prompts import builtin_body
+
+        # A ModelForm strips the field, which is what the admin stored.
+        AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body=builtin_body(AGENT_KEY).strip())
+        resolved = resolved_prompt()
+        self.assertEqual(resolved.origin, "stored")
+        self.assertEqual(resolved.sha256, RECORDED_SHA)
