@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
@@ -509,3 +510,56 @@ class ModelChoiceListTests(TestCase):
         form = self.form(instance=row)
         self.assertIn("anthropic/claude-opus-5-5", self.offered(form))
         self.assertIn("(retired)", dict(form.fields["model"].choices)["anthropic/claude-opus-5-5"])
+
+
+class CurateModelsTests(TestCase):
+    """The menu is short on purpose, and withdrawing is not deleting."""
+
+    def setUp(self) -> None:
+        for model_id in ("a/one", "a/two", "b/three"):
+            AvailableModel.objects.create(model_id=model_id)
+
+    def run_curate(self, *args):
+        from io import StringIO
+
+        out = StringIO()
+        call_command("curate_models", *args, stdout=out)
+        return out.getvalue()
+
+    def offered(self):
+        return set(AvailableModel.objects.filter(enabled=True).values_list("model_id", flat=True))
+
+    def test_without_yes_nothing_changes(self) -> None:
+        self.run_curate("--keep", "a/one")
+        self.assertEqual(self.offered(), {"a/one", "a/two", "b/three"})
+
+    def test_only_the_named_models_stay_offered(self) -> None:
+        self.run_curate("--keep", "a/one,b/three", "--yes")
+        self.assertEqual(self.offered(), {"a/one", "b/three"})
+
+    def test_withdrawing_keeps_the_row(self) -> None:
+        self.run_curate("--keep", "a/one", "--yes")
+        self.assertEqual(AvailableModel.objects.count(), 3)
+        self.assertFalse(AvailableModel.objects.get(model_id="a/two").enabled)
+
+    def test_also_adds_without_withdrawing_the_rest(self) -> None:
+        self.run_curate("--keep", "a/one", "--yes")
+        self.run_curate("--also", "b/three", "--yes")
+        self.assertEqual(self.offered(), {"a/one", "b/three"})
+
+    def test_an_unknown_id_is_refused_before_anything_changes(self) -> None:
+        with self.assertRaises(CommandError):
+            self.run_curate("--keep", "a/typo", "--yes")
+        self.assertEqual(self.offered(), {"a/one", "a/two", "b/three"})
+
+    def test_a_model_an_agent_uses_is_not_withdrawn_by_accident(self) -> None:
+        AgentLimitsConfig.objects.create(agent_key=AGENT_KEY, model="a/two")
+        with self.assertRaises(CommandError) as caught:
+            self.run_curate("--keep", "a/one", "--yes")
+        self.assertIn("a/two", str(caught.exception))
+        self.assertTrue(AvailableModel.objects.get(model_id="a/two").enabled)
+
+    def test_force_withdraws_it_anyway(self) -> None:
+        AgentLimitsConfig.objects.create(agent_key=AGENT_KEY, model="a/two")
+        self.run_curate("--keep", "a/one", "--yes", "--force")
+        self.assertFalse(AvailableModel.objects.get(model_id="a/two").enabled)
