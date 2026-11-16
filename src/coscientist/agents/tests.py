@@ -382,3 +382,36 @@ class DeletePermissionTests(TestCase):
 
     def test_bulk_deletion_stays_off(self) -> None:
         self.assertFalse(self.admin_for().has_delete_permission(None, None))
+
+
+class ReadableNamesTests(TestCase):
+    """A key identifies; a label is what a person reads."""
+
+    def test_a_prompt_prints_its_agent_name_and_version(self) -> None:
+        row = AgentPrompt.objects.create(agent_key=DELEGATION_KEY, version=2, body="x")
+        self.assertEqual(
+            str(row), "Protein Design Supervisor — delegation to the Hotspot agent v2"
+        )
+
+    def test_limits_print_the_agent_name(self) -> None:
+        row = AgentLimitsConfig.objects.create(agent_key=SPECIALIST_KEY)
+        self.assertEqual(str(row), "Hotspot Identification Agent — hotspot suggestion")
+
+    def test_an_unregistered_key_still_prints_something_true(self) -> None:
+        row = AgentPrompt(agent_key="retired.agent", version=1, body="x")
+        self.assertEqual(row.label, "retired.agent")
+
+    def test_the_list_shows_the_name_first_and_keeps_the_key(self) -> None:
+        from django.contrib import admin as django_admin
+
+        from coscientist.agents.admin import AgentPromptAdmin
+
+        columns = AgentPromptAdmin(AgentPrompt, django_admin.site).list_display
+        self.assertEqual(columns[0], "label")
+        self.assertIn("agent_key", columns)
+
+    def test_the_sidebar_filter_offers_names(self) -> None:
+        from coscientist.agents.admin import AgentLabelFilter
+
+        labels = [label for _key, label in AgentLabelFilter(None, {}, AgentPrompt, None).lookups(None, None)]
+        self.assertIn("Hotspot Identification Agent — hotspot suggestion", labels)

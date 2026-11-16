@@ -16,6 +16,8 @@ from __future__ import annotations
 from django.core.validators import RegexValidator
 from django.db import models
 
+from cellertz.application.agent_prompts import agent_label
+
 # `agent.task`: one agent may hold several prompts, and each is its own key.
 AGENT_KEY = RegexValidator(
     r"^[a-z0-9_]+(\.[a-z0-9_]+)*$",
@@ -47,8 +49,14 @@ class AgentPrompt(models.Model):
         ]
         ordering = ("agent_key", "-version")
 
+    @property
+    def label(self) -> str:
+        """The agent's readable name. The key is an identifier, not a name."""
+
+        return agent_label(self.agent_key)
+
     def __str__(self) -> str:
-        return f"{self.agent_key} v{self.version}"
+        return f"{self.label} v{self.version}"
 
 
 class AgentLimitsConfig(models.Model):
@@ -87,5 +95,9 @@ class AgentLimitsConfig(models.Model):
         verbose_name_plural = "agent limits"
         ordering = ("agent_key",)
 
+    @property
+    def label(self) -> str:
+        return agent_label(self.agent_key)
+
     def __str__(self) -> str:
-        return self.agent_key
+        return self.label

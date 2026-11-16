@@ -10,6 +10,25 @@ from cellertz.application.agent_runtime import default_limits
 from coscientist.agents.models import AgentLimitsConfig, AgentPrompt
 
 
+class AgentLabelFilter(admin.SimpleListFilter):
+    """Filter by the agent's name rather than by its key.
+
+    The sidebar listed raw keys, which wrap badly and read as identifiers.
+    Every registered agent is offered, including those with no row yet, so the
+    list says which agents exist rather than only which were configured.
+    """
+
+    title = "agent"
+    parameter_name = "agent_key"
+
+    def lookups(self, request, model_admin):
+        return list(known_agents())
+
+    def queryset(self, request, queryset):
+        chosen = self.value()
+        return queryset.filter(agent_key=chosen) if chosen else queryset
+
+
 class PromptBodyWidget(forms.Textarea):
     """A textarea that follows the agent chosen above it.
 
@@ -128,9 +147,13 @@ class AgentPromptForm(forms.ModelForm):
 
 @admin.register(AgentPrompt)
 class AgentPromptAdmin(admin.ModelAdmin):
+    @admin.display(description="Agent and task", ordering="agent_key")
+    def label(self, obj) -> str:
+        return obj.label
+
     form = AgentPromptForm
-    list_display = ("agent_key", "version", "created_at")
-    list_filter = ("agent_key",)
+    list_display = ("label", "version", "created_at", "agent_key")
+    list_filter = (AgentLabelFilter,)
     search_fields = ("agent_key", "body", "note")
     ordering = ("agent_key", "-version")
 
@@ -239,8 +262,19 @@ class AgentLimitsForm(forms.ModelForm):
 
 @admin.register(AgentLimitsConfig)
 class AgentLimitsAdmin(admin.ModelAdmin):
+    @admin.display(description="Agent and task", ordering="agent_key")
+    def label(self, obj) -> str:
+        return obj.label
+
     form = AgentLimitsForm
-    list_display = ("agent_key", "max_output_tokens", "max_model_calls", "token_budget", "call_timeout_seconds", "updated_at")
+    list_display = (
+        "label",
+        "max_output_tokens",
+        "max_model_calls",
+        "token_budget",
+        "call_timeout_seconds",
+        "updated_at",
+    )
     ordering = ("agent_key",)
 
     def get_readonly_fields(self, request, obj=None):

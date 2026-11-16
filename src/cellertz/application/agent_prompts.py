@@ -80,6 +80,13 @@ def known_agents() -> tuple[tuple[str, str], ...]:
     return tuple((key, label) for key, (label, _body) in sorted(_catalog.items()))
 
 
+def agent_label(agent_key: str) -> str:
+    """The name a person reads. Falls back to the key, which is still true."""
+
+    entry = _catalog.get(agent_key)
+    return entry[0] if entry else agent_key
+
+
 def builtin_body(agent_key: str) -> str | None:
     entry = _catalog.get(agent_key)
     return None if entry is None else entry[1]
@@ -161,6 +168,7 @@ __all__: tuple[str, ...] = (
     "BUILTIN",
     "AgentPromptProvider",
     "ResolvedPrompt",
+    "agent_label",
     "builtin_body",
     "known_agents",
     "register_agent",
