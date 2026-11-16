@@ -8,10 +8,11 @@ from django.test import TestCase
 
 from cellertz.application.agent_prompts import (
     BUILTIN,
+    known_agents,
     set_agent_prompt_provider,
 )
 from cellertz.application.agent_runtime import set_agent_limits_provider
-from cellertz.application.plan_configuration_suggestion import SPECIALIST_KEY
+from cellertz.application.plan_configuration_suggestion import DELEGATION_KEY, SPECIALIST_KEY
 from cellertz.application.request_supervisor import (
     _GOVERNANCE,
     AGENT_KEY,
@@ -207,3 +208,50 @@ class StoredLimitsTests(TestCase):
         form = AgentLimitsForm(data={"agent_key": "typo.key", "max_output_tokens": 900})
         self.assertFalse(form.is_valid())
         self.assertIn("agent_key", form.errors)
+
+
+class WrongBodyForWrongAgentTests(TestCase):
+    """The agent and the text are two fields and must agree."""
+
+    def form(self, **data):
+        from coscientist.agents.admin import AgentPromptForm
+
+        return AgentPromptForm(data={"version": 1, "note": "", **data})
+
+    def test_saving_one_agents_text_under_another_is_refused(self) -> None:
+        from cellertz.application.agent_prompts import builtin_body
+
+        # Exactly what the Add page offered: the first agent's body, with the
+        # second agent chosen in the dropdown.
+        form = self.form(
+            agent_key=DELEGATION_KEY,
+            body=builtin_body(SPECIALIST_KEY),
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("body", form.errors)
+        self.assertIn("Hotspot Identification Agent", form.errors["body"][0])
+
+    def test_its_own_text_is_accepted(self) -> None:
+        from cellertz.application.agent_prompts import builtin_body
+
+        form = self.form(agent_key=DELEGATION_KEY, body=builtin_body(DELEGATION_KEY))
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_an_edited_text_is_accepted(self) -> None:
+        form = self.form(agent_key=DELEGATION_KEY, body="Delegate the review, and say why.")
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_the_page_carries_every_agents_text_for_the_swap(self) -> None:
+        import json as _json
+
+        from coscientist.agents.admin import AgentPromptForm
+
+        bodies = _json.loads(AgentPromptForm().fields["body"].widget.attrs["data-bodies"])
+        self.assertEqual(set(bodies), {key for key, _ in known_agents()})
+        self.assertTrue(bodies[SPECIALIST_KEY].startswith("Recommend the residues"))
+
+    def test_the_text_in_force_is_the_stored_one_when_there_is_one(self) -> None:
+        from coscientist.agents.admin import AgentPromptForm
+
+        AgentPrompt.objects.create(agent_key=DELEGATION_KEY, version=1, body="A stored delegation body.")
+        self.assertEqual(AgentPromptForm.text_in_force(DELEGATION_KEY), "A stored delegation body.")

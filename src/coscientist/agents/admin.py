@@ -1,9 +1,50 @@
+import json
+
 from django import forms
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 
 from cellertz.application.agent_prompts import builtin_body, known_agents
 from cellertz.application.agent_runtime import default_limits
 from coscientist.agents.models import AgentLimitsConfig, AgentPrompt
+
+
+class PromptBodyWidget(forms.Textarea):
+    """A textarea that follows the agent chosen above it.
+
+    The swap is server-rendered data plus a few lines of script rather than a
+    collected static file, so the admin needs no deployment step of its own.
+    A text the editor has changed is never replaced: losing an edit to a
+    dropdown would be its own defect.
+    """
+
+    def render(self, name, value, attrs=None, renderer=None):
+        textarea = super().render(name, value, attrs, renderer)
+        bodies = self.attrs.get("data-bodies")
+        if not bodies:
+            return textarea
+        element_id = (attrs or {}).get("id", f"id_{name}")
+        script = f"""
+<script>
+(function () {{
+  var box = document.getElementById({json.dumps(element_id)});
+  var picker = document.getElementById("id_agent_key");
+  if (!box || !picker) return;
+  var bodies = JSON.parse(box.getAttribute("data-bodies"));
+  var untouched = box.value;
+  box.addEventListener("input", function () {{ untouched = null; }});
+  picker.addEventListener("change", function () {{
+    var next = bodies[picker.value];
+    if (next === undefined) return;
+    if (untouched === null && box.value.trim() !== "") {{
+      if (!window.confirm("Replace the text you edited with this agent's own?")) return;
+    }}
+    box.value = next;
+    untouched = next;
+  }});
+}})();
+</script>"""
+        return mark_safe(textarea + script)
 
 
 class AgentPromptForm(forms.ModelForm):
@@ -16,6 +57,7 @@ class AgentPromptForm(forms.ModelForm):
     class Meta:
         model = AgentPrompt
         fields = ("agent_key", "version", "body", "note")
+        widgets = {"body": PromptBodyWidget(attrs={"rows": 12})}
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -35,11 +77,52 @@ class AgentPromptForm(forms.ModelForm):
         self.fields["version"].initial = (highest or 0) + 1
         # The body in force right now, so a new version is an edit of the real
         # text rather than something typed from memory.
-        self.fields["body"].initial = builtin_body(chosen) if highest is None else self._body_of(chosen, highest)
+        self.fields["body"].initial = self.text_in_force(chosen)
+        # Changing the agent must change the text with it. The page is rendered
+        # once, so the alternatives travel with it and the widget swaps them.
+        self.fields["body"].widget.attrs["data-bodies"] = json.dumps(
+            {key: self.text_in_force(key) for key, _label in agents}
+        )
 
     @staticmethod
-    def _body_of(agent_key: str, version: int) -> str:
-        return AgentPrompt.objects.filter(agent_key=agent_key, version=version).values_list("body", flat=True).first() or ""
+    def text_in_force(agent_key: str) -> str:
+        """The stored body if there is one, otherwise the code's own."""
+
+        stored = (
+            AgentPrompt.objects.filter(agent_key=agent_key)
+            .order_by("-version")
+            .values_list("body", flat=True)
+            .first()
+        )
+        return stored if stored is not None else (builtin_body(agent_key) or "")
+
+    def clean(self):
+        """Refuse a body that belongs to a different agent.
+
+        The agent and the text are two fields, and nothing stops them being
+        filled from different agents — a page rendered for one agent and then
+        switched to another would save the wrong prompt under the wrong name,
+        and the analysis recorded against it would say so for ever.
+        """
+
+        cleaned = super().clean()
+        agent_key = cleaned.get("agent_key")
+        body = (cleaned.get("body") or "").strip()
+        if not agent_key or not body:
+            return cleaned
+        for key, label in known_agents():
+            if key == agent_key:
+                continue
+            if body == (builtin_body(key) or "").strip():
+                raise forms.ValidationError(
+                    {
+                        "body": (
+                            f"This is the built-in text of {label}, not of the agent selected above. "
+                            "Choose the agent first, then edit its text."
+                        )
+                    }
+                )
+        return cleaned
 
 
 @admin.register(AgentPrompt)
