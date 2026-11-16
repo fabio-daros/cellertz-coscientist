@@ -10,9 +10,16 @@ from cellertz.application.agent_prompts import (
     BUILTIN,
     set_agent_prompt_provider,
 )
-from cellertz.application.request_supervisor import _GOVERNANCE, AGENT_KEY, resolved_prompt
-from coscientist.agents.models import AgentPrompt
-from coscientist.agents.prompts import DjangoAgentPromptProvider
+from cellertz.application.agent_runtime import set_agent_limits_provider
+from cellertz.application.plan_configuration_suggestion import SPECIALIST_KEY
+from cellertz.application.request_supervisor import (
+    _GOVERNANCE,
+    AGENT_KEY,
+    resolve_supervisor_limits,
+    resolved_prompt,
+)
+from coscientist.agents.models import AgentLimitsConfig, AgentPrompt
+from coscientist.agents.prompts import DjangoAgentLimitsProvider, DjangoAgentPromptProvider
 
 RECORDED_SHA = "495fdd31a26980f8e328c1012b2e78c134315ca26050a3d4a3b969a3b68afd9f"
 
@@ -157,3 +164,46 @@ class CatalogueTests(TestCase):
         for key, label in known_agents():
             self.assertNotEqual(key, label)
             self.assertIn("—", label)
+
+
+class StoredLimitsTests(TestCase):
+    """Limits read the way the running service reads them."""
+
+    def setUp(self) -> None:
+        set_agent_limits_provider(DjangoAgentLimitsProvider())
+        self.addCleanup(set_agent_limits_provider, None)
+
+    def test_an_empty_table_keeps_every_default(self) -> None:
+        self.assertEqual(resolve_supervisor_limits({}).max_output_tokens, 400)
+
+    def test_a_stored_ceiling_is_what_the_supervisor_uses(self) -> None:
+        AgentLimitsConfig.objects.create(agent_key=AGENT_KEY, max_output_tokens=900)
+        self.assertEqual(resolve_supervisor_limits({}).max_output_tokens, 900)
+
+    def test_a_row_for_one_agent_does_not_reach_another(self) -> None:
+        AgentLimitsConfig.objects.create(agent_key=SPECIALIST_KEY, max_output_tokens=2400)
+        self.assertEqual(resolve_supervisor_limits({}).max_output_tokens, 400)
+
+    def test_blank_fields_keep_the_defaults(self) -> None:
+        AgentLimitsConfig.objects.create(agent_key=AGENT_KEY, note="nothing changed yet")
+        limits = resolve_supervisor_limits({})
+        self.assertEqual(limits.max_output_tokens, 400)
+        self.assertEqual(limits.max_model_calls, 8)
+
+    def test_one_row_per_agent(self) -> None:
+        AgentLimitsConfig.objects.create(agent_key=AGENT_KEY, max_output_tokens=900)
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            AgentLimitsConfig.objects.create(agent_key=AGENT_KEY, max_output_tokens=800)
+
+    def test_the_form_shows_the_code_default_for_the_chosen_agent(self) -> None:
+        from coscientist.agents.admin import AgentLimitsForm
+
+        form = AgentLimitsForm(initial={"agent_key": AGENT_KEY})
+        self.assertIn("default: 400", form.fields["max_output_tokens"].widget.attrs["placeholder"])
+
+    def test_the_form_refuses_an_unregistered_agent(self) -> None:
+        from coscientist.agents.admin import AgentLimitsForm
+
+        form = AgentLimitsForm(data={"agent_key": "typo.key", "max_output_tokens": 900})
+        self.assertFalse(form.is_valid())
+        self.assertIn("agent_key", form.errors)

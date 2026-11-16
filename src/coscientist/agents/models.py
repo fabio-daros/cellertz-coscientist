@@ -49,3 +49,43 @@ class AgentPrompt(models.Model):
 
     def __str__(self) -> str:
         return f"{self.agent_key} v{self.version}"
+
+
+class AgentLimitsConfig(models.Model):
+    """What one agent may spend. A blank field keeps the code's default.
+
+    Unlike a prompt, this is not versioned. What a call actually spent is
+    already recorded in the run's instrumentation, so this row states the
+    intent and the record states the fact.
+    """
+
+    agent_key = models.CharField(
+        max_length=96,
+        unique=True,
+        validators=[AGENT_KEY],
+        help_text="The agent and task these limits apply to.",
+    )
+    max_output_tokens = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Tokens one reply may use. Raise it when a reply is being truncated.",
+    )
+    max_model_calls = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Model calls allowed while answering one request."
+    )
+    token_budget = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Tokens allowed across those calls."
+    )
+    call_timeout_seconds = models.FloatField(
+        null=True, blank=True, help_text="Seconds one call may take before it is abandoned."
+    )
+    note = models.TextField(blank=True, help_text="Why these limits differ from the default.")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "agent limits"
+        verbose_name_plural = "agent limits"
+        ordering = ("agent_key",)
+
+    def __str__(self) -> str:
+        return self.agent_key

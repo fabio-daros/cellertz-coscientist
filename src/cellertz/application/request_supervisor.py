@@ -23,6 +23,11 @@ from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 
 from cellertz.application.agent_prompts import ResolvedPrompt, register_agent, resolve_prompt
+from cellertz.application.agent_runtime import (
+    AgentLimits,
+    register_agent_limits,
+    resolve_limits,
+)
 from cellertz.application.conversation import ConversationModel, ReadOnlyFact, RecordedFactsModel
 from cellertz.application.request_draft import _QUESTIONS, GENERATORS, DesignDrafting, _questions
 
@@ -67,6 +72,13 @@ _GOVERNANCE = (
 # Kept so that nothing which reads the whole prompt has to compose it again.
 _QUESTION = _TASK_BODY + _GOVERNANCE
 register_agent(AGENT_KEY, AGENT_LABEL, _TASK_BODY)
+_DEFAULT_LIMITS = AgentLimits(
+    max_output_tokens=DEFAULT_MAX_OUTPUT_TOKENS,
+    max_model_calls=DEFAULT_MAX_CALLS,
+    token_budget=DEFAULT_TOKEN_BUDGET,
+    call_timeout_seconds=DEFAULT_CALL_TIMEOUT_SECONDS,
+)
+register_agent_limits(AGENT_KEY, _DEFAULT_LIMITS)
 _STALE ="The analysis was not run. The selected revision is not the current revision."
 _MAX_SUPERVISOR_QUESTIONS = 2
 _UNAVAILABLE = "The Supervisor model is not configured. No analysis was substituted."
@@ -121,7 +133,7 @@ def resolve_supervisor_limits(environ: Mapping[str, str] | None = None) -> Super
     """Read call and token limits. The API key is not one of these variables."""
 
     env = os.environ if environ is None else environ
-    return SupervisorLimits(
+    from_environment = AgentLimits(
         max_model_calls=_positive_int(env.get("CELLERTZ_SUPERVISOR_MAX_CALLS", ""), DEFAULT_MAX_CALLS, 20),
         max_output_tokens=_positive_int(
             env.get("CELLERTZ_SUPERVISOR_MAX_OUTPUT_TOKENS", ""),
@@ -130,6 +142,16 @@ def resolve_supervisor_limits(environ: Mapping[str, str] | None = None) -> Super
         ),
         token_budget=_positive_int(env.get("CELLERTZ_SUPERVISOR_TOKEN_BUDGET", ""), DEFAULT_TOKEN_BUDGET, 20000),
         call_timeout_seconds=_timeout(env.get("CELLERTZ_SUPERVISOR_CALL_TIMEOUT_SECONDS", "")),
+    )
+    # A stored limit is the installation's own decision, so it is applied over
+    # whatever the environment asked for. With nothing stored this is the
+    # environment's answer unchanged.
+    in_force = resolve_limits(AGENT_KEY, from_environment).limits
+    return SupervisorLimits(
+        max_model_calls=in_force.max_model_calls,
+        max_output_tokens=in_force.max_output_tokens,
+        token_budget=in_force.token_budget,
+        call_timeout_seconds=in_force.call_timeout_seconds,
         retries=0,
     )
 

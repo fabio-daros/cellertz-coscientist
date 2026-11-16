@@ -25,8 +25,9 @@ def install() -> None:
     django.setup()
 
     from cellertz.application.agent_prompts import set_agent_prompt_provider
+    from cellertz.application.agent_runtime import set_agent_limits_provider
     from cellertz.application.literature_search import set_literature_cache_factory
-    from coscientist.agents.prompts import DjangoAgentPromptProvider
+    from coscientist.agents.prompts import DjangoAgentLimitsProvider, DjangoAgentPromptProvider
     from coscientist.literature.cache import DjangoLiteratureCache
 
     # A factory, not an instance: the service may build a cache per use, and a
@@ -36,6 +37,9 @@ def install() -> None:
     # With no stored row the agents keep their built-in prompts, so this
     # registration changes no text until someone adds a version.
     set_agent_prompt_provider(DjangoAgentPromptProvider())
+
+    # With no stored row an agent keeps the limits the code gives it.
+    set_agent_limits_provider(DjangoAgentLimitsProvider())
 
 
 def main() -> None:

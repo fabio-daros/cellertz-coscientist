@@ -13,6 +13,11 @@ from cellertz.application.agent_prompts import (
     register_agent,
     resolve_prompt,
 )
+from cellertz.application.agent_runtime import (
+    AgentLimits,
+    register_agent_limits,
+    resolve_limits,
+)
 
 import inspect
 import json
@@ -33,7 +38,11 @@ from cellertz.application.pdl1_container_entrypoint import (
     LENGTH_MIN as CONTAINER_LENGTH_MIN,
 )
 from cellertz.application.literature_search import EuropePMCLiteratureSearch, classify_literature
-from cellertz.application.request_supervisor import SupervisorLimits, resolve_supervisor_limits
+from cellertz.application.request_supervisor import (
+    DEFAULT_CALL_TIMEOUT_SECONDS,
+    SupervisorLimits,
+    resolve_supervisor_limits,
+)
 
 HOTSPOT_AGENT = "Hotspot Identification Agent"
 PATH = "/api/generation-plan/suggestion"
@@ -114,6 +123,24 @@ _SPECIALIST_PREFACE = f"{_SPECIALIST_PREAMBLE} {_SPECIALIST_GUIDANCE} {_SPECIALI
 
 register_agent(DELEGATION_KEY, DELEGATION_LABEL, _DELEGATION_TASK)
 register_agent(SPECIALIST_KEY, SPECIALIST_LABEL, _SPECIALIST_GUIDANCE)
+register_agent_limits(
+    DELEGATION_KEY,
+    AgentLimits(
+        max_output_tokens=SUGGESTION_MAX_OUTPUT_TOKENS,
+        max_model_calls=SUGGESTION_MAX_CALLS,
+        token_budget=SUGGESTION_TOKEN_BUDGET,
+        call_timeout_seconds=DEFAULT_CALL_TIMEOUT_SECONDS,
+    ),
+)
+register_agent_limits(
+    SPECIALIST_KEY,
+    AgentLimits(
+        max_output_tokens=SUGGESTION_MAX_OUTPUT_TOKENS,
+        max_model_calls=SUGGESTION_MAX_CALLS,
+        token_budget=SUGGESTION_TOKEN_BUDGET,
+        call_timeout_seconds=DEFAULT_CALL_TIMEOUT_SECONDS,
+    ),
+)
 
 
 def delegation_prompt() -> ResolvedPrompt:
@@ -769,11 +796,23 @@ def limits_for_suggestion(shared: SupervisorLimits, environ: Mapping[str, str] |
         number = int(raw)
         if 1 <= number <= 20000:
             budget = number
+    # These are the specialist's limits, and the one that was raised from 400
+    # to 1200 by a published script because a hotspot list did not fit. A
+    # stored row now does the same without a deploy.
+    in_force = resolve_limits(
+        SPECIALIST_KEY,
+        AgentLimits(
+            max_output_tokens=SUGGESTION_MAX_OUTPUT_TOKENS,
+            max_model_calls=SUGGESTION_MAX_CALLS,
+            token_budget=budget,
+            call_timeout_seconds=shared.call_timeout_seconds,
+        ),
+    ).limits
     return SupervisorLimits(
-        max_model_calls=SUGGESTION_MAX_CALLS,
-        max_output_tokens=SUGGESTION_MAX_OUTPUT_TOKENS,
-        token_budget=budget,
-        call_timeout_seconds=shared.call_timeout_seconds,
+        max_model_calls=in_force.max_model_calls,
+        max_output_tokens=in_force.max_output_tokens,
+        token_budget=in_force.token_budget,
+        call_timeout_seconds=in_force.call_timeout_seconds,
         retries=0,
     )
 

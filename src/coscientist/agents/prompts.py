@@ -32,3 +32,19 @@ class DjangoAgentPromptProvider:
             return (int(version), body)
         finally:
             close_old_connections()
+
+
+class DjangoAgentLimitsProvider:
+    """Reads stored limits. A blank field is absent, so the default stands."""
+
+    _FIELDS = ("max_output_tokens", "max_model_calls", "token_budget", "call_timeout_seconds")
+
+    def limits(self, agent_key: str) -> dict[str, float | int | None] | None:
+        from coscientist.agents.models import AgentLimitsConfig
+
+        close_old_connections()
+        try:
+            row = AgentLimitsConfig.objects.filter(agent_key=agent_key).values(*self._FIELDS).first()
+            return dict(row) if row else None
+        finally:
+            close_old_connections()
