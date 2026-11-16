@@ -82,13 +82,13 @@ class AdminFormTests(TestCase):
         self.assertIn("agent_key", form.errors)
 
     def test_the_form_offers_the_text_in_force_and_the_next_version(self) -> None:
-        form = self.form_class()
+        form = self.form_class(initial={"agent_key": AGENT_KEY})
         self.assertEqual(form.fields["version"].initial, 1)
         self.assertTrue(str(form.fields["body"].initial).startswith("You are the Protein Design Supervisor."))
 
     def test_after_a_stored_version_the_form_offers_that_body_next(self) -> None:
         AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="Stored body. ")
-        form = self.form_class()
+        form = self.form_class(initial={"agent_key": AGENT_KEY})
         self.assertEqual(form.fields["version"].initial, 2)
         self.assertEqual(form.fields["body"].initial, "Stored body. ")
 
@@ -133,3 +133,27 @@ class FormWhitespaceTests(TestCase):
         resolved = resolved_prompt()
         self.assertEqual(resolved.origin, "stored")
         self.assertEqual(resolved.sha256, RECORDED_SHA)
+
+
+class CatalogueTests(TestCase):
+    """Every agent that reads a stored prompt must be offerable."""
+
+    def test_all_three_prompts_are_listed(self) -> None:
+        from cellertz.application.agent_prompts import known_agents
+
+        keys = {key for key, _label in known_agents()}
+        self.assertEqual(
+            keys,
+            {
+                "protein_design_supervisor.request_analysis",
+                "protein_design_supervisor.delegation",
+                "hotspot_identification_agent.suggestion",
+            },
+        )
+
+    def test_each_one_is_labelled_for_a_reader(self) -> None:
+        from cellertz.application.agent_prompts import known_agents
+
+        for key, label in known_agents():
+            self.assertNotEqual(key, label)
+            self.assertIn("—", label)

@@ -95,8 +95,23 @@ def set_agent_prompt_provider(provider: AgentPromptProvider | None) -> None:
     _provider = provider
 
 
-def resolve_prompt(agent_key: str, builtin_body: str, governance: str) -> ResolvedPrompt:
-    """Compose the prompt. Governance is appended last and is never replaced."""
+def resolve_prompt(
+    agent_key: str,
+    builtin_body: str,
+    governance: str = "",
+    *,
+    preamble: str = "",
+) -> ResolvedPrompt:
+    """Compose `preamble + body + governance`, where only the body may be stored.
+
+    Governance sits on both sides because prompts are not all shaped alike.
+    The Supervisor opens with its task and then states its rules, so its
+    preamble is empty. The Hotspot Identification Agent states its rules
+    first and the tunable judgement — how many residues a hotspot set should
+    prefer — comes near the end, so that judgement is the body and the rules
+    before it are the preamble. Either way a stored body is surrounded by
+    clauses it cannot reach.
+    """
 
     body = builtin_body
     origin = BUILTIN
@@ -105,19 +120,24 @@ def resolve_prompt(agent_key: str, builtin_body: str, governance: str) -> Resolv
     if stored is not None:
         version, body = stored
         origin = "stored"
-    return ResolvedPrompt(agent_key=agent_key, origin=origin, version=version, text=_joined(body, governance))
+    return ResolvedPrompt(
+        agent_key=agent_key,
+        origin=origin,
+        version=version,
+        text=_joined(preamble, body, governance),
+    )
 
 
-def _joined(body: str, governance: str) -> str:
-    """One space between the halves, whatever the stored body ends with.
+def _joined(*parts: str) -> str:
+    """One space between parts, whatever a stored body ends with.
 
-    A form strips trailing whitespace, so a body that was saved through one
-    would otherwise run into the first governance clause: `saved text.The
-    facts keep`. The separator is added here instead of being carried by the
-    body, which no one editing a prompt should have to know about.
+    A form strips trailing whitespace, so a body saved through one would
+    otherwise run into the clause after it: `saved text.The facts keep`. The
+    separator belongs to the composition, not to the body, which no one
+    editing a prompt should have to know about.
     """
 
-    return f"{body.rstrip()} {governance.lstrip()}"
+    return " ".join(part.strip() for part in parts if part.strip())
 
 
 def _stored_body(agent_key: str) -> tuple[int, str] | None:

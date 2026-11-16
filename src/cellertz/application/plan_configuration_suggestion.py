@@ -8,6 +8,12 @@ technical profile. A missing source is reported; it is not simulated.
 
 from __future__ import annotations
 
+from cellertz.application.agent_prompts import (
+    ResolvedPrompt,
+    register_agent,
+    resolve_prompt,
+)
+
 import inspect
 import json
 import os
@@ -45,15 +51,30 @@ _BINDING_TERMS = (
     "binding interface",
 )
 _EXTERNAL_NUMBERING = ("uniprot", "author numbering", "sequence numbering", "renumber")
-_SUPERVISOR_QUESTION = (
+DELEGATION_KEY = "protein_design_supervisor.delegation"
+DELEGATION_LABEL = "Protein Design Supervisor — delegation to the Hotspot agent"
+SPECIALIST_KEY = "hotspot_identification_agent.suggestion"
+SPECIALIST_LABEL = "Hotspot Identification Agent — hotspot suggestion"
+
+# What this Supervisor call is for. Storable.
+_DELEGATION_TASK = (
     "You are the Protein Design Supervisor. Delegate the binding-region review to the "
-    "Hotspot Identification Agent. Reply with one JSON object and no other text. "
+    "Hotspot Identification Agent."
+)
+
+# The shape the parser needs and what this call may not do. Not storable.
+_DELEGATION_GOVERNANCE = (
+    "Reply with one JSON object and no other text. "
     "The object has task and delegate_to. delegate_to must be exactly "
     "'Hotspot Identification Agent'. Do not recommend residues, a length, a filter, "
     "or infrastructure. Do not approve, authorize, or start a run. "
     "Preserve the researcher's target, quantity, and explicit constraints."
 )
-_SPECIALIST_PREFACE = (
+_SUPERVISOR_QUESTION = f"{_DELEGATION_TASK} {_DELEGATION_GOVERNANCE}"
+
+# The specialist states its rules first and its tunable judgement last, so the
+# rules are the preamble and the judgement is the storable body.
+_SPECIALIST_PREAMBLE = (
     "You are the Hotspot Identification Agent. This is your own task, separate from "
     "the Supervisor. Reply with one JSON object and no other text. Keys are summary, "
     "hotspots, uncertainties, and length_alternatives. A hotspot has chain, residue, "
@@ -72,13 +93,44 @@ _SPECIALIST_PREFACE = (
     "hotspots undefined. Do not set recommend_no_hotspots. A length alternative needs value "
     "and justification and does not replace the researcher's length. Do not invent "
     "GPU, CPU, memory, or deadline values. Do not treat an earlier generation result "
-    "as evidence that existed before that execution. "
+    "as evidence that existed before that execution."
+)
+
+# How much to recommend, and how large a usable hotspot set is. This is
+# judgement about the science rather than a rule the reply must obey, so it is
+# the half a scientist may tune.
+_SPECIALIST_GUIDANCE = (
     "Recommend the residues the retrieved knowledge supports best, not every residue a "
     "note lists. A hotspot set is a design instruction, so keep it small enough to use: "
-    "prefer at most five residues and say in summary that the note holds more. "
+    "prefer at most five residues and say in summary that the note holds more."
+)
+
+_SPECIALIST_GOVERNANCE = (
     "Keep each evidence string to one sentence and reply with one JSON object that is "
     "complete and parseable."
 )
+
+_SPECIALIST_PREFACE = f"{_SPECIALIST_PREAMBLE} {_SPECIALIST_GUIDANCE} {_SPECIALIST_GOVERNANCE}"
+
+register_agent(DELEGATION_KEY, DELEGATION_LABEL, _DELEGATION_TASK)
+register_agent(SPECIALIST_KEY, SPECIALIST_LABEL, _SPECIALIST_GUIDANCE)
+
+
+def delegation_prompt() -> ResolvedPrompt:
+    """The Supervisor's delegation call, with its task half possibly stored."""
+
+    return resolve_prompt(DELEGATION_KEY, _DELEGATION_TASK, _DELEGATION_GOVERNANCE)
+
+
+def specialist_prompt() -> ResolvedPrompt:
+    """The specialist's brief. Only its judgement half may be stored."""
+
+    return resolve_prompt(
+        SPECIALIST_KEY,
+        _SPECIALIST_GUIDANCE,
+        _SPECIALIST_GOVERNANCE,
+        preamble=_SPECIALIST_PREAMBLE,
+    )
 
 
 class MemorySuggestionStore:
@@ -240,7 +292,7 @@ class PlanConfigurationSuggester:
         spent = 0
         calls = 0
         supervisor_facts = _supervisor_facts(request, plan, tools)
-        supervisor_estimate = _token_estimate(_SUPERVISOR_QUESTION, supervisor_facts, self._limits)
+        supervisor_estimate = _token_estimate(delegation_prompt().text, supervisor_facts, self._limits)
         if supervisor_estimate["estimated_call_tokens"] > self._limits.token_budget:
             recorded = _document(
                 request,
@@ -257,7 +309,7 @@ class PlanConfigurationSuggester:
                 system_messages=["The estimated prompt does not fit the shared token budget. The provider was not called."],
             )
             return self._finish(recorded, "token_budget_exceeded", supervisor_estimate, None)
-        supervisor = _invoke(self._model, self._limits, _SUPERVISOR_QUESTION, supervisor_facts)
+        supervisor = _invoke(self._model, self._limits, delegation_prompt().text, supervisor_facts)
         calls += 1
         if supervisor["error"] == "raised":
             return _unavailable("The Supervisor could not delegate. No scientific action was taken.")
@@ -617,7 +669,7 @@ def _specialist_facts(
 
 def _specialist_question(task: str, tools: Mapping[str, Any], plan: Mapping[str, Any], request: Mapping[str, Any]) -> str:
     return (
-        f"{_SPECIALIST_PREFACE}\n"
+        f"{specialist_prompt().text}\n"
         f"Delegated task: {task}\n"
         f"Saved request: {request.get('message')}\n"
         f"Retrieved knowledge ids: {', '.join(item['id'] for item in tools['knowledge.list']['items']) or 'none'}\n"

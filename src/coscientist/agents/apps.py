@@ -11,4 +11,7 @@ class AgentsConfig(AppConfig):
         # registers itself when its module is imported. The admin process
         # serves Django alone and would otherwise never import the science,
         # so the list would be empty and no prompt could be added.
-        from cellertz.application import request_supervisor  # noqa: F401
+        from cellertz.application import (  # noqa: F401
+            plan_configuration_suggestion,
+            request_supervisor,
+        )
