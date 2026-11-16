@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
@@ -305,3 +306,79 @@ class LimitsFieldWidthTests(TestCase):
             self.assertTrue(attrs["placeholder"].startswith("default: "), name)
             # The number itself, not only the word before it.
             self.assertRegex(attrs["placeholder"], r"default: \d")
+
+
+class PruneCommandTests(TestCase):
+    """A version a result names must survive the prune."""
+
+    def run_prune(self, *args, referenced=frozenset()):
+        from io import StringIO
+        from unittest.mock import patch
+
+        out = StringIO()
+        with patch(
+            "coscientist.agents.management.commands.prune_agent_prompts.referenced_versions",
+            return_value=set(referenced),
+        ):
+            call_command("prune_agent_prompts", *args, stdout=out)
+        return out.getvalue()
+
+    def test_without_yes_nothing_is_deleted(self) -> None:
+        AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="x")
+        output = self.run_prune()
+        self.assertIn("would be deleted", output)
+        self.assertEqual(AgentPrompt.objects.count(), 1)
+
+    def test_an_unreferenced_version_is_deleted_with_yes(self) -> None:
+        AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="x")
+        self.run_prune("--yes")
+        self.assertEqual(AgentPrompt.objects.count(), 0)
+
+    def test_a_referenced_version_is_kept_even_with_yes(self) -> None:
+        AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="x")
+        output = self.run_prune("--yes", referenced={(AGENT_KEY, 1)})
+        self.assertIn("a recorded result names it", output)
+        self.assertEqual(AgentPrompt.objects.count(), 1)
+
+    def test_only_the_referenced_version_of_an_agent_survives(self) -> None:
+        AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="one")
+        AgentPrompt.objects.create(agent_key=AGENT_KEY, version=2, body="two")
+        self.run_prune("--yes", referenced={(AGENT_KEY, 2)})
+        self.assertEqual(
+            list(AgentPrompt.objects.values_list("version", flat=True)), [2]
+        )
+
+    def test_the_agent_filter_leaves_other_agents_alone(self) -> None:
+        AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="x")
+        AgentPrompt.objects.create(agent_key=SPECIALIST_KEY, version=1, body="y")
+        self.run_prune("--agent", SPECIALIST_KEY, "--yes")
+        self.assertEqual(
+            list(AgentPrompt.objects.values_list("agent_key", flat=True)), [AGENT_KEY]
+        )
+
+
+class DeletePermissionTests(TestCase):
+    """The admin may remove a version only while nothing names it."""
+
+    def admin_for(self):
+        from django.contrib import admin as django_admin
+
+        from coscientist.agents.admin import AgentPromptAdmin
+
+        return AgentPromptAdmin(AgentPrompt, django_admin.site)
+
+    def test_an_unreferenced_version_may_be_deleted(self) -> None:
+        row = AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="x")
+        self.assertTrue(self.admin_for().has_delete_permission(None, row))
+
+    def test_a_referenced_version_may_not(self) -> None:
+        from unittest.mock import patch
+
+        row = AgentPrompt.objects.create(agent_key=AGENT_KEY, version=1, body="x")
+        with patch(
+            "coscientist.agents.admin.referenced_versions", return_value={(AGENT_KEY, 1)}
+        ):
+            self.assertFalse(self.admin_for().has_delete_permission(None, row))
+
+    def test_bulk_deletion_stays_off(self) -> None:
+        self.assertFalse(self.admin_for().has_delete_permission(None, None))

@@ -1279,6 +1279,10 @@ def _document(
             "supervisor_model_call": supervisor.get("call"),
             "model_call": None if specialist is None else specialist.get("call"),
         },
+        # Which words produced this suggestion. Two suggestions written under
+        # different prompt versions are not comparable, and a version named
+        # here is one that cannot be pruned away.
+        "prompts": [delegation_prompt().provenance(), specialist_prompt().provenance()],
         "tools": tools,
         "saved": False,
         "executed": False,

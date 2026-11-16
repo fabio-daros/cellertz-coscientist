@@ -4,6 +4,7 @@ from django import forms
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
+from cellertz.application.agent_prompt_references import referenced_versions
 from cellertz.application.agent_prompts import builtin_body, known_agents
 from cellertz.application.agent_runtime import default_limits
 from coscientist.agents.models import AgentLimitsConfig, AgentPrompt
@@ -139,7 +140,19 @@ class AgentPromptAdmin(admin.ModelAdmin):
         return ("agent_key", "version", "body", "note", "created_at") if obj else ()
 
     def has_delete_permission(self, request, obj=None) -> bool:
-        return False
+        """Deletable only while no recorded result names this version.
+
+        The blanket refusal this replaces was honest about the risk and blind
+        about the case: most versions are never referenced, and a row made by
+        mistake had to be removed from a shell.
+
+        Bulk deletion stays off. Each row is checked against the recorded
+        results, and that is a decision to take one at a time.
+        """
+
+        if obj is None:
+            return False
+        return (obj.agent_key, obj.version) not in referenced_versions()
 
 
 class AgentDefaultsSelect(forms.Select):
