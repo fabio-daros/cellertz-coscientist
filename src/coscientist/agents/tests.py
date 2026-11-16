@@ -290,3 +290,18 @@ class LimitsDefaultsShownTests(TestCase):
         self.assertEqual(set(defaults), {key for key, _ in known_agents()})
         self.assertEqual(defaults[AGENT_KEY]["max_output_tokens"], 400)
         self.assertEqual(defaults[SPECIALIST_KEY]["max_output_tokens"], 1200)
+
+
+class LimitsFieldWidthTests(TestCase):
+    """The hint has to fit in the box, or it says nothing."""
+
+    def test_every_number_field_is_wide_enough_for_its_hint(self) -> None:
+        from coscientist.agents.admin import AgentLimitsForm
+
+        form = AgentLimitsForm(initial={"agent_key": SPECIALIST_KEY})
+        for name in ("max_output_tokens", "max_model_calls", "token_budget", "call_timeout_seconds"):
+            attrs = form.fields[name].widget.attrs
+            self.assertIn("width", attrs.get("style", ""), name)
+            self.assertTrue(attrs["placeholder"].startswith("default: "), name)
+            # The number itself, not only the word before it.
+            self.assertRegex(attrs["placeholder"], r"default: \d")

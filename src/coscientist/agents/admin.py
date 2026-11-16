@@ -213,6 +213,9 @@ class AgentLimitsForm(forms.ModelForm):
         for name, value in defaults.to_dict().items():
             if name in self.fields:
                 self.fields[name].widget.attrs["placeholder"] = f"default: {value}"
+                # A number input is narrow by default and clipped the hint to
+                # "default:", which told the reader nothing.
+                self.fields[name].widget.attrs["style"] = "width: 12em;"
                 self.fields[name].help_text = f"{self.fields[name].help_text} Leave blank for {value}."
         # And the defaults must follow the dropdown, as the prompt body does.
         self.fields["agent_key"].widget = AgentDefaultsSelect(
