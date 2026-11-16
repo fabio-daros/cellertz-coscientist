@@ -11,7 +11,7 @@ from cellertz.application.agent_prompts import (
     known_agents,
     set_agent_prompt_provider,
 )
-from cellertz.application.agent_runtime import set_agent_limits_provider
+from cellertz.application.agent_runtime import default_limits, set_agent_limits_provider
 from cellertz.application.plan_configuration_suggestion import DELEGATION_KEY, SPECIALIST_KEY
 from cellertz.application.request_supervisor import (
     _GOVERNANCE,
@@ -255,3 +255,38 @@ class WrongBodyForWrongAgentTests(TestCase):
 
         AgentPrompt.objects.create(agent_key=DELEGATION_KEY, version=1, body="A stored delegation body.")
         self.assertEqual(AgentPromptForm.text_in_force(DELEGATION_KEY), "A stored delegation body.")
+
+
+class LimitsDefaultsShownTests(TestCase):
+    """An empty box must say what it falls back to."""
+
+    def form(self, **kwargs):
+        from coscientist.agents.admin import AgentLimitsForm
+
+        return AgentLimitsForm(**kwargs)
+
+    def test_a_fresh_page_shows_the_first_agents_defaults(self) -> None:
+        # The browser selects the first option, so the form must agree.
+        first = known_agents()[0][0]
+        expected = default_limits(first).max_output_tokens
+        form = self.form()
+        self.assertEqual(
+            form.fields["max_output_tokens"].widget.attrs["placeholder"], f"default: {expected}"
+        )
+
+    def test_the_chosen_agents_defaults_are_shown(self) -> None:
+        form = self.form(initial={"agent_key": AGENT_KEY})
+        self.assertEqual(form.fields["max_output_tokens"].widget.attrs["placeholder"], "default: 400")
+        self.assertEqual(form.fields["max_model_calls"].widget.attrs["placeholder"], "default: 8")
+        self.assertIn("Leave blank for 400.", form.fields["max_output_tokens"].help_text)
+
+    def test_the_specialist_shows_its_own_higher_ceiling(self) -> None:
+        form = self.form(initial={"agent_key": SPECIALIST_KEY})
+        self.assertEqual(form.fields["max_output_tokens"].widget.attrs["placeholder"], "default: 1200")
+
+    def test_every_agents_defaults_travel_with_the_page(self) -> None:
+        form = self.form()
+        defaults = form.fields["agent_key"].widget.defaults
+        self.assertEqual(set(defaults), {key for key, _ in known_agents()})
+        self.assertEqual(defaults[AGENT_KEY]["max_output_tokens"], 400)
+        self.assertEqual(defaults[SPECIALIST_KEY]["max_output_tokens"], 1200)

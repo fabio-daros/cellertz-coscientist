@@ -142,6 +142,44 @@ class AgentPromptAdmin(admin.ModelAdmin):
         return False
 
 
+class AgentDefaultsSelect(forms.Select):
+    """A picker that rewrites the limit placeholders when the agent changes.
+
+    Each agent spends differently, so the number an empty box falls back to
+    differs too. Showing one agent's defaults beside another's name is the
+    same confusion the prompt body had.
+    """
+
+    def __init__(self, choices, defaults) -> None:
+        super().__init__(choices=choices)
+        self.defaults = defaults
+
+    def render(self, name, value, attrs=None, renderer=None):
+        select = super().render(name, value, attrs, renderer)
+        script = f"""
+<script>
+(function () {{
+  var defaults = {json.dumps(self.defaults)};
+  var picker = document.getElementById("id_agent_key");
+  if (!picker) return;
+  function apply() {{
+    var chosen = defaults[picker.value] || {{}};
+    Object.keys(chosen).forEach(function (field) {{
+      var box = document.getElementById("id_" + field);
+      if (!box) return;
+      box.setAttribute("placeholder", "default: " + chosen[field]);
+      var help = box.parentNode.querySelector(".help, .helptext");
+      if (help) help.textContent = help.textContent.replace(
+        /Leave blank for [^.]*\\./, "Leave blank for " + chosen[field] + ".");
+    }});
+  }}
+  picker.addEventListener("change", apply);
+  apply();
+}})();
+</script>"""
+        return mark_safe(select + script)
+
+
 class AgentLimitsForm(forms.ModelForm):
     """Only a registered agent, and the code's defaults shown as placeholders."""
 
@@ -156,11 +194,16 @@ class AgentLimitsForm(forms.ModelForm):
             label="Agent and task",
             help_text="Only agents whose limits the code reads are listed.",
         )
+        agents = known_agents()
+        first = agents[0][0] if agents else ""
+        # The browser shows the first option when nothing is selected, so the
+        # form must assume the same agent. Otherwise the page would offer no
+        # default at all, while appearing to have an agent chosen.
         chosen = (
             getattr(self.instance, "agent_key", "")
             or self.data.get("agent_key")
             or self.initial.get("agent_key")
-            or ""
+            or first
         )
         defaults = default_limits(chosen)
         if defaults is None:
@@ -171,6 +214,11 @@ class AgentLimitsForm(forms.ModelForm):
             if name in self.fields:
                 self.fields[name].widget.attrs["placeholder"] = f"default: {value}"
                 self.fields[name].help_text = f"{self.fields[name].help_text} Leave blank for {value}."
+        # And the defaults must follow the dropdown, as the prompt body does.
+        self.fields["agent_key"].widget = AgentDefaultsSelect(
+            choices=list(agents),
+            defaults={key: (default_limits(key).to_dict() if default_limits(key) else {}) for key, _ in agents},
+        )
 
 
 @admin.register(AgentLimitsConfig)
