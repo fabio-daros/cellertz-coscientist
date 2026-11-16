@@ -15,6 +15,7 @@ from cellertz.application.agent_prompts import (
 )
 from cellertz.application.agent_runtime import (
     AgentLimits,
+    model_for_agent,
     register_agent_limits,
     resolve_limits,
 )
@@ -336,7 +337,12 @@ class PlanConfigurationSuggester:
                 system_messages=["The estimated prompt does not fit the shared token budget. The provider was not called."],
             )
             return self._finish(recorded, "token_budget_exceeded", supervisor_estimate, None)
-        supervisor = _invoke(self._model, self._limits, delegation_prompt().text, supervisor_facts)
+        supervisor = _invoke(
+            model_for_agent(DELEGATION_KEY, self._model),
+            self._limits,
+            delegation_prompt().text,
+            supervisor_facts,
+        )
         calls += 1
         if supervisor["error"] == "raised":
             return _unavailable("The Supervisor could not delegate. No scientific action was taken.")
@@ -383,7 +389,12 @@ class PlanConfigurationSuggester:
                 system_messages=["The estimated prompt does not fit the shared token budget. The provider was not called."],
             )
             return self._finish(recorded, "token_budget_exceeded", supervisor_estimate, specialist_estimate)
-        specialist = _invoke(self._model, self._limits, specialist_question, specialist_facts)
+        specialist = _invoke(
+            model_for_agent(SPECIALIST_KEY, self._model),
+            self._limits,
+            specialist_question,
+            specialist_facts,
+        )
         calls += 1
         if specialist["error"] == "raised":
             recorded = _document(

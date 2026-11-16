@@ -28,14 +28,24 @@ class ConversationConfigurationError(Exception):
 def resolve_conversation_model(
     environ: Mapping[str, str] | None = None,
     transport: ChatTransport | None = None,
+    *,
+    model_override: str | None = None,
 ) -> ConversationModel:
+    """Build the model this installation speaks to.
+
+    `model_override` names a different model at the same provider, which is
+    how one agent reasons with a larger model than another. The key, the base
+    and the provider itself are not overridable: those are the installation's,
+    read from its environment and never from a request or a stored row.
+    """
+
     env = os.environ if environ is None else environ
     provider = env.get(PROVIDER_ENV, RECORDED).strip().lower()
     if provider in {"", RECORDED}:
         return RecordedFactsModel()
     if provider != OPENROUTER:
         raise ConversationConfigurationError("invalid_conversation_provider")
-    model = env.get(MODEL_ENV, "").strip()
+    model = (model_override or env.get(MODEL_ENV, "")).strip()
     key = env.get(OPENROUTER_KEY_ENV, "").strip()
     if not model:
         raise ConversationConfigurationError("conversation_model_required")

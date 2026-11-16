@@ -18,6 +18,7 @@ intent and the record states the fact.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, replace
 from typing import Protocol
 
@@ -112,6 +113,45 @@ def resolve_limits(agent_key: str, defaults: AgentLimits) -> ResolvedLimits:
     return ResolvedLimits(agent_key=agent_key, origin=STORED if changed else BUILTIN, limits=limits)
 
 
+# An OpenRouter model id: a vendor, a slash, and the model's name. Validated
+# here as well as in the host, because a store is not the only way in.
+MODEL_ID = re.compile(r"^[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._:-]*$")
+
+
+def resolve_agent_model_id(agent_key: str) -> str | None:
+    """The model this agent reasons with, or None to use the installation's."""
+
+    stored = _stored(agent_key).get("model")
+    if not isinstance(stored, str):
+        return None
+    candidate = stored.strip()
+    return candidate if MODEL_ID.match(candidate) else None
+
+
+def model_for_agent(agent_key: str, fallback: object) -> object:
+    """The agent's own model, or the one the service was given.
+
+    The provider, its key and its base stay the installation's. Only which
+    model answers is per agent, because a delegation needs less of a model
+    than a review of binding-region evidence does.
+    """
+
+    model_id = resolve_agent_model_id(agent_key)
+    if model_id is None:
+        return fallback
+    from cellertz.conversation.config import (
+        ConversationConfigurationError,
+        resolve_conversation_model,
+    )
+
+    try:
+        return resolve_conversation_model(model_override=model_id)
+    except ConversationConfigurationError:
+        # The installation has no live provider, so there is nothing to
+        # override and the recorded model it already holds is the answer.
+        return fallback
+
+
 def _stored(agent_key: str) -> dict[str, float | int | None]:
     provider = _provider
     if provider is None:
@@ -142,7 +182,9 @@ __all__: tuple[str, ...] = (
     "AgentLimitsProvider",
     "ResolvedLimits",
     "default_limits",
+    "model_for_agent",
     "register_agent_limits",
+    "resolve_agent_model_id",
     "resolve_limits",
     "set_agent_limits_provider",
 )

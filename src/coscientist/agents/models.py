@@ -19,6 +19,10 @@ from django.db import models
 from cellertz.application.agent_prompts import agent_label
 
 # `agent.task`: one agent may hold several prompts, and each is its own key.
+MODEL_ID_VALIDATOR = RegexValidator(
+    r"^[a-z0-9][a-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._:-]*$",
+    "A model id is the vendor, a slash, and the model, such as anthropic/claude-opus-5-5.",
+)
 AGENT_KEY = RegexValidator(
     r"^[a-z0-9_]+(\.[a-z0-9_]+)*$",
     "A key is lowercase words joined by underscores, with tasks after a dot.",
@@ -73,6 +77,15 @@ class AgentLimitsConfig(models.Model):
         validators=[AGENT_KEY],
         help_text="The agent and task these limits apply to.",
     )
+    model = models.CharField(
+        max_length=128,
+        blank=True,
+        validators=[MODEL_ID_VALIDATOR],
+        help_text=(
+            "The model this agent reasons with, as the provider names it, such as "
+            "anthropic/claude-opus-5-5. Blank uses the installation's own model."
+        ),
+    )
     max_output_tokens = models.PositiveIntegerField(
         null=True,
         blank=True,
@@ -91,8 +104,8 @@ class AgentLimitsConfig(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "agent limits"
-        verbose_name_plural = "agent limits"
+        verbose_name = "agent model and limits"
+        verbose_name_plural = "agent models and limits"
         ordering = ("agent_key",)
 
     @property

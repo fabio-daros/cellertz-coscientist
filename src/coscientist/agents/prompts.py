@@ -37,7 +37,7 @@ class DjangoAgentPromptProvider:
 class DjangoAgentLimitsProvider:
     """Reads stored limits. A blank field is absent, so the default stands."""
 
-    _FIELDS = ("max_output_tokens", "max_model_calls", "token_budget", "call_timeout_seconds")
+    _FIELDS = ("model", "max_output_tokens", "max_model_calls", "token_budget", "call_timeout_seconds")
 
     def limits(self, agent_key: str) -> dict[str, float | int | None] | None:
         from coscientist.agents.models import AgentLimitsConfig

@@ -25,6 +25,7 @@ from uuid import uuid4
 from cellertz.application.agent_prompts import ResolvedPrompt, register_agent, resolve_prompt
 from cellertz.application.agent_runtime import (
     AgentLimits,
+    model_for_agent,
     register_agent_limits,
     resolve_limits,
 )
@@ -428,6 +429,7 @@ def resolved_prompt() -> ResolvedPrompt:
 
 
 def _complete(model: ConversationModel, facts: tuple[ReadOnlyFact, ...], limits: SupervisorLimits) -> Any:
+    model = model_for_agent(AGENT_KEY, model)
     parameters = inspect.signature(model.complete).parameters
     question = resolved_prompt().text
     arguments: dict[str, Any] = {"facts": facts, "question": question}

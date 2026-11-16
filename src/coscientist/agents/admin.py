@@ -221,7 +221,15 @@ class AgentLimitsForm(forms.ModelForm):
 
     class Meta:
         model = AgentLimitsConfig
-        fields = ("agent_key", "max_output_tokens", "max_model_calls", "token_budget", "call_timeout_seconds", "note")
+        fields = (
+            "agent_key",
+            "model",
+            "max_output_tokens",
+            "max_model_calls",
+            "token_budget",
+            "call_timeout_seconds",
+            "note",
+        )
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -269,6 +277,7 @@ class AgentLimitsAdmin(admin.ModelAdmin):
     form = AgentLimitsForm
     list_display = (
         "label",
+        "model",
         "max_output_tokens",
         "max_model_calls",
         "token_budget",

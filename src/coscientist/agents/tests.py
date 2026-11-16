@@ -415,3 +415,43 @@ class ReadableNamesTests(TestCase):
 
         labels = [label for _key, label in AgentLabelFilter(None, {}, AgentPrompt, None).lookups(None, None)]
         self.assertIn("Hotspot Identification Agent — hotspot suggestion", labels)
+
+
+class StoredModelTests(TestCase):
+    """The model an agent uses, chosen from the admin."""
+
+    def setUp(self) -> None:
+        set_agent_limits_provider(DjangoAgentLimitsProvider())
+        self.addCleanup(set_agent_limits_provider, None)
+
+    def test_no_row_means_the_installations_model(self) -> None:
+        from cellertz.application.agent_runtime import resolve_agent_model_id
+
+        self.assertIsNone(resolve_agent_model_id(AGENT_KEY))
+
+    def test_a_stored_model_is_read_for_that_agent_only(self) -> None:
+        from cellertz.application.agent_runtime import resolve_agent_model_id
+
+        AgentLimitsConfig.objects.create(agent_key=AGENT_KEY, model="anthropic/claude-opus-5-5")
+        self.assertEqual(resolve_agent_model_id(AGENT_KEY), "anthropic/claude-opus-5-5")
+        self.assertIsNone(resolve_agent_model_id(SPECIALIST_KEY))
+
+    def test_a_malformed_model_is_refused_by_the_form(self) -> None:
+        from coscientist.agents.admin import AgentLimitsForm
+
+        form = AgentLimitsForm(data={"agent_key": AGENT_KEY, "model": "claude-opus-5-5"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("model", form.errors)
+
+    def test_a_well_formed_model_is_accepted(self) -> None:
+        from coscientist.agents.admin import AgentLimitsForm
+
+        form = AgentLimitsForm(data={"agent_key": AGENT_KEY, "model": "anthropic/claude-opus-5-5"})
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_model_and_limits_live_on_one_row(self) -> None:
+        row = AgentLimitsConfig.objects.create(
+            agent_key=AGENT_KEY, model="anthropic/claude-opus-5-5", max_output_tokens=900
+        )
+        self.assertEqual(resolve_supervisor_limits({}).max_output_tokens, 900)
+        self.assertEqual(row.model, "anthropic/claude-opus-5-5")
