@@ -20,7 +20,7 @@ from cellertz.application.request_supervisor import (
     resolve_supervisor_limits,
     resolved_prompt,
 )
-from coscientist.agents.models import AgentLimitsConfig, AgentPrompt
+from coscientist.agents.models import AgentLimitsConfig, AgentPrompt, AvailableModel
 from coscientist.agents.prompts import DjangoAgentLimitsProvider, DjangoAgentPromptProvider
 
 RECORDED_SHA = "495fdd31a26980f8e328c1012b2e78c134315ca26050a3d4a3b969a3b68afd9f"
@@ -439,15 +439,20 @@ class StoredModelTests(TestCase):
     def test_a_malformed_model_is_refused_by_the_form(self) -> None:
         from coscientist.agents.admin import AgentLimitsForm
 
+        AvailableModel.objects.create(model_id="anthropic/claude-opus-5-5")
         form = AgentLimitsForm(data={"agent_key": AGENT_KEY, "model": "claude-opus-5-5"})
         self.assertFalse(form.is_valid())
         self.assertIn("model", form.errors)
 
-    def test_a_well_formed_model_is_accepted(self) -> None:
+    def test_a_model_is_accepted_once_the_installation_lists_it(self) -> None:
         from coscientist.agents.admin import AgentLimitsForm
 
-        form = AgentLimitsForm(data={"agent_key": AGENT_KEY, "model": "anthropic/claude-opus-5-5"})
-        self.assertTrue(form.is_valid(), form.errors)
+        data = {"agent_key": AGENT_KEY, "model": "anthropic/claude-opus-5-5"}
+        # Well formed is no longer enough: it has to be a model this
+        # installation keeps, so a name cannot be invented in the form.
+        self.assertFalse(AgentLimitsForm(data=data).is_valid())
+        AvailableModel.objects.create(model_id="anthropic/claude-opus-5-5")
+        self.assertTrue(AgentLimitsForm(data=data).is_valid())
 
     def test_model_and_limits_live_on_one_row(self) -> None:
         row = AgentLimitsConfig.objects.create(
@@ -455,3 +460,52 @@ class StoredModelTests(TestCase):
         )
         self.assertEqual(resolve_supervisor_limits({}).max_output_tokens, 900)
         self.assertEqual(row.model, "anthropic/claude-opus-5-5")
+
+
+class ModelChoiceListTests(TestCase):
+    """An agent is given a model from a list, never from free text."""
+
+    def form(self, **kwargs):
+        from coscientist.agents.admin import AgentLimitsForm
+
+        return AgentLimitsForm(**kwargs)
+
+    def offered(self, form):
+        return [value for value, _label in form.fields["model"].choices]
+
+    def test_an_empty_catalogue_offers_only_the_installations_model(self) -> None:
+        form = self.form()
+        self.assertEqual(self.offered(form), [""])
+        self.assertIn("refresh_openrouter_models", form.fields["model"].help_text)
+
+    def test_enabled_models_are_offered(self) -> None:
+        AvailableModel.objects.create(model_id="anthropic/claude-opus-5-5", label="Claude Opus 5.5")
+        AvailableModel.objects.create(model_id="openai/gpt-4.1-mini", label="GPT-4.1 mini")
+        self.assertEqual(
+            self.offered(self.form()), ["", "anthropic/claude-opus-5-5", "openai/gpt-4.1-mini"]
+        )
+
+    def test_a_disabled_model_is_not_offered(self) -> None:
+        AvailableModel.objects.create(model_id="anthropic/claude-opus-5-5", enabled=False)
+        self.assertEqual(self.offered(self.form()), [""])
+
+    def test_free_text_is_refused_even_when_well_formed(self) -> None:
+        form = self.form(data={"agent_key": AGENT_KEY, "model": "anthropic/claude-opus-5-5"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("model", form.errors)
+
+    def test_a_listed_model_is_accepted(self) -> None:
+        AvailableModel.objects.create(model_id="anthropic/claude-opus-5-5")
+        form = self.form(data={"agent_key": AGENT_KEY, "model": "anthropic/claude-opus-5-5"})
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_blank_is_accepted_and_means_the_installations_model(self) -> None:
+        form = self.form(data={"agent_key": AGENT_KEY, "model": ""})
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_a_retired_model_already_configured_stays_on_the_list(self) -> None:
+        row = AgentLimitsConfig.objects.create(agent_key=AGENT_KEY, model="anthropic/claude-opus-5-5")
+        # The model is no longer offered, but the row still uses it.
+        form = self.form(instance=row)
+        self.assertIn("anthropic/claude-opus-5-5", self.offered(form))
+        self.assertIn("(retired)", dict(form.fields["model"].choices)["anthropic/claude-opus-5-5"])

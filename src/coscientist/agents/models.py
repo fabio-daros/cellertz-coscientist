@@ -114,3 +114,33 @@ class AgentLimitsConfig(models.Model):
 
     def __str__(self) -> str:
         return self.label
+
+
+class AvailableModel(models.Model):
+    """A model this installation may give an agent.
+
+    The list lives here rather than in the code so that using a model the
+    provider released last week does not need a deploy. It is refreshed from
+    the provider's catalogue by a command, and a row may be disabled when an
+    installation does not want to pay for it.
+    """
+
+    model_id = models.CharField(
+        max_length=128,
+        unique=True,
+        validators=[MODEL_ID_VALIDATOR],
+        help_text="As the provider names it, such as anthropic/claude-opus-5-5.",
+    )
+    label = models.CharField(max_length=200, blank=True, help_text="The name a person reads.")
+    enabled = models.BooleanField(
+        default=True, help_text="Offered to agents. Clear it to retire a model without losing the row."
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "available model"
+        verbose_name_plural = "available models"
+        ordering = ("model_id",)
+
+    def __str__(self) -> str:
+        return self.label or self.model_id

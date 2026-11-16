@@ -7,7 +7,7 @@ from django.utils.safestring import mark_safe
 from cellertz.application.agent_prompt_references import referenced_versions
 from cellertz.application.agent_prompts import builtin_body, known_agents
 from cellertz.application.agent_runtime import default_limits
-from coscientist.agents.models import AgentLimitsConfig, AgentPrompt
+from coscientist.agents.models import AgentLimitsConfig, AgentPrompt, AvailableModel
 
 
 class AgentLabelFilter(admin.SimpleListFilter):
@@ -249,6 +249,7 @@ class AgentLimitsForm(forms.ModelForm):
             or self.initial.get("agent_key")
             or first
         )
+        self._offer_models()
         defaults = default_limits(chosen)
         if defaults is None:
             return
@@ -266,6 +267,30 @@ class AgentLimitsForm(forms.ModelForm):
             choices=list(agents),
             defaults={key: (default_limits(key).to_dict() if default_limits(key) else {}) for key, _ in agents},
         )
+
+    def _offer_models(self) -> None:
+        """Offer the models this installation keeps, never free text.
+
+        The value already stored stays on the list even if the model was
+        later retired, so opening a row does not quietly change what the
+        agent is being given.
+        """
+
+        offered = list(
+            AvailableModel.objects.filter(enabled=True).values_list("model_id", "label")
+        )
+        choices = [("", "the installation's own model")]
+        choices += [(model_id, label or model_id) for model_id, label in offered]
+        current = getattr(self.instance, "model", "") or ""
+        if current and current not in {model_id for model_id, _ in offered}:
+            choices.append((current, f"{current} (retired)"))
+        help_text = "Blank uses the installation's own model."
+        if not offered:
+            help_text += " No model is listed yet: run refresh_openrouter_models."
+        self.fields["model"] = forms.ChoiceField(
+            choices=choices, required=False, label="Model", help_text=help_text
+        )
+
 
 
 @admin.register(AgentLimitsConfig)
@@ -289,3 +314,11 @@ class AgentLimitsAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         # The agent a row belongs to is not something an edit should move.
         return ("agent_key",) if obj else ()
+
+
+@admin.register(AvailableModel)
+class AvailableModelAdmin(admin.ModelAdmin):
+    list_display = ("model_id", "label", "enabled", "updated_at")
+    list_filter = ("enabled",)
+    search_fields = ("model_id", "label")
+    ordering = ("model_id",)
