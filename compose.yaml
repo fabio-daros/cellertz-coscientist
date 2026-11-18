@@ -35,6 +35,7 @@ services:
 
     volumes:
       - hermes_data:/opt/data
+      - ./hermes/config.yaml:/opt/data/config.yaml:ro
 
     ports:
       - "127.0.0.1:8642:8642"

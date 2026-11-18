@@ -1,0 +1,18 @@
+# Hermes as a pluggable runtime under evaluation (Work Plan v2, next step 05).
+# It may reach Cellertz only through the MCP: no terminal, files or web, and
+# no memory of its own to compete with the Second Brain.
+model:
+  default: "anthropic/claude-haiku-5.5"
+  provider: "openrouter"
+  base_url: "https://openrouter.ai/api/v1"
+
+memory:
+  memory_enabled: false
+  user_profile_enabled: false
+
+platform_toolsets:
+  api_server: [cellertz]
+
+mcp_servers:
+  cellertz:
+    url: http://cellertz-mcp:8000/mcp
