@@ -10,6 +10,16 @@ model:
 auxiliary:
   free_only: true
 
+# The caller names the model (the admin's choice); without this Hermes
+# silently runs its default and reports the requested name.
+platforms:
+  api_server:
+    extra:
+      direct_model_requests: true
+
+skills:
+  creation_nudge_interval: 0
+
 memory:
   memory_enabled: false
   user_profile_enabled: false
