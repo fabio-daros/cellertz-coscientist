@@ -57,3 +57,6 @@ node_modules/
 
 # Django runtime state: database, collected static
 var/
+
+# Reference documents: large and not code
+docs/*.pdf
