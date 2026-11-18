@@ -44,8 +44,9 @@ class Command(BaseCommand):
             if wanted and wanted not in model_id.lower():
                 continue
             label = entry.get("name") if isinstance(entry.get("name"), str) else ""
+            # A new model arrives withdrawn: offering it is a person's choice, not the catalogue's.
             _row, created = AvailableModel.objects.update_or_create(
-                model_id=model_id, defaults={"label": label}
+                model_id=model_id, defaults={"label": label}, create_defaults={"label": label, "enabled": False}
             )
             added, updated = (added + 1, updated) if created else (added, updated + 1)
 

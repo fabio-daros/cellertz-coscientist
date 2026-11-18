@@ -286,7 +286,7 @@ class AgentLimitsForm(forms.ModelForm):
             choices.append((current, f"{current} (retired)"))
         help_text = "Blank uses the installation's own model."
         if not offered:
-            help_text += " No model is listed yet: run refresh_openrouter_models."
+            help_text += " No model is offered yet: run refresh_openrouter_models, then enable one in Available models."
         self.fields["model"] = forms.ChoiceField(
             choices=choices, required=False, label="Model", help_text=help_text
         )
@@ -319,6 +319,7 @@ class AgentLimitsAdmin(admin.ModelAdmin):
 @admin.register(AvailableModel)
 class AvailableModelAdmin(admin.ModelAdmin):
     list_display = ("model_id", "label", "enabled", "updated_at")
+    list_editable = ("enabled",)
     list_filter = ("enabled",)
     search_fields = ("model_id", "label")
     ordering = ("model_id",)

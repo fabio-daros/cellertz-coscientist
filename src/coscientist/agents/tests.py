@@ -563,3 +563,17 @@ class CurateModelsTests(TestCase):
         AgentLimitsConfig.objects.create(agent_key=AGENT_KEY, model="a/two")
         self.run_curate("--keep", "a/one", "--yes", "--force")
         self.assertFalse(AvailableModel.objects.get(model_id="a/two").enabled)
+
+    def test_a_refresh_adds_new_models_withdrawn_and_keeps_the_choice(self) -> None:
+        from io import StringIO
+        from unittest import mock
+
+        from coscientist.agents.management.commands.refresh_openrouter_models import Command
+
+        self.run_curate("--keep", "a/one", "--yes")
+        catalogue = {"data": [{"id": "a/one", "name": "One"}, {"id": "a/two"}, {"id": "c/new", "name": "New"}]}
+        with mock.patch.object(Command, "_fetch", return_value=catalogue):
+            call_command("refresh_openrouter_models", stdout=StringIO())
+        self.assertEqual(self.offered(), {"a/one"})
+        self.assertEqual(AvailableModel.objects.get(model_id="a/one").label, "One")
+        self.assertEqual(AvailableModel.objects.get(model_id="c/new").label, "New")
