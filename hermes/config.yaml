@@ -2,9 +2,13 @@
 # It may reach Cellertz only through the MCP: no terminal, files or web, and
 # no memory of its own to compete with the Second Brain.
 model:
-  default: "anthropic/claude-haiku-5.5"
+  default: "nvidia/nemotron-3.5-lightning:free"
   provider: "openrouter"
   base_url: "https://openrouter.ai/api/v1"
+
+# Hermes falls back to a paid model for its own background tasks unless told not to.
+auxiliary:
+  free_only: true
 
 memory:
   memory_enabled: false
