@@ -579,3 +579,31 @@ class CurateModelsTests(TestCase):
         self.assertEqual(self.offered(), {"a/one"})
         self.assertEqual(AvailableModel.objects.get(model_id="a/one").label, "One")
         self.assertEqual(AvailableModel.objects.get(model_id="c/new").label, "New")
+
+
+class CoordinatorStoredPromptTests(TestCase):
+    """The coordinator reads the admin through the same store as the Supervisor."""
+
+    def setUp(self) -> None:
+        set_agent_prompt_provider(DjangoAgentPromptProvider())
+        self.addCleanup(set_agent_prompt_provider, None)
+
+    def test_a_stored_refinement_body_reaches_the_system_message(self) -> None:
+        from cellertz.application import attempt_coordinator as coordinator
+
+        AgentPrompt.objects.create(
+            agent_key=coordinator.REFINEMENT_KEY,
+            version=3,
+            body="Change the filter policy before the length.",
+        )
+        text, provenance = coordinator.system_prompt()
+        self.assertIn("Change the filter policy before the length.", text)
+        self.assertNotIn(coordinator._REFINEMENT_BODY, text)
+        # The clause a stored body must never be able to remove.
+        self.assertIn("Drafting a refinement is not approving one.", text)
+        self.assertEqual(provenance[1], {
+            "agent_key": coordinator.REFINEMENT_KEY,
+            "origin": "stored",
+            "version": 3,
+            "sha256": provenance[1]["sha256"],
+        })
