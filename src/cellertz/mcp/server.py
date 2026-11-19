@@ -14,6 +14,11 @@ from pydantic_core import core_schema
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from cellertz.mcp.attempt_evidence import (
+    compare_model_metrics as read_attempt_metrics,
+)
+from cellertz.mcp.attempt_evidence import get_attempt_evidence as read_attempt_evidence
+from cellertz.mcp.attempt_evidence import list_verified_attempts as read_attempts
 from cellertz.mcp.capabilities import cellertz_capabilities
 from cellertz.mcp.episodic_memory import (
     scientific_memory_find_candidate as read_scientific_memory_candidate,
@@ -65,7 +70,9 @@ mcp = MCPServer(
         "protein_get_run_state, scientific_memory_get_run, "
         "scientific_memory_find_runs_by_target, "
         "scientific_memory_find_candidate, knowledge_get, "
-        "knowledge_neighbors, knowledge_ground_package. "
+        "knowledge_neighbors, knowledge_ground_package, "
+        "list_verified_attempts, get_attempt_evidence, "
+        "compare_model_metrics. "
         "protein_get_run_state is operational status. "
         "scientific_memory_* returns recorded observed episodic results, "
         "not validated scientific knowledge. knowledge_* is semantic "
@@ -119,6 +126,24 @@ def scientific_memory_find_candidate(
 ) -> dict:
     """Return observed candidate occurrences across runs. Read-only."""
     return read_scientific_memory_candidate(candidate_id, limit)
+
+
+@mcp.tool()
+def list_verified_attempts() -> dict:
+    """List verified manual attempts. Does not rank them. Read-only."""
+    return read_attempts()
+
+
+@mcp.tool()
+def get_attempt_evidence(attempt_id: str) -> dict:
+    """Return one verified attempt's selection rule and provenance. Read-only."""
+    return read_attempt_evidence(attempt_id)
+
+
+@mcp.tool()
+def compare_model_metrics(attempt_id: str, metrics: list[str] | None = None) -> dict:
+    """Return recorded metric cells for one attempt; all when metrics is omitted. Read-only."""
+    return read_attempt_metrics(attempt_id, metrics)
 
 
 @mcp.tool()
