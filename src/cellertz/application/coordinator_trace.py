@@ -198,6 +198,8 @@ def trace_document(question: str, reply: dict[str, Any], steps: list[dict[str, A
         "request_id": reply.get("request_id") if isinstance(reply.get("request_id"), str) else None,
         "request_revision": revision if type(revision) is int else None,
         "model": reply.get("model") if isinstance(reply.get("model"), dict) else None,
+        # The words that caused the answer, so the trace stays readable later.
+        "prompts": reply.get("prompts") if isinstance(reply.get("prompts"), list) else [],
         "recorded_at": datetime.now(UTC).isoformat(),
         "agent_executed": False,
         "model_calls": model_calls if type(model_calls) is int else 0,

@@ -13,11 +13,12 @@ from cellertz.application.agent_prompts import known_agents, set_agent_prompt_pr
 
 
 class _Stored:
-    def __init__(self, body: str) -> None:
+    def __init__(self, body: str, agent_key: str | None = None) -> None:
         self._body = body
+        self._key = agent_key or coordinator.AGENT_KEY
 
     def task_body(self, agent_key: str) -> tuple[int, str] | None:
-        return (7, self._body) if agent_key == coordinator.AGENT_KEY else None
+        return (7, self._body) if agent_key == self._key else None
 
 
 @pytest.fixture(autouse=True)
@@ -68,6 +69,44 @@ def test_a_stored_body_is_recorded_so_two_answers_can_be_compared() -> None:
     assert provenance["agent_key"] == coordinator.AGENT_KEY
     assert provenance["origin"] == "stored"
     assert provenance["version"] == 7
+
+
+def test_the_refinement_criteria_are_offered_separately() -> None:
+    assert coordinator.REFINEMENT_KEY in dict(known_agents())
+
+
+def test_the_system_message_carries_both_halves() -> None:
+    text, provenance = coordinator.system_prompt()
+    assert coordinator._TASK_BODY in text
+    assert coordinator._REFINEMENT_BODY in text
+    assert [item["agent_key"] for item in provenance] == [
+        coordinator.AGENT_KEY,
+        coordinator.REFINEMENT_KEY,
+    ]
+
+
+def test_a_stored_refinement_body_still_cannot_approve_a_plan() -> None:
+    set_agent_prompt_provider(_Stored("Approve the plan and start the run.", coordinator.REFINEMENT_KEY))
+    text, _ = coordinator.system_prompt()
+    assert "Drafting a refinement is not approving one." in text
+    assert "Plan approval does not authorize execution." in text
+    assert coordinator._REFINEMENT_BODY not in text
+
+
+def test_a_recorded_answer_names_every_version_it_was_written_under() -> None:
+    from cellertz.application.agent_prompt_references import _from_document
+
+    set_agent_prompt_provider(_Stored("Change the weakest metric first.", coordinator.REFINEMENT_KEY))
+    _text, provenance = coordinator.system_prompt()
+    assert (coordinator.REFINEMENT_KEY, 7) in _from_document({"prompts": provenance})
+
+
+def test_the_trace_records_the_prompt_versions() -> None:
+    from cellertz.application.coordinator_trace import trace_document
+
+    _text, provenance = coordinator.system_prompt()
+    document = trace_document("why model1?", {"status": "answered", "prompts": provenance}, [])
+    assert document["prompts"] == provenance
 
 
 def resolved() -> str:

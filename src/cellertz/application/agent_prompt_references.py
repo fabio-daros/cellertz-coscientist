@@ -21,6 +21,7 @@ from pathlib import Path
 _SOURCES = (
     ("design-supervisor-analyses.sqlite", "design_supervisor_analyses", "document"),
     ("design-plan-suggestions.sqlite", "design_plan_suggestions", "document"),
+    ("coordinator-traces.sqlite", "coordinator_traces", "document"),
 )
 
 

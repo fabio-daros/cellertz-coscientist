@@ -159,6 +159,7 @@ class CatalogueTests(TestCase):
                 "protein_design_supervisor.delegation",
                 "hotspot_identification_agent.suggestion",
                 "protein_design_coordinator.attempt_review",
+                "protein_design_coordinator.refinement",
             },
         )
 

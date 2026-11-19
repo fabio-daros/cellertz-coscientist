@@ -128,13 +128,45 @@ _GOVERNANCE = (
     "Do not reveal private reasoning."
 )
 
+REFINEMENT_KEY = "protein_design_coordinator.refinement"
+REFINEMENT_LABEL = "Protein Design Coordinator — refinement criteria"
+
+# What makes a refinement worth drafting is the science owner's judgement, and
+# it is the half of the Evolution step a person should be able to change.
+_REFINEMENT_BODY = (
+    "When you draft a refinement, change what the evidence shows is weak. "
+    "Prefer a gap a tool reported over a new idea, change one thing at a time, "
+    "and say which recorded value the change answers."
+)
+
+# A draft is still only a draft, whatever the body above is tuned to say.
+_REFINEMENT_GOVERNANCE = (
+    "Base a change note on values the tools returned and name them. "
+    "Do not invent a metric, a filter policy, or a constraint the professor did not state. "
+    "Drafting a refinement is not approving one."
+)
+
 register_agent(AGENT_KEY, AGENT_LABEL, _TASK_BODY)
+register_agent(REFINEMENT_KEY, REFINEMENT_LABEL, _REFINEMENT_BODY)
 
 
 def resolved_prompt() -> ResolvedPrompt:
-    """The text sent as the system message, and where its body came from."""
+    """The coordinator's own half of the system message."""
 
     return resolve_prompt(AGENT_KEY, _TASK_BODY, _GOVERNANCE, preamble=_PREAMBLE)
+
+
+def resolved_refinement() -> ResolvedPrompt:
+    """The Evolution half: what a refinement should change, and what it may not do."""
+
+    return resolve_prompt(REFINEMENT_KEY, _REFINEMENT_BODY, _REFINEMENT_GOVERNANCE)
+
+
+def system_prompt() -> tuple[str, list[dict[str, object]]]:
+    """The system message, and the prompt versions that composed it."""
+
+    parts = (resolved_prompt(), resolved_refinement())
+    return " ".join(part.text for part in parts), [part.provenance() for part in parts]
 
 _TOOLS = [
     {
@@ -514,7 +546,7 @@ class AttemptCoordinator:
         reply["request_revision"] = memory.request_revision
         reply["model"] = self._model_record
         # Two answers written under different prompt versions are not comparable.
-        reply["prompt"] = resolved_prompt().provenance()
+        reply["prompts"] = system_prompt()[1]
         reply["model_calls"] = account["calls"]
         reply["usage"] = {
             "reported_calls": account["reported_calls"],
@@ -717,7 +749,7 @@ def _transcript(memory: _Memory) -> list[dict[str, Any]]:
         "generation_plan_approved": False if memory.plan is None else memory.plan.get("approved"),
     }
     return [
-        {"role": "system", "content": resolved_prompt().text},
+        {"role": "system", "content": system_prompt()[0]},
         {"role": "system", "content": "Conversation context: " + json.dumps(context, sort_keys=True)},
         *memory.messages,
     ]
