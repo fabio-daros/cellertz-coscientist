@@ -12,6 +12,7 @@ class AgentsConfig(AppConfig):
         # serves Django alone and would otherwise never import the science,
         # so the list would be empty and no prompt could be added.
         from cellertz.application import (  # noqa: F401
+            attempt_coordinator,
             plan_configuration_suggestion,
             request_supervisor,
         )

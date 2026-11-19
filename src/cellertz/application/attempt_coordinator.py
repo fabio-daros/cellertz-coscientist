@@ -27,6 +27,8 @@ from cellertz.application.attempt_evidence import (
     resolve_attempt,
     specialist_for,
 )
+from cellertz.application.agent_prompts import ResolvedPrompt, register_agent, resolve_prompt
+from cellertz.application.agent_runtime import model_for_agent
 from cellertz.application.coordinator_harness import (
     VALIDATION_LIMITATIONS,
     CoordinatorLimits,
@@ -52,7 +54,12 @@ _SUBSTANTIVE = {
     "propose_refinement",
 }
 
-_SYSTEM = (
+AGENT_KEY = "protein_design_coordinator.attempt_review"
+AGENT_LABEL = "Protein Design Coordinator — attempt review"
+
+# The coordinator states its rules before the professor's question, so those
+# rules are the preamble and only the judgement near the end is storable.
+_PREAMBLE = (
     "You are the Protein Design coordinator for a professor. "
     "Interpret a request written in Portuguese or English. Reply in English. "
     "Call tools for every number, hash, contact count, and selection rule. "
@@ -101,10 +108,18 @@ _SYSTEM = (
     "An empty interface_residues field does not make n_InterfaceResidues empty or absent. "
     "compare_model_metrics returns valid_metrics. Request only those identifiers. "
     "If its status is unsupported_metrics, report that tool error and the valid identifiers. "
-    "Do not say the measurement is unavailable, unrecorded, or absent because the name was rejected. "
+    "Do not say the measurement is unavailable, unrecorded, or absent because the name was rejected."
+)
+
+# Which gaps are worth naming next is judgement about this science rather than
+# a rule the reply must obey, so it is the half an installation may tune.
+_TASK_BODY = (
     "When asked what to investigate next, name gaps the tools show: "
     "scientific evaluation pending, no_filters is not quality, platform ipSAE was not computed, "
-    "the interface_residues field is empty, and model2 has no 5 angstrom contacts. "
+    "the interface_residues field is empty, and model2 has no 5 angstrom contacts."
+)
+
+_GOVERNANCE = (
     "If execution_constraints.unmet is true, report that unmet constraint and its recorded files. "
     "Do not say that no unmet trajectory execution constraints are reported. "
     "If execution constraints were not reported, say so. That is not compliance. "
@@ -112,6 +127,14 @@ _SYSTEM = (
     "Separate tool evidence from your interpretation. "
     "Do not reveal private reasoning."
 )
+
+register_agent(AGENT_KEY, AGENT_LABEL, _TASK_BODY)
+
+
+def resolved_prompt() -> ResolvedPrompt:
+    """The text sent as the system message, and where its body came from."""
+
+    return resolve_prompt(AGENT_KEY, _TASK_BODY, _GOVERNANCE, preamble=_PREAMBLE)
 
 _TOOLS = [
     {
@@ -490,6 +513,8 @@ class AttemptCoordinator:
         reply["request_id"] = memory.request_id
         reply["request_revision"] = memory.request_revision
         reply["model"] = self._model_record
+        # Two answers written under different prompt versions are not comparable.
+        reply["prompt"] = resolved_prompt().provenance()
         reply["model_calls"] = account["calls"]
         reply["usage"] = {
             "reported_calls": account["reported_calls"],
@@ -592,7 +617,7 @@ def coordinator_from_environment(
     """Use the configured chat model. A recorded-facts model is not a fallback."""
 
     limits = resolve_coordinator_limits()
-    model = resolve_conversation_model()
+    model = model_for_agent(AGENT_KEY, resolve_conversation_model())
     complete = None
     model_record = None
     if isinstance(model, ChatCompletionModel):
@@ -692,7 +717,7 @@ def _transcript(memory: _Memory) -> list[dict[str, Any]]:
         "generation_plan_approved": False if memory.plan is None else memory.plan.get("approved"),
     }
     return [
-        {"role": "system", "content": _SYSTEM},
+        {"role": "system", "content": resolved_prompt().text},
         {"role": "system", "content": "Conversation context: " + json.dumps(context, sort_keys=True)},
         *memory.messages,
     ]

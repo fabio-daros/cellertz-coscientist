@@ -148,7 +148,7 @@ class FormWhitespaceTests(TestCase):
 class CatalogueTests(TestCase):
     """Every agent that reads a stored prompt must be offerable."""
 
-    def test_all_three_prompts_are_listed(self) -> None:
+    def test_every_prompt_is_listed(self) -> None:
         from cellertz.application.agent_prompts import known_agents
 
         keys = {key for key, _label in known_agents()}
@@ -158,6 +158,7 @@ class CatalogueTests(TestCase):
                 "protein_design_supervisor.request_analysis",
                 "protein_design_supervisor.delegation",
                 "hotspot_identification_agent.suggestion",
+                "protein_design_coordinator.attempt_review",
             },
         )
 
