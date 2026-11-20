@@ -26,7 +26,7 @@ import os
 import re
 import sqlite3
 import threading
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -1088,6 +1088,47 @@ def _complete_texts(raw: Any) -> tuple[list[str], str | None]:
         elif not (item is None or item == ""):
             refused = True
     return kept, ("refused_items" if refused else None)
+
+
+def declared_hotspot_blocks(
+    fields: Mapping[str, Any],
+    suggestions: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """The blocks this plan declared, or why it declared none.
+
+    Nothing new is stored for this. A plan already records which suggestion
+    each field was adopted from, and resets that origin to the person as soon
+    as the value is edited, so following it back is the only honest source of
+    what the plan actually declared. A block set that no longer matches the
+    plan's own residues is refused rather than audited: it would describe a
+    recommendation the plan no longer carries.
+    """
+
+    residues = fields.get("hotspot_assumption")
+    residues = residues.strip() if isinstance(residues, str) else ""
+    if fields.get("hotspot_assumption_provenance") != "adopted_suggestion":
+        return {"status": "not_adopted", "blocks": [], "residues": residues}
+    suggestion_id = fields.get("hotspot_assumption_suggestion_id")
+    if not isinstance(suggestion_id, str) or not suggestion_id.strip():
+        return {"status": "origin_incomplete", "blocks": [], "residues": residues}
+    for document in suggestions:
+        if document.get("suggestion_id") != suggestion_id:
+            continue
+        for item in document.get("suggestions") or []:
+            if not isinstance(item, dict) or item.get("field") != "hotspot_assumption":
+                continue
+            suggested = item.get("suggested")
+            if not isinstance(suggested, str) or suggested.strip() != residues:
+                return {"status": "residues_changed", "blocks": [], "residues": residues}
+            blocks = item.get("blocks")
+            return {
+                "status": "adopted",
+                "suggestion_id": suggestion_id,
+                "blocks": blocks if isinstance(blocks, list) else [],
+                "residues": residues,
+            }
+        return {"status": "suggestion_has_no_hotspots", "blocks": [], "residues": residues}
+    return {"status": "suggestion_absent", "blocks": [], "residues": residues}
 
 
 _SELECTIVITY = ("HIGH", "MEDIUM", "LOW")
