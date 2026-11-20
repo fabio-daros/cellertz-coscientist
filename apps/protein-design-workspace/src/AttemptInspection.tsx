@@ -26,8 +26,26 @@ type ModelRecord = {
   recorded_contacts: Record<string, number | null> | null;
 };
 
+export type HotspotAuditBlock = {
+  id: string;
+  declared: number;
+  contact_n: number;
+  contact_pct: number;
+  contacted_residues: number[];
+};
+
+export type HotspotAudit = {
+  status: string;
+  plan_id?: string;
+  declared_residues?: string;
+  measures_overlap_not_steering?: boolean;
+  cutoff_angstrom?: number;
+  blocks: HotspotAuditBlock[];
+};
+
 export type AttemptInspectionRecord = {
   status: string;
+  hotspot_audit?: HotspotAudit;
   error?: string;
   attempt_id: string;
   candidate: string;
@@ -223,6 +241,57 @@ function budgetText(saved: SavedSpecialistRecord): string {
     return "Attempted-trajectory-budget compliance is established. This does not establish overall execution compliance.";
   }
   return "Attempted-trajectory-budget compliance is recorded as not established. This is separate from PDB integrity and scientific validation.";
+}
+
+// Why there is no audit matters as much as the numbers: a plan that declared no
+// block was never asked for one, and must not read as a run that missed it.
+const AUDIT_ABSENT: Record<string, string> = {
+  not_available: "The plan store was not available, so declared hotspot blocks were not read.",
+  attempt_has_no_saved_plan: "No saved plan produced this attempt, so there is no declared block to audit.",
+  not_adopted: "The hotspot set on this plan was written by hand, not adopted from an agent, so it has no blocks.",
+  residues_changed: "The hotspot residues were edited after the suggestion was adopted, so its blocks no longer describe this plan.",
+  suggestion_absent: "The adopted suggestion is no longer stored, so its blocks cannot be read.",
+  origin_incomplete: "The plan records an adopted hotspot without naming the suggestion it came from.",
+  suggestion_has_no_hotspots: "The adopted suggestion carries no hotspot recommendation.",
+  no_blocks_declared: "This plan declared no hotspot block.",
+  hash_mismatch: "A served PDB does not match the verified hash, so contact was not calculated.",
+};
+
+function HotspotAuditPanel({ audit }: { audit?: HotspotAudit }) {
+  if (!audit) {
+    return null;
+  }
+  if (audit.status !== "calculated") {
+    return (
+      <section aria-label="Hotspot block audit">
+        <h3>Hotspot block audit</h3>
+        <p>{AUDIT_ABSENT[audit.status] ?? `No audit was produced (${audit.status}).`}</p>
+      </section>
+    );
+  }
+  return (
+    <section aria-label="Hotspot block audit">
+      <h3>Hotspot block audit</h3>
+      <p>
+        Measured from heavy-atom distance at {audit.cutoff_angstrom} Å in the verified PDB, against the blocks this
+        plan declared{audit.declared_residues ? ` (${audit.declared_residues})` : ""}.
+      </p>
+      {audit.measures_overlap_not_steering ? (
+        <p>
+          These blocks were declared on the plan, not given to the generator that produced these structures. This is
+          how much they overlap, not whether the generator obeyed them.
+        </p>
+      ) : null}
+      <ul>
+        {audit.blocks.map((block) => (
+          <li key={block.id}>
+            <b>{block.id}</b>: {block.contact_n} of {block.declared} declared residues reached ({block.contact_pct}%)
+            {block.contacted_residues.length > 0 ? ` — ${block.contacted_residues.join(", ")}` : ""}.
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 function SavedSpecialist({ record }: { record: AttemptInspectionRecord }) {
@@ -537,6 +606,7 @@ function InspectionBody({
           </article>
         ))}
       </div>
+      <HotspotAuditPanel audit={record.hotspot_audit} />
       <SavedSpecialist record={record} />
       <p>
         {record.ranking_note} Recorded review ranking_score is {record.ranking_score}.

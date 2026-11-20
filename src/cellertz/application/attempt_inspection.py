@@ -15,6 +15,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 
 from cellertz.application.attempt_evidence import (
+    audit_hotspot_blocks,
     AttemptFiles,
     geometric_contacts,
     load_catalog,
@@ -60,6 +61,7 @@ def handle_attempt_get(
     catalog: dict[str, dict[str, Any]] | None = None,
     traces_for: Any | None = None,
     journey_documents: list[dict[str, Any]] | None = None,
+    declared_blocks_for: Any | None = None,
 ) -> tuple[int, dict[str, Any]] | StructureArtifact | None:
     """Serve an inspection or one verified PDB. Other paths return None."""
 
@@ -81,6 +83,7 @@ def handle_attempt_get(
             _query(split.query),
             traces_for=traces_for,
             journey_documents=journey_documents,
+            declared_blocks_for=declared_blocks_for,
         )
     if parts[3] == "structures" and len(parts) == 5 and parts[4].endswith(".pdb"):
         model_id = parts[4][:-4]
@@ -96,6 +99,7 @@ def inspect_attempt(
     query: dict[str, str],
     traces_for: Any | None = None,
     journey_documents: list[dict[str, Any]] | None = None,
+    declared_blocks_for: Any | None = None,
 ) -> tuple[int, dict[str, Any]]:
     candidate = query.get("candidate", "")
     model_id = query.get("model", "")
@@ -133,7 +137,55 @@ def inspect_attempt(
         "attempted-trajectory-budget compliance, or a missing constraint record."
     )
     payload.update(_trace_view(resolved_id, traces_for))
+    payload["hotspot_audit"] = _hotspot_audit(resolved_id, item, journey_documents, declared_blocks_for)
     return 200, payload
+
+
+def _plan_of_attempt(attempt_id: str, documents: list[dict[str, Any]] | None) -> str | None:
+    """The plan whose saved execution produced this attempt."""
+
+    for document in documents or []:
+        if not isinstance(document, dict):
+            continue
+        execution = document.get("execution")
+        if isinstance(execution, dict) and execution.get("attempt_id") == attempt_id:
+            plan_id = execution.get("plan_id") or document.get("plan_id")
+            return plan_id if isinstance(plan_id, str) and plan_id.strip() else None
+    return None
+
+
+def _hotspot_audit(
+    attempt_id: str,
+    item: dict[str, Any],
+    documents: list[dict[str, Any]] | None,
+    declared_blocks_for: Any | None,
+) -> dict[str, Any]:
+    """How much of each block the plan declared this attempt actually reached.
+
+    An attempt with no plan behind it, or a plan that declared no blocks, is
+    reported as such. Saying "0 of 0 reached" about a run that was never given
+    a block would read as a failure to hit a target nobody set.
+    """
+
+    if declared_blocks_for is None:
+        return {"status": "not_available", "blocks": []}
+    plan_id = _plan_of_attempt(attempt_id, documents)
+    if plan_id is None:
+        return {"status": "attempt_has_no_saved_plan", "blocks": []}
+    declared = declared_blocks_for(plan_id)
+    if not isinstance(declared, dict):
+        return {"status": "not_available", "blocks": []}
+    blocks = declared.get("blocks") or []
+    if not blocks:
+        return {"status": declared.get("status", "no_blocks_declared"), "plan_id": plan_id, "blocks": []}
+    audited = audit_hotspot_blocks(blocks, item)
+    audited["plan_id"] = plan_id
+    audited["declared_status"] = declared.get("status")
+    audited["declared_residues"] = declared.get("residues", "")
+    # The blocks were declared for this plan, not handed to the generator that
+    # produced these structures, so this is overlap and not obedience.
+    audited["measures_overlap_not_steering"] = True
+    return audited
 
 
 def read_verified_structure(

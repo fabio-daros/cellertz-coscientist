@@ -215,6 +215,7 @@ def configured_handler(
                 self.path,
                 traces_for=reader if callable(reader) else None,
                 journey_documents=documents,
+                declared_blocks_for=_declared_blocks_reader(generation_plans, request_supervisor),
             )
             if attempt_result is not None:
                 if isinstance(attempt_result, StructureArtifact):
@@ -465,6 +466,40 @@ def _plan_suggester(supervisor: Any) -> Any:
     )
     setattr(supervisor, "_plan_suggester", cached)
     return cached
+
+
+def _declared_blocks_reader(generation_plans: Any, supervisor: Any) -> Any:
+    """Follow a plan's adopted origin back to the blocks it declared.
+
+    Returns None when either store is absent, so the inspection says the audit
+    is unavailable rather than reporting that no block was declared.
+    """
+
+    if generation_plans is None or supervisor is None:
+        return None
+
+    def declared(plan_id: str) -> dict[str, Any] | None:
+        from cellertz.application.plan_configuration_suggestion import declared_hotspot_blocks
+
+        plan = generation_plans.published(plan_id)
+        if not isinstance(plan, dict):
+            return None
+        fields = plan.get("fields")
+        if not isinstance(fields, dict):
+            return None
+        store = getattr(_plan_suggester(supervisor), "_store", None)
+        listing = getattr(store, "list_for", None)
+        if not callable(listing):
+            return None
+        # The suggestion store is keyed by the request, which the plan carries
+        # only inside its conversation id, as a design-request or a
+        # design-journey. An unreadable one still answers with the plan's own
+        # provenance: a hand-written hotspot needs no suggestion to be read.
+        parts = str(plan.get("conversation_id") or "").split(":")
+        request_id = parts[1] if len(parts) > 2 and parts[0] in {"design-request", "design-journey"} else ""
+        return declared_hotspot_blocks(fields, listing(request_id) if request_id else [])
+
+    return declared
 
 
 def _knowledge_reader() -> Any:
