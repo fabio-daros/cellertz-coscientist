@@ -1150,11 +1150,17 @@ def _validated_blocks(
             continue
         chain = str(_RESIDUE_LABEL.match(numbered[0][1]).group(1))
         lo, hi = numbered[0][0], numbered[-1][0]
+        # A spatially clustered patch is often not a run of consecutive numbers,
+        # and calling such a set a range would overstate what was recommended.
+        contiguous = len(numbered) == hi - lo + 1
         seen.add(block_id)
         blocks.append(
             {
                 "id": block_id,
-                "label": f"{chain}{lo}-{chain}{hi}" if lo != hi else f"{chain}{lo}",
+                "contiguous": contiguous,
+                "label": (f"{chain}{lo}-{chain}{hi}" if contiguous else f"{chain}{lo}..{chain}{hi}")
+                if lo != hi
+                else f"{chain}{lo}",
                 "chain": chain,
                 "lo": lo,
                 "hi": hi,

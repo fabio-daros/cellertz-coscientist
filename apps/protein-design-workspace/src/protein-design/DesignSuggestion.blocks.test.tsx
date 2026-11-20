@@ -11,6 +11,7 @@ const BLOCKS: HotspotBlock[] = [
     lo: 66,
     hi: 125,
     n: 3,
+    contiguous: false,
     residues: ["A66", "A124", "A125"],
     priority: 2,
     selectivity: "MEDIUM",
@@ -24,6 +25,7 @@ const BLOCKS: HotspotBlock[] = [
     lo: 19,
     hi: 56,
     n: 2,
+    contiguous: false,
     residues: ["A19", "A56"],
     priority: 1,
     selectivity: "HIGH",
@@ -91,11 +93,11 @@ describe("hotspot blocks in the suggestion panel", () => {
     render(<DesignSuggestion suggestion={view(BLOCKS)} onApply={vi.fn()} />);
     const items = screen.getByRole("list", { name: "Hotspot blocks" }).querySelectorAll("li");
     expect(items).toHaveLength(2);
-    expect(items[0].textContent).toContain("A A19-A56 — 2 residues (A19, A56).");
+    expect(items[0].textContent).toContain("2 residues spread between A19 and A56, not a continuous stretch (A19, A56).");
     expect(items[0].textContent).toContain("Priority 1.");
     expect(items[0].textContent).toContain("Selectivity HIGH.");
     expect(items[0].textContent).toContain("Risk: Competes with the native ligand.");
-    expect(items[1].textContent).toContain("B A66-A125 — 3 residues");
+    expect(items[1].textContent).toContain("3 residues spread between A66 and A125");
   });
 
   it("says contact is not measured, so a block is not read as a result", () => {

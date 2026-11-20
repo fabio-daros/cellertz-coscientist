@@ -152,6 +152,7 @@ export type HotspotBlock = {
   lo: number;
   hi: number;
   n: number;
+  contiguous: boolean;
   residues: string[];
   priority: number | null;
   selectivity: string;
@@ -529,6 +530,7 @@ function parseBlock(value: unknown): HotspotBlock[] {
     lo: row.lo,
     hi: row.hi,
     n: typeof row.n === "number" ? row.n : 0,
+    contiguous: row.contiguous === true,
     residues: Array.isArray(row.residues) ? row.residues.filter((item): item is string => typeof item === "string") : [],
     priority: typeof row.priority === "number" ? row.priority : null,
     selectivity: typeof row.selectivity === "string" ? row.selectivity : "",

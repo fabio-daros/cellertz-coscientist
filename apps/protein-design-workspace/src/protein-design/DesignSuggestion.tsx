@@ -184,7 +184,11 @@ function HotspotBlocks({ blocks }: { blocks?: HotspotBlock[] }) {
     <ul aria-label="Hotspot blocks">
       {ordered.map((block) => (
         <li key={block.id}>
-          <b>{block.id}</b> {block.label} — {block.n} residue{block.n === 1 ? "" : "s"} ({block.residues.join(", ")}).
+          <b>{block.id}</b>{" "}
+          {block.contiguous
+            ? `${block.label} — ${block.n} residue${block.n === 1 ? "" : "s"}`
+            : `${block.n} residue${block.n === 1 ? "" : "s"} spread between ${block.chain}${block.lo} and ${block.chain}${block.hi}, not a continuous stretch`}
+          {" "}({block.residues.join(", ")}).
           {block.priority === null ? " Priority not recorded." : ` Priority ${block.priority}.`}
           {block.selectivity ? ` Selectivity ${block.selectivity}.` : " Selectivity not recorded."}
           {block.rationale ? ` ${block.rationale}` : ""}

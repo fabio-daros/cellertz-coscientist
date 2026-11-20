@@ -687,3 +687,11 @@ def test_an_unusable_selectivity_or_priority_is_not_recorded():
     assert block["selectivity"] == ""
     assert block["priority"] is None
     assert any("selectivity was not recorded" in note for note in shown["system_messages"])
+
+
+def test_a_block_of_scattered_residues_is_not_called_a_range():
+    shown = _blocks_shown(
+        [{"id": "A", "residues": ["A20"], "priority": 1, "selectivity": "HIGH", "rationale": "r", "risks": "x"}]
+    )
+    hotspot = next(item for item in shown["suggestions"] if item["field"] == "hotspot_assumption")
+    assert hotspot["blocks"][0]["contiguous"] is True
