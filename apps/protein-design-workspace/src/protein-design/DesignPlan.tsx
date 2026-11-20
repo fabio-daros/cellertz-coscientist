@@ -222,6 +222,19 @@ function progressMessages(plan: DesignPlanRecord): string[] {
   return lines;
 }
 
+const RUN_REFUSED: Record<string, string> = {
+  plan_revision_conflict: "The plan changed since this page loaded. It was reloaded; try again.",
+  plan_identity_rejected: "This plan belongs to a different saved request revision.",
+  configuration_incomplete: "The number of candidate designs is not saved on this request revision.",
+  inputs_unverified: "The registered input files are not verified against their hashes.",
+  inputs_unreadable: "A registered input file could not be read.",
+  gpu_not_selected: "No GPU is assigned on this plan.",
+  execution_not_permitted: "This server does not allow the demonstration run.",
+  attempt_directory_unconfigured: "The server has no directory configured for attempts.",
+  plan_absent: "The plan was not found.",
+  journey_absent: "No journey is linked to this request revision.",
+};
+
 const EXECUTION_PENDENCY: Record<string, string> = {
   gpu: "A GPU is not selected.",
   cpu_count: "CPUs are still to be defined.",
@@ -934,6 +947,8 @@ function RunDesign({
         };
       };
       if (response.status === 409 || body.status === "plan_revision_conflict") {
+        // The reason was being swallowed, leaving a console error as the only trace.
+        setFailure(RUN_REFUSED[body.status ?? ""] ?? `The run was refused (${body.status ?? response.status}).`);
         onStale();
         return;
       }
