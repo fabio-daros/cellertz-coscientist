@@ -458,6 +458,11 @@ def audit_hotspot_blocks(blocks: list[dict[str, Any]], item: dict[str, Any]) -> 
             {
                 "id": block.get("id"),
                 "declared": len(numbers),
+                # The labels too, so a drawing colours what was declared rather
+                # than guessing the chain from the count.
+                "declared_residues": [
+                    label for label in (block.get("residues") or []) if _RESIDUE_NUMBER.match(str(label))
+                ],
                 "contact_n": len(best),
                 "contact_pct": round(100 * len(best) / len(numbers)) if numbers else 0,
                 "contacted_residues": best,

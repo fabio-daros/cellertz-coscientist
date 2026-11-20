@@ -28,6 +28,7 @@ type ModelRecord = {
 
 export type HotspotAuditBlock = {
   id: string;
+  declared_residues?: string[];
   declared: number;
   contact_n: number;
   contact_pct: number;

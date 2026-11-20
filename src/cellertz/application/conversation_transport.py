@@ -153,6 +153,11 @@ def configured_handler(
 
                 journey_result = handle_design_journey(journeys, "GET", path, b"")
                 if journey_result is not None:
+                    if path.endswith("/results") and journey_result[0] == 200:
+                        _add_hotspot_audit(
+                            journey_result[1],
+                            _declared_blocks_reader(generation_plans, request_supervisor),
+                        )
                     self._send(journey_result[0], journey_result[1])
                     return
             if path == DESIGN_DRAFT_PATH:
@@ -466,6 +471,45 @@ def _plan_suggester(supervisor: Any) -> Any:
     )
     setattr(supervisor, "_plan_suggester", cached)
     return cached
+
+
+def _add_hotspot_audit(document: Any, declared_blocks_for: Any) -> None:
+    """Attach, to each result, how much of its plan's declared blocks it reached.
+
+    The journey service knows nothing of plans or suggestions, so the two are
+    joined here rather than threaded through it. A result the audit cannot
+    speak about keeps the reason instead of a number.
+    """
+
+    if not isinstance(document, dict) or not isinstance(document.get("results"), list):
+        return
+    from cellertz.application.attempt_evidence import audit_hotspot_blocks, load_catalog, resolve_attempt_id
+
+    catalog = None
+    for result in document["results"]:
+        if not isinstance(result, dict):
+            continue
+        plan_id = result.get("plan_id")
+        attempt_id = result.get("attempt_id")
+        if declared_blocks_for is None or not isinstance(plan_id, str) or not isinstance(attempt_id, str):
+            result["hotspot_audit"] = {"status": "not_available", "blocks": []}
+            continue
+        declared = declared_blocks_for(plan_id)
+        blocks = declared.get("blocks") if isinstance(declared, dict) else None
+        if not blocks:
+            status = declared.get("status", "no_blocks_declared") if isinstance(declared, dict) else "not_available"
+            result["hotspot_audit"] = {"status": status, "blocks": []}
+            continue
+        catalog = load_catalog() if catalog is None else catalog
+        found = resolve_attempt_id(catalog, attempt_id)
+        if found["status"] != "ok":
+            result["hotspot_audit"] = {"status": "attempt_not_in_catalog", "blocks": []}
+            continue
+        audited = audit_hotspot_blocks(blocks, found["item"])
+        # Declared on the plan, not handed to the generator that produced these.
+        audited["measures_overlap_not_steering"] = True
+        audited["declared_residues"] = declared.get("residues", "")
+        result["hotspot_audit"] = audited
 
 
 def _declared_blocks_reader(generation_plans: Any, supervisor: Any) -> Any:

@@ -28,7 +28,22 @@ type Review = {
   pdb_verified: boolean;
   models: Record<string, ModelRecord>;
 };
+type HotspotAuditBlock = {
+  id: string;
+  declared: number;
+  contact_n: number;
+  contact_pct: number;
+  contacted_residues: number[];
+};
+type HotspotAudit = {
+  status: string;
+  cutoff_angstrom?: number;
+  declared_residues?: string;
+  measures_overlap_not_steering?: boolean;
+  blocks: HotspotAuditBlock[];
+};
 type AttemptResult = {
+  hotspot_audit?: HotspotAudit;
   attempt_id: string | null;
   status: string | null;
   diagnosis: string | null;
@@ -122,6 +137,57 @@ function AttemptResults({ document }: { document: ResultsDocument }) {
   );
 }
 
+// Why there is no audit matters as much as a number: a plan that declared no
+// block was never asked for one, and must not read as a run that missed it.
+const AUDIT_ABSENT: Record<string, string> = {
+  not_available: "Declared hotspot blocks were not read, so no audit was produced.",
+  not_adopted: "The hotspot set on this plan was written by hand, not adopted from an agent, so it has no blocks.",
+  residues_changed: "The hotspot residues were edited after the suggestion was adopted, so its blocks no longer describe this plan.",
+  suggestion_absent: "The adopted suggestion is no longer stored, so its blocks cannot be read.",
+  origin_incomplete: "The plan records an adopted hotspot without naming the suggestion it came from.",
+  suggestion_has_no_hotspots: "The adopted suggestion carries no hotspot recommendation.",
+  no_blocks_declared: "This plan declared no hotspot block.",
+  attempt_not_in_catalog: "This attempt is not in the verified catalogue, so contact was not calculated.",
+  hash_mismatch: "A served PDB does not match the verified hash, so contact was not calculated.",
+};
+
+function HotspotAuditPanel({ audit }: { audit?: HotspotAudit }) {
+  if (!audit) {
+    return null;
+  }
+  if (audit.status !== "calculated") {
+    return (
+      <section aria-label="Hotspot block audit">
+        <h4>Hotspot block audit</h4>
+        <p>{AUDIT_ABSENT[audit.status] ?? `No audit was produced (${audit.status}).`}</p>
+      </section>
+    );
+  }
+  return (
+    <section aria-label="Hotspot block audit">
+      <h4>Hotspot block audit</h4>
+      <p>
+        Measured from heavy-atom distance at {audit.cutoff_angstrom} Å in the verified PDB, against the blocks this
+        plan declared{audit.declared_residues ? ` (${audit.declared_residues})` : ""}.
+      </p>
+      {audit.measures_overlap_not_steering ? (
+        <p>
+          These blocks were declared on the plan, not given to the generator that produced these structures. This is
+          how much they overlap, not whether the generator obeyed them.
+        </p>
+      ) : null}
+      <ul>
+        {audit.blocks.map((block) => (
+          <li key={block.id}>
+            <b>{block.id}</b>: {block.contact_n} of {block.declared} declared residues reached ({block.contact_pct}%)
+            {block.contacted_residues.length > 0 ? ` — ${block.contacted_residues.join(", ")}` : ""}.
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function AttemptCard({ result, document }: { result: AttemptResult; document: ResultsDocument }) {
   const review = result.review;
   const representative = review ? representativeModel(review) : null;
@@ -132,6 +198,7 @@ function AttemptCard({ result, document }: { result: AttemptResult; document: Re
   return (
     <article aria-label={result.attempt_id ?? "Attempt"}>
       <p>Status: {completed ? "Generation completed" : result.status}.</p>
+      <HotspotAuditPanel audit={result.hotspot_audit} />
       {review?.scientific_evaluation === "pending" ? <p>Scientific evaluation pending.</p> : null}
       {review?.candidate ? <p>Candidate {review.candidate}.</p> : null}
       {sequence ? <p>Length: {sequence.length} amino acids.</p> : null}
