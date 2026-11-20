@@ -10,6 +10,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -421,6 +422,59 @@ def geometric_contacts(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def audit_hotspot_blocks(blocks: list[dict[str, Any]], item: dict[str, Any]) -> dict[str, Any]:
+    """How much of each declared block the designs actually reached.
+
+    The atlas records this per block as contact_n and contact_pct, measured
+    after the run. A block is a claim until this is computed, and the professor's
+    campaigns turned on exactly this number: a declared block the designs never
+    touched is a specification the optimiser ignored, not a binding site.
+    """
+
+    contacts = geometric_contacts(item)
+    if contacts["status"] != "calculated":
+        return {
+            "status": contacts["status"],
+            "detail": contacts.get("detail", ""),
+            "blocks": [],
+        }
+    reached: dict[str, set[int]] = {
+        model_id: set(model["calculated"]["target_residues"])
+        for model_id, model in contacts["models"].items()
+    }
+    audited = []
+    for block in blocks:
+        numbers = []
+        for label in block.get("residues") or []:
+            match = _RESIDUE_NUMBER.match(str(label))
+            if match is not None:
+                numbers.append(int(match.group(2)))
+        per_model = {
+            model_id: sorted(number for number in numbers if number in hit)
+            for model_id, hit in reached.items()
+        }
+        best = max(per_model.values(), key=len, default=[])
+        audited.append(
+            {
+                "id": block.get("id"),
+                "declared": len(numbers),
+                "contact_n": len(best),
+                "contact_pct": round(100 * len(best) / len(numbers)) if numbers else 0,
+                "contacted_residues": best,
+                "per_model": per_model,
+            }
+        )
+    return {
+        "status": "calculated",
+        "cutoff_angstrom": CONTACT_ANGSTROM,
+        "declared_but_not_reached_is_not_a_binding_site": True,
+        "blocks": audited,
+    }
+
+
+_RESIDUE_NUMBER = re.compile(r"^([A-Za-z])(\d{1,6})$")
+
+
 def _contacts_for_pdb(path: Path) -> dict[str, Any]:
     target: list[tuple[int, float, float, float]] = []
     binder: list[tuple[int, float, float, float]] = []
@@ -445,6 +499,9 @@ def _contacts_for_pdb(path: Path) -> dict[str, Any]:
     return {
         "binder_residues_in_contact": len(binder_hit),
         "target_residues_in_contact": len(target_hit),
+        # The identities, not only the count: a declared hotspot block can only
+        # be audited against the residues the binder actually reached.
+        "target_residues": sorted(target_hit),
         "residue_pairs": len(pairs),
         "minimum_heavy_atom_distance_angstrom": None if minimum is None else round(minimum, 3),
         "target_heavy_atoms": len(target),
