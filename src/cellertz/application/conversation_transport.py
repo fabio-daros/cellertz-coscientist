@@ -158,6 +158,7 @@ def configured_handler(
                             journey_result[1],
                             _declared_blocks_reader(generation_plans, request_supervisor),
                         )
+                        _add_developability_screen(journey_result[1])
                     self._send(journey_result[0], journey_result[1])
                     return
             if path == DESIGN_DRAFT_PATH:
@@ -510,6 +511,34 @@ def _add_hotspot_audit(document: Any, declared_blocks_for: Any) -> None:
         audited["measures_overlap_not_steering"] = True
         audited["declared_residues"] = declared.get("residues", "")
         result["hotspot_audit"] = audited
+
+
+def _add_developability_screen(document: Any) -> None:
+    """Attach, to each result, the atlas pre-filters measured on its structures.
+
+    The screen needs no plan: it reads the verified PDB alone. A result whose
+    attempt is not in the catalogue keeps the reason, because a design that was
+    never screened must not read as one that passed.
+    """
+
+    if not isinstance(document, dict) or not isinstance(document.get("results"), list):
+        return
+    from cellertz.application.attempt_evidence import load_catalog, resolve_attempt_id, screen_developability
+
+    catalog = None
+    for result in document["results"]:
+        if not isinstance(result, dict):
+            continue
+        attempt_id = result.get("attempt_id")
+        if not isinstance(attempt_id, str):
+            result["developability_screen"] = {"status": "not_available", "models": {}}
+            continue
+        catalog = load_catalog() if catalog is None else catalog
+        found = resolve_attempt_id(catalog, attempt_id)
+        if found["status"] != "ok":
+            result["developability_screen"] = {"status": "attempt_not_in_catalog", "models": {}}
+            continue
+        result["developability_screen"] = screen_developability(found["item"])
 
 
 def _declared_blocks_reader(generation_plans: Any, supervisor: Any) -> Any:

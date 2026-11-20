@@ -479,6 +479,171 @@ def audit_hotspot_blocks(blocks: list[dict[str, Any]], item: dict[str, Any]) -> 
 
 _RESIDUE_NUMBER = re.compile(r"^([A-Za-z])(\d{1,6})$")
 
+# The atlas pre-filter thresholds, from the professor's BCMA campaign: 11,430
+# accepted designs -> 7,540 on liabilities -> 842 on occlusion -> 754 on charge.
+# They are his numbers, not ours.
+THRESHOLDS_FROM = "engager_target_atlas_bcma_campaign"
+NET_CHARGE_LIMIT = 2
+OCCLUSION_LIMIT = 8
+# S-S is ~2.05 A; beyond this the two thiols are not bonded.
+DISULFIDE_ANGSTROM = 2.5
+FILTER_ORDER = ("unpaired_cysteine", "glycosylation_sequon", "occlusion_footprint", "net_charge")
+_THREE_TO_ONE = {
+    "ALA": "A", "ARG": "R", "ASN": "N", "ASP": "D", "CYS": "C",
+    "GLN": "Q", "GLU": "E", "GLY": "G", "HIS": "H", "ILE": "I",
+    "LEU": "L", "LYS": "K", "MET": "M", "PHE": "F", "PRO": "P",
+    "SER": "S", "THR": "T", "TRP": "W", "TYR": "Y", "VAL": "V",
+}
+
+
+def screen_developability(
+    item: dict[str, Any],
+    ligand_residues: object = (),
+) -> dict[str, Any]:
+    """The atlas pre-filters, measured from the verified PDB.
+
+    The professor screens before he ranks, and the order is his: sequence
+    liabilities first, then how much of the natural ligand's footprint the
+    design occludes, then net charge. A rejected design is named by the filter
+    that rejected it, so the screen can be argued with.
+
+    The sequence and the disulfide pairing are read from the structure, never
+    from a review field. An unverified PDB refuses the screen.
+    """
+
+    if not item["pdb_verified"]:
+        return {
+            "status": "hash_mismatch",
+            "detail": "A served PDB does not match the verified hash, so the screen was not run on it.",
+            "models": {},
+        }
+    ligand = sorted({int(number) for number in ligand_residues or ()})
+    contacts = geometric_contacts(item)
+    models: dict[str, Any] = {}
+    for model_id, model in item["models"].items():
+        # Chain B, the same binder chain ``_contacts_for_pdb`` reads.
+        residues, thiols = _binder_chain(model["pdb_path"].read_text(encoding="utf-8"), "B")
+        sequence = "".join(name for _, name in residues)
+        cysteines = _cysteine_pairing(residues, thiols)
+        sequons = _glycosylation_sequons(residues)
+        charge = sum(sequence.count(name) for name in "KR") - sum(sequence.count(name) for name in "DE")
+        reached = set(contacts["models"][model_id]["calculated"]["target_residues"])
+        occluded = [number for number in ligand if number in reached]
+        rejected = None
+        if cysteines["unpaired"]:
+            rejected = "unpaired_cysteine"
+        elif sequons:
+            rejected = "glycosylation_sequon"
+        elif ligand and len(occluded) > OCCLUSION_LIMIT:
+            rejected = "occlusion_footprint"
+        elif charge > NET_CHARGE_LIMIT:
+            rejected = "net_charge"
+        models[model_id] = {
+            "binder_chain": "B",
+            "sequence": sequence,
+            "length": len(sequence),
+            "cysteines": cysteines,
+            "sequons": sequons,
+            "net_charge": charge,
+            "net_charge_limit": NET_CHARGE_LIMIT,
+            "net_charge_rule": "K+R minus D+E, at neutral pH; histidine is not counted",
+            "occlusion": (
+                {"status": "not_declared", "limit": OCCLUSION_LIMIT}
+                if not ligand
+                else {
+                    "status": "measured",
+                    "ligand_residues": len(ligand),
+                    "footprint": len(occluded),
+                    "occluded_residues": occluded,
+                    "limit": OCCLUSION_LIMIT,
+                }
+            ),
+            "rejected_by": rejected,
+            "verdict": "rejected" if rejected else "passed_measured_filters",
+            # shortcut: no plan field declares the natural ligand's footprint
+            # yet, so occlusion stays unscreened; declare it with target
+            # preparation (step 5 of the mBER pipeline).
+            "unscreened": [] if ligand else ["occlusion_footprint"],
+        }
+    return {
+        "status": "calculated",
+        "thresholds_from": THRESHOLDS_FROM,
+        "filter_order": list(FILTER_ORDER),
+        "models": models,
+    }
+
+
+def _binder_chain(
+    pdb: str,
+    chain: str,
+) -> tuple[list[tuple[int, str]], dict[int, tuple[float, float, float]]]:
+    """The chain's residues in order, and the coordinate of each cysteine thiol."""
+
+    residues: dict[int, str] = {}
+    thiols: dict[int, tuple[float, float, float]] = {}
+    for line in pdb.splitlines():
+        if not line.startswith("ATOM") or line[21:22].strip() != chain:
+            continue
+        name = _THREE_TO_ONE.get(line[17:20].strip().upper())
+        if name is None:
+            continue
+        try:
+            resseq = int(line[22:26])
+        except ValueError:
+            continue
+        residues[resseq] = name
+        if name == "C" and line[12:16].strip() == "SG":
+            try:
+                thiols[resseq] = (float(line[30:38]), float(line[38:46]), float(line[46:54]))
+            except ValueError:
+                continue
+    return sorted(residues.items()), thiols
+
+
+def _cysteine_pairing(
+    residues: list[tuple[int, str]],
+    thiols: dict[int, tuple[float, float, float]],
+) -> dict[str, Any]:
+    """Which cysteines hold a disulfide. A free thiol is the liability.
+
+    A cysteine whose SG atom the file does not carry cannot be shown to be
+    paired, so it is reported as unpaired and named: a screen that passed an
+    unjudged liability would be worse than one that over-flags it.
+    """
+
+    cysteines = [number for number, name in residues if name == "C"]
+    paired: set[int] = set()
+    for first in thiols:
+        for second in thiols:
+            if first < second and math.dist(thiols[first], thiols[second]) <= DISULFIDE_ANGSTROM:
+                paired.update((first, second))
+    return {
+        "cysteines": cysteines,
+        "unpaired": [number for number in cysteines if number not in paired],
+        "without_sg_atom": [number for number in cysteines if number not in thiols],
+        "disulfide_angstrom": DISULFIDE_ANGSTROM,
+    }
+
+
+def _glycosylation_sequons(residues: list[tuple[int, str]]) -> list[str]:
+    """N-X-S/T with X not proline, over residues numbered consecutively.
+
+    The triplet must be consecutive in the structure: read across a chain
+    break, three residues that are not neighbours would be a false sequon.
+    """
+
+    by_number = dict(residues)
+    found = []
+    for number, name in residues:
+        if name != "N":
+            continue
+        middle = by_number.get(number + 1)
+        last = by_number.get(number + 2)
+        if middle is None or middle == "P" or last not in {"S", "T"}:
+            continue
+        found.append(f"N{number}-{middle}-{last}{number + 2}")
+    return found
+
 
 def _contacts_for_pdb(path: Path) -> dict[str, Any]:
     target: list[tuple[int, float, float, float]] = []

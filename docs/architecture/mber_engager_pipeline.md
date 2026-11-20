@@ -131,8 +131,15 @@ the installation registers the profiles, a person picks one.
 2. **Hotspot audit.** After a run, measure how many declared blocks the designs
    actually contacted, and record it. This is what makes a block a claim rather
    than decoration, and it is what the atlas does by hand.
-3. **Screening.** Cys, sequon, charge and occlusion filters in the critique
-   stage. This is Phase 3 item 06, developability, which has no implementation.
+3. **Screening.** Cys, sequon, charge and occlusion filters, in the atlas's own
+   order. `screen_developability` measures them from the verified PDB: the
+   sequence and the disulfide pairing are read from the structure, never from a
+   review field, and a rejected design is named by the filter that rejected it.
+   The results panel shows the screen for the model on screen.
+   **Occlusion does not run yet:** no plan field declares the natural ligand's
+   footprint, so that filter reports `not_declared` and the design is reported
+   as having passed the *measured* filters, never as having passed. Step 5
+   declares the footprint and turns it on.
 4. **Two-axis ranking** with Pareto front and greedy diversity, as its own
    protocol.
 5. **Target preparation and seeding** exposed as plan fields, since they are the

@@ -42,8 +42,25 @@ type HotspotAudit = {
   measures_overlap_not_steering?: boolean;
   blocks: HotspotAuditBlock[];
 };
+type ScreenedModel = {
+  length: number;
+  net_charge: number;
+  net_charge_limit: number;
+  cysteines: { unpaired: number[]; without_sg_atom: number[] };
+  sequons: string[];
+  occlusion: { status: string; footprint?: number; ligand_residues?: number; limit: number };
+  rejected_by: string | null;
+  verdict: string;
+  unscreened: string[];
+};
+type DevelopabilityScreen = {
+  status: string;
+  thresholds_from?: string;
+  models: Record<string, ScreenedModel>;
+};
 type AttemptResult = {
   hotspot_audit?: HotspotAudit;
+  developability_screen?: DevelopabilityScreen;
   attempt_id: string | null;
   status: string | null;
   diagnosis: string | null;
@@ -188,6 +205,70 @@ function HotspotAuditPanel({ audit }: { audit?: HotspotAudit }) {
   );
 }
 
+// The filter that rejected a design, in the words of the screen that ran it.
+const REJECTED_BY: Record<string, string> = {
+  unpaired_cysteine: "a free cysteine thiol",
+  glycosylation_sequon: "an N-X-S/T glycosylation sequon",
+  occlusion_footprint: "occluding too much of the natural ligand's footprint",
+  net_charge: "net charge above the limit",
+};
+const SCREEN_ABSENT: Record<string, string> = {
+  not_available: "This result names no attempt, so no structure was screened.",
+  attempt_not_in_catalog: "This attempt is not in the verified catalogue, so it was not screened.",
+  hash_mismatch: "A served PDB does not match the verified hash, so the screen was not run on it.",
+};
+
+function DevelopabilityPanel({ screen, modelId }: { screen?: DevelopabilityScreen; modelId: string }) {
+  if (!screen) {
+    return null;
+  }
+  const screened = screen.models[modelId];
+  if (!screened) {
+    return (
+      <section aria-label="Developability screen">
+        <h3>Developability screen</h3>
+        <p>{SCREEN_ABSENT[screen.status] ?? `No screen was produced (${screen.status}).`}</p>
+      </section>
+    );
+  }
+  return (
+    <section aria-label="Developability screen">
+      <h3>Developability screen</h3>
+      <p>
+        {screened.rejected_by
+          ? `Rejected by ${REJECTED_BY[screened.rejected_by] ?? screened.rejected_by}.`
+          : "Passed every filter that could be measured."}
+      </p>
+      <ul>
+        <li>
+          Free cysteine thiols: {screened.cysteines.unpaired.length === 0 ? "none" : screened.cysteines.unpaired.join(", ")}
+          {screened.cysteines.without_sg_atom.length > 0
+            ? ` (${screened.cysteines.without_sg_atom.join(", ")} carry no SG atom in the file, so pairing could not be shown)`
+            : ""}
+          .
+        </li>
+        <li>Glycosylation sequons: {screened.sequons.length === 0 ? "none" : screened.sequons.join(", ")}.</li>
+        <li>
+          Net charge: {screened.net_charge} (limit +{screened.net_charge_limit}, K+R minus D+E).
+        </li>
+        <li>
+          Ligand occlusion:{" "}
+          {screened.occlusion.status === "measured"
+            ? `${screened.occlusion.footprint} of ${screened.occlusion.ligand_residues} declared ligand residues reached (limit ${screened.occlusion.limit}).`
+            : "no ligand footprint is declared for this target, so this filter did not run."}
+        </li>
+      </ul>
+      {screened.unscreened.length > 0 ? (
+        <p>Not screened: {screened.unscreened.join(", ")}. A design that passed is not a design that passed everything.</p>
+      ) : null}
+      <p>
+        Thresholds from the professor&apos;s own campaign, measured here from the verified structure, not from a review
+        field. This is a pre-filter, not a score.
+      </p>
+    </section>
+  );
+}
+
 function AttemptCard({ result, document }: { result: AttemptResult; document: ResultsDocument }) {
   const review = result.review;
   const representative = review ? representativeModel(review) : null;
@@ -199,6 +280,7 @@ function AttemptCard({ result, document }: { result: AttemptResult; document: Re
     <article aria-label={result.attempt_id ?? "Attempt"}>
       <p>Status: {completed ? "Generation completed" : result.status}.</p>
       <HotspotAuditPanel audit={result.hotspot_audit} />
+      <DevelopabilityPanel screen={result.developability_screen} modelId={modelId} />
       {review?.scientific_evaluation === "pending" ? <p>Scientific evaluation pending.</p> : null}
       {review?.candidate ? <p>Candidate {review.candidate}.</p> : null}
       {sequence ? <p>Length: {sequence.length} amino acids.</p> : null}

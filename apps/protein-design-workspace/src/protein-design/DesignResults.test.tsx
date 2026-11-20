@@ -21,6 +21,34 @@ const owned = {
       recorded_at: "2026-11-08T13:25:27Z",
       duration: "Script execution for 2 trajectories took: 0 hours, 7 minutes, 25 seconds",
       executor_log: "Finished all designs.",
+      developability_screen: {
+        status: "calculated",
+        thresholds_from: "engager_target_atlas_bcma_campaign",
+        models: {
+          model1: {
+            length: 65,
+            net_charge: -3,
+            net_charge_limit: 2,
+            cysteines: { unpaired: [], without_sg_atom: [] },
+            sequons: [],
+            occlusion: { status: "not_declared", limit: 8 },
+            rejected_by: null,
+            verdict: "passed_measured_filters",
+            unscreened: ["occlusion_footprint"],
+          },
+          model2: {
+            length: 65,
+            net_charge: 4,
+            net_charge_limit: 2,
+            cysteines: { unpaired: [22], without_sg_atom: [] },
+            sequons: ["N31-A-T33"],
+            occlusion: { status: "measured", footprint: 3, ligand_residues: 18, limit: 8 },
+            rejected_by: "unpaired_cysteine",
+            verdict: "rejected",
+            unscreened: [],
+          },
+        },
+      },
       review: {
         candidate: "PDL1_l65_s597806_mpnn1",
         filter_policy: "no_filters",
@@ -148,6 +176,24 @@ it("shows only the selected request results and keeps the earlier failure", asyn
   await user.click(screen.getByRole("tab", { name: "Results" }));
   expect(await screen.findByText("No results for this request.")).toBeInTheDocument();
   expect(screen.queryByText("PDL1_l65_s597806_mpnn1.")).not.toBeInTheDocument();
+});
+
+it("screens the structure on screen, and says which filter did not run", async () => {
+  const user = userEvent.setup();
+  window.history.replaceState({}, "", "/?panel=results&request=request_owned");
+  render(<ProteinDesignModule />);
+  const panel = await screen.findByRole("region", { name: "Developability screen" });
+  expect(panel).toHaveTextContent("Passed every filter that could be measured.");
+  expect(panel).toHaveTextContent("Net charge: -3 (limit +2, K+R minus D+E).");
+  expect(panel).toHaveTextContent("no ligand footprint is declared for this target");
+  expect(panel).toHaveTextContent("Not screened: occlusion_footprint.");
+
+  await user.click(screen.getByRole("button", { name: "Structure prediction 2" }));
+  expect(panel).toHaveTextContent("Rejected by a free cysteine thiol.");
+  expect(panel).toHaveTextContent("Free cysteine thiols: 22.");
+  expect(panel).toHaveTextContent("Glycosylation sequons: N31-A-T33.");
+  expect(panel).toHaveTextContent("3 of 18 declared ligand residues reached (limit 8).");
+  expect(panel).not.toHaveTextContent("Not screened:");
 });
 
 it("reloads the selected request results without starting a run", async () => {
