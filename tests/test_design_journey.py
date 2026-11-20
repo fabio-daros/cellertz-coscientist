@@ -4462,3 +4462,16 @@ def test_results_follow_the_selected_request_and_leave_other_attempts_unread(tmp
     assert served.body == model1
     refused = handle_attempt_get("/api/attempts/attempt.historical/structures/model1.pdb")
     assert isinstance(refused, tuple) and refused[0] == 404
+
+
+def test_a_note_does_not_refuse_the_run_but_a_real_question_does() -> None:
+    from cellertz.application.design_journey import _open_questions
+
+    note = {"field": "hotspot_assumption", "question": "The stated hotspot was kept.", "blocking": False}
+    real = {"field": "gpu", "question": "Which GPU?", "blocking": True}
+    unmarked = {"field": "gpu", "question": "Which GPU?"}
+    assert _open_questions({"questions": [note]}) == []
+    assert _open_questions({"questions": [note, real]}) == [real]
+    # A payload from a server that does not mark its questions is read as blocking.
+    assert _open_questions({"questions": [unmarked]}) == [unmarked]
+    assert _open_questions({}) == []

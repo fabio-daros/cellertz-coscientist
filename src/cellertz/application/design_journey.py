@@ -672,10 +672,10 @@ class DesignJourneyService:
             or published.get("revision") != parsed["revision"]
             or published.get("digest") != parsed["digest"]
             or published.get("input_registration") != "verified"
-            or published.get("questions")
+            or _open_questions(published)
         ):
             blockers = ["input_identity_rejected"]
-            if published is not None and published.get("questions"):
+            if published is not None and _open_questions(published):
                 blockers = ["open_questions"]
             if published is not None and published.get("digest") != parsed["digest"]:
                 blockers = ["revision_mismatch"]
@@ -3340,8 +3340,17 @@ def _with_launch(document: dict[str, Any], execution: dict[str, Any]) -> dict[st
     return updated
 
 
+def _open_questions(published: Mapping[str, Any]) -> list[Any]:
+    """Questions still to be answered. The plan marks a note as not blocking."""
+
+    found = published.get("questions")
+    if not isinstance(found, list):
+        return []
+    return [item for item in found if not (isinstance(item, Mapping) and item.get("blocking") is False)]
+
+
 def _run_configuration(published: Mapping[str, Any], plans: Any) -> str | None:
-    if published.get("questions"):
+    if _open_questions(published):
         return "configuration_incomplete"
     fields = published.get("fields") if isinstance(published.get("fields"), dict) else {}
     if fields.get("input_hashes_verified_against_files") is not True:
