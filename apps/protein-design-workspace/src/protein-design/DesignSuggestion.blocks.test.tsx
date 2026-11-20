@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { DesignSuggestion, defaultPicked } from "./DesignSuggestion";
+import { blockingQuestions } from "./design-plan";
 import type { HotspotBlock, PlanSuggestion } from "./design-plan";
 
 const BLOCKS: HotspotBlock[] = [
@@ -157,5 +158,19 @@ describe("what is ticked before the person touches anything", () => {
 
   it("ticks nothing when there is no suggestion", () => {
     expect(defaultPicked(null)).toEqual({});
+  });
+});
+
+describe("a note does not hold up review", () => {
+  const note = { field: "hotspot_assumption", question: "The stated hotspot was kept.", blocking: false };
+  const real = { field: "filter_policy", question: "Which filter policy?", blocking: true };
+
+  it("keeps only the questions that must be answered", () => {
+    expect(blockingQuestions([note, real])).toEqual([real]);
+  });
+
+  it("treats a question with no mark as blocking, which is what older plans carry", () => {
+    const old = { field: "gpu", question: "Which GPU?", blocking: true };
+    expect(blockingQuestions([old])).toEqual([old]);
   });
 });

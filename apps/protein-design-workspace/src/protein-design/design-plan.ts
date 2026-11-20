@@ -18,7 +18,13 @@ export type PlanSummary = {
 export type PlanQuestion = {
   field: string;
   question: string;
+  blocking: boolean;
 };
+
+/** A note is shown but does not hold up review; the server marks it. */
+export function blockingQuestions(questions: readonly PlanQuestion[]): PlanQuestion[] {
+  return questions.filter((item) => item.blocking);
+}
 
 export type PlanParameter = {
   field: string;
@@ -721,7 +727,7 @@ function parsePlan(value: unknown, requestId: string): DesignPlanRecord | null {
     if (typeof question.field !== "string" || typeof question.question !== "string" || question.question.trim() === "") {
       return [];
     }
-    return [{ field: question.field, question: question.question }];
+    return [{ field: question.field, question: question.question, blocking: question.blocking !== false }];
   });
   if (questions.length !== record.questions.length) {
     return null;

@@ -8,6 +8,7 @@ import {
   type PlanFact,
   type PlanRevisionEdits,
   type SuggestionChoice,
+  blockingQuestions,
 } from "./design-plan";
 import type { SelectedDesignRequest } from "./DesignRequest";
 import { DesignSuggestion, EditPlanWithAgentButton, usePlanSuggestion } from "./DesignSuggestion";
@@ -214,7 +215,7 @@ function progressMessages(plan: DesignPlanRecord): string[] {
   }
   const gpu = plan.parameters.find((item) => item.field === "gpu")?.value ?? null;
   if ((gpu === null || gpu === "not_assigned") && !lines.includes("A GPU is not selected.")) {
-    if (gpu === "not_assigned" || plan.questions.length === 0) {
+    if (gpu === "not_assigned" || blockingQuestions(plan.questions).length === 0) {
       lines.push("A GPU is not selected.");
     }
   }
@@ -830,7 +831,7 @@ function RunDesign({
   const liveOutputRef = useRef<HTMLPreElement | null>(null);
   const idempotencyKey = `run_${plan.planId}_${plan.planRevision}_${plan.digest}`;
   const gpu = plan.parameters.find((item) => item.field === "gpu")?.value ?? null;
-  const configured = plan.questions.length === 0 && gpu !== null && gpu !== "not_assigned";
+  const configured = blockingQuestions(plan.questions).length === 0 && gpu !== null && gpu !== "not_assigned";
   const watchRunning = pending || serverRunning || (executionPermitted && configured);
   useEffect(() => {
     if (!watchRunning) {
