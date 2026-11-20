@@ -556,7 +556,7 @@ class GenerationPlanService:
         if plan.revision != revision or (expected_digest is not None and expected_digest != digest):
             return self._published(plan, status="approval_rejected")
         ready = (
-            not plan.questions
+            not _blocking_questions(plan.questions)
             and plan.fields.get("input_hashes_verified_against_files") is True
             and not _execution_integration_pending(plan.fields)
         )
@@ -1124,6 +1124,9 @@ def _fields(
         questions.append(
             {
                 "field": "hotspot_assumption",
+                # The executor writes the plan's hotspot over the settings file,
+                # so the difference is told, not resolved: it cannot block review.
+                "blocking": False,
                 "question": (
                     "The stated hotspot conflicts with the verified settings. "
                     "The stated hotspot was kept."
@@ -1337,7 +1340,7 @@ def _public(plan: _Plan) -> dict[str, Any]:
             "approved"
             if approved
             else "draft"
-            if plan.questions or _execution_integration_pending(plan.fields)
+            if _blocking_questions(plan.questions) or _execution_integration_pending(plan.fields)
             else "ready_for_review"
         ),
         "plan_id": plan.plan_id,
@@ -1938,6 +1941,7 @@ def _apply_parameter_updates(
                 questions.append(
                     {
                         "field": "hotspot_assumption",
+                        "blocking": False,
                         "question": (
                             "The stated hotspot conflicts with the verified settings. "
                             "The stated hotspot was kept."
@@ -2049,6 +2053,12 @@ def _bounded_int(value: object, low: int, high: int) -> int | None:
     if type(value) is not int or isinstance(value, bool) or value < low or value > high:
         return None
     return value
+
+
+def _blocking_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Questions that must be answered before review. A note is not one."""
+
+    return [item for item in questions if item.get("blocking") is not False]
 
 
 def _execution_integration_pending(fields: dict[str, Any]) -> bool:

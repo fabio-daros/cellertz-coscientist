@@ -1246,3 +1246,63 @@ def _revise(plans, drafts, plan, payload, configuration):
         body=json.dumps(body).encode(),
         configuration=configuration,
     )
+
+
+def _conflicting(tmp_path: Path) -> tuple[GenerationPlanService, dict]:
+    """A registered settings file whose hotspot differs from the plan's."""
+
+    payloads = {
+        "target_structure": b"TARGET\n",
+        "settings": b'{"chain": "A", "target_hotspot_residues": "56"}\n',
+        "advanced_profile": b'{"k": 1}\n',
+    }
+    files: dict[str, Path] = {}
+    for role, payload in payloads.items():
+        path = tmp_path / role
+        path.write_bytes(payload)
+        files[role] = path
+    catalog = RegisteredInputCatalog(files)
+    identities = catalog.identities()
+    assert identities is not None
+    service = GenerationPlanService(None, inputs=catalog)  # type: ignore[arg-type]
+    proposal = _proposal()
+    proposal["input_artifacts"] = [
+        {"role": item["role"], "sha256": item["sha256"]} for item in identities["artifacts"]
+    ]
+    proposal["hotspot_assumption"] = "A19,A56,A58"
+    return service, proposal
+
+
+def test_a_hotspot_that_differs_from_the_settings_is_told_but_does_not_block_review(tmp_path: Path) -> None:
+    service, proposal = _conflicting(tmp_path)
+    plan = service.draft("conversation", proposal)
+    assert plan["fields"]["hotspot_assumption_conflict"] is True
+    conflict = [item for item in plan["questions"] if item["field"] == "hotspot_assumption"]
+    assert conflict and "conflicts with the verified settings" in conflict[0]["question"]
+    # The executor writes the plan's hotspot over the settings file, so the
+    # difference is a note. A note that blocked review could never be cleared.
+    assert conflict[0]["blocking"] is False
+    assert plan["status"] != "draft"
+    approved = service.approve(
+        plan_id=plan["plan_id"],
+        revision=plan["revision"],
+        reviewer_id="professor",
+        reason="I reviewed this revision.",
+        idempotency_key="approval-conflict",
+    )
+    assert approved["approved"] is True
+
+
+def test_a_question_that_is_not_a_note_still_blocks_review(tmp_path: Path) -> None:
+    service, proposal = _conflicting(tmp_path)
+    del proposal["filter_policy"]
+    plan = service.draft("conversation", proposal)
+    assert plan["status"] == "draft"
+    refused = service.approve(
+        plan_id=plan["plan_id"],
+        revision=plan["revision"],
+        reviewer_id="professor",
+        reason="I reviewed this revision.",
+        idempotency_key="approval-blocked",
+    )
+    assert refused["approved"] is False
