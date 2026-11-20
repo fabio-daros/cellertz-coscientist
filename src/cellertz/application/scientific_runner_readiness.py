@@ -622,7 +622,9 @@ def _checks(
             _check(
                 "target_execution_blocked",
                 False,
-                "CD22 and TACI remain blocked. The mBER version and other scientific requirements are not recorded.",
+                "CD22 and TACI remain blocked. Their campaign specifications record every other "
+                "scientific field and are incomplete on the generator version alone, which the "
+                "campaign must record; a version in this manifest does not supply it.",
             )
         )
     return tuple(checks)

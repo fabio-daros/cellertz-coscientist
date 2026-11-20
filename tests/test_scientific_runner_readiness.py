@@ -320,6 +320,34 @@ def test_cd22_and_taci_stay_blocked_without_a_probe(
     assert reply.execution_authorized is False
 
 
+def test_the_block_names_the_one_field_the_campaigns_are_missing() -> None:
+    """The reason must match what the specifications actually lack.
+
+    Both fixtures record the structure, the preparation, the epitope, the
+    scaffold, the protocol, the acceptance and the stopping policy. Naming
+    unspecified "other requirements" would send whoever reads the panel
+    looking for work that is already done.
+    """
+
+    from cellertz.application.vhh_campaign import _issues
+    from cellertz.application.vhh_campaign_fixtures import (
+        cd22_operational_reference,
+        taci_operational_reference,
+    )
+
+    for specification in (cd22_operational_reference(), taci_operational_reference()):
+        assert _issues(
+            specification.target_structure,
+            specification.preparation,
+            specification.epitope,
+            specification.scaffold,
+            specification.generator_protocol,
+            specification.acceptance_policy,
+            specification.stopping_policy,
+            specification.rationale,
+        ) == ("missing_generator_version",)
+
+
 def test_environment_does_not_launch_a_probe(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
