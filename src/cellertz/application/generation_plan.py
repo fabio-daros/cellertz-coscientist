@@ -556,7 +556,7 @@ class GenerationPlanService:
         if plan.revision != revision or (expected_digest is not None and expected_digest != digest):
             return self._published(plan, status="approval_rejected")
         ready = (
-            not _blocking_questions(plan.questions)
+            not _blocking_questions(plan.questions, plan.fields)
             and plan.fields.get("input_hashes_verified_against_files") is True
             and not _execution_integration_pending(plan.fields)
         )
@@ -1340,7 +1340,7 @@ def _public(plan: _Plan) -> dict[str, Any]:
             "approved"
             if approved
             else "draft"
-            if _blocking_questions(plan.questions) or _execution_integration_pending(plan.fields)
+            if _blocking_questions(plan.questions, plan.fields) or _execution_integration_pending(plan.fields)
             else "ready_for_review"
         ),
         "plan_id": plan.plan_id,
@@ -1348,7 +1348,7 @@ def _public(plan: _Plan) -> dict[str, Any]:
         "revision": plan.revision,
         "digest": _digest(plan),
         "fields": plan.fields,
-        "questions": plan.questions,
+        "questions": _marked_questions(plan.questions, plan.fields),
         "approved": approved,
         "approval": plan.approval if approved else None,
         "approval_history": list(plan.approval_history),
@@ -2055,10 +2055,37 @@ def _bounded_int(value: object, low: int, high: int) -> int | None:
     return value
 
 
-def _blocking_questions(questions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _is_note(item: Mapping[str, Any], fields: Mapping[str, Any]) -> bool:
+    """A question that states a resolved difference rather than asking for one.
+
+    Derived from the plan rather than from what was written into the question,
+    so a plan recorded before notes existed is read the same way. The hotspot
+    conflict is resolved at launch: the executor writes the plan's hotspot over
+    the settings file, and the question itself says the stated hotspot was kept.
+    """
+
+    if item.get("blocking") is False:
+        return True
+    return item.get("field") == "hotspot_assumption" and fields.get("hotspot_assumption_conflict") is True
+
+
+def _blocking_questions(
+    questions: list[dict[str, Any]],
+    fields: Mapping[str, Any] | None = None,
+) -> list[dict[str, Any]]:
     """Questions that must be answered before review. A note is not one."""
 
-    return [item for item in questions if item.get("blocking") is not False]
+    known = fields or {}
+    return [item for item in questions if not _is_note(item, known)]
+
+
+def _marked_questions(
+    questions: list[dict[str, Any]],
+    fields: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """The questions as a reader sees them, each saying whether it blocks."""
+
+    return [{**item, "blocking": not _is_note(item, fields)} for item in questions]
 
 
 def _execution_integration_pending(fields: dict[str, Any]) -> bool:

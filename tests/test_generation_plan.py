@@ -1306,3 +1306,42 @@ def test_a_question_that_is_not_a_note_still_blocks_review(tmp_path: Path) -> No
         idempotency_key="approval-blocked",
     )
     assert refused["approved"] is False
+
+
+def test_a_plan_recorded_before_notes_existed_is_read_the_same_way(tmp_path: Path) -> None:
+    """The mark is derived from the plan, so an old record needs no rewrite."""
+
+    service, proposal = _conflicting(tmp_path)
+    plan = service.draft("conversation", proposal)
+    stored = service._plans[plan["plan_id"]]
+    # What a plan saved before today carries: the question without any mark.
+    stored.questions = [
+        {
+            "field": "hotspot_assumption",
+            "question": "The stated hotspot conflicts with the verified settings. The stated hotspot was kept.",
+        }
+    ]
+    published = service.published(plan["plan_id"])
+    assert published is not None
+    assert published["questions"][0]["blocking"] is False
+    assert published["status"] != "draft"
+    approved = service.approve(
+        plan_id=plan["plan_id"],
+        revision=plan["revision"],
+        reviewer_id="professor",
+        reason="I reviewed this revision.",
+        idempotency_key="approval-old-record",
+    )
+    assert approved["approved"] is True
+
+
+def test_a_hotspot_question_without_a_conflict_still_blocks(tmp_path: Path) -> None:
+    service, proposal = _conflicting(tmp_path)
+    plan = service.draft("conversation", proposal)
+    stored = service._plans[plan["plan_id"]]
+    stored.fields.pop("hotspot_assumption_conflict", None)
+    stored.questions = [{"field": "hotspot_assumption", "question": "Which hotspot assumption should be recorded?"}]
+    published = service.published(plan["plan_id"])
+    assert published is not None
+    assert published["questions"][0]["blocking"] is True
+    assert published["status"] == "draft"
