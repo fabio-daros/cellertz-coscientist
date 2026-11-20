@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DesignSuggestion } from "./DesignSuggestion";
+import { DesignSuggestion, defaultPicked } from "./DesignSuggestion";
 import type { HotspotBlock, PlanSuggestion } from "./design-plan";
 
 const BLOCKS: HotspotBlock[] = [
@@ -109,5 +109,53 @@ describe("hotspot blocks in the suggestion panel", () => {
     render(<DesignSuggestion suggestion={view([])} onApply={vi.fn()} />);
     expect(screen.queryByRole("list", { name: "Hotspot blocks" })).toBeNull();
     expect(screen.getByText(/A19,A56,A66,A124,A125/)).toBeTruthy();
+  });
+});
+
+describe("what is ticked before the person touches anything", () => {
+  function withKinds(kinds: { field: string; kind: string; applicable?: boolean }[]): PlanSuggestion {
+    const base = suggestion([]);
+    return {
+      ...base,
+      suggestions: kinds.map((item) => ({
+        field: item.field,
+        label: item.field,
+        current: "none",
+        suggested: "x",
+        source: "s",
+        kind: item.kind,
+        applicable: item.applicable !== false,
+      })),
+    };
+  }
+
+  it("ticks the server's own numbers, which are not a scientific choice", () => {
+    const picked = defaultPicked(
+      withKinds([
+        { field: "cpu_count", kind: "server_configuration" },
+        { field: "memory_mib", kind: "server_configuration" },
+      ]),
+    );
+    expect(picked).toEqual({ cpu_count: true, memory_mib: true });
+  });
+
+  it("leaves an agent recommendation untouched, so adopting it stays a person's act", () => {
+    const picked = defaultPicked(
+      withKinds([
+        { field: "hotspot_assumption", kind: "agent_recommendation" },
+        { field: "binder_length", kind: "alternative" },
+        { field: "cpu_count", kind: "server_configuration" },
+      ]),
+    );
+    expect(picked).toEqual({ cpu_count: true });
+  });
+
+  it("does not tick a suggestion the server marked inapplicable", () => {
+    const picked = defaultPicked(withKinds([{ field: "cpu_count", kind: "server_configuration", applicable: false }]));
+    expect(picked).toEqual({});
+  });
+
+  it("ticks nothing when there is no suggestion", () => {
+    expect(defaultPicked(null)).toEqual({});
   });
 });

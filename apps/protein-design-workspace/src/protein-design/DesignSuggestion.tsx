@@ -8,10 +8,22 @@ import {
 import type { DesignPlanRecord, HotspotBlock } from "./design-plan";
 import { SupervisorMark } from "./DesignRequest";
 
+/** Ticked before the person touches anything. */
+export function defaultPicked(suggestion: PlanSuggestion | null): Record<string, boolean> {
+  // The server's own numbers are the server's, not a scientific choice, so they
+  // start ticked. An agent's recommendation does not: the plan records it as an
+  // adopted suggestion, and that provenance only means something if a person
+  // adopted it.
+  const entries = (suggestion?.suggestions ?? [])
+    .filter((item) => item.applicable && item.kind === "server_configuration")
+    .map((item) => [item.field, true] as const);
+  return Object.fromEntries(entries);
+}
+
 export function usePlanSuggestion(plan: DesignPlanRecord, enabled: boolean) {
   const [history, setHistory] = useState<PlanSuggestion[]>([]);
   const [suggesting, setSuggesting] = useState(false);
-  const [picked, setPicked] = useState<Record<string, boolean>>({});
+  const [chosen, setPicked] = useState<Record<string, boolean>>({});
   const binding = `${plan.requestId}:${plan.planId}:${plan.planRevision}:${plan.digest}`;
   const bindingRef = useRef(binding);
   bindingRef.current = binding;
@@ -59,6 +71,7 @@ export function usePlanSuggestion(plan: DesignPlanRecord, enabled: boolean) {
     }
   }
 
+  const picked = { ...defaultPicked(current), ...chosen };
   return { suggesting, suggest, current, stale, picked, setPicked };
 }
 
