@@ -18,7 +18,12 @@ from cellertz.application.plan_configuration_suggestion import (
 )
 
 DELEGATION_SHA = "30e412dd442f974017311092b8440e86844d91070c3921f922e419069c6eee69"
-SPECIALIST_SHA = "9355beccf3bbffab93525f219857e22daffb0f219ba2c899d5c42ccee69cf817"
+# Changed on 2026-11-20, when the specialist was asked for blocks as well as
+# residues. Suggestions recorded before that were written under
+# 9355beccf3bbffab93525f219857e22daffb0f219ba2c899d5c42ccee69cf817 and carry no
+# blocks; they are not the same prompt and their absence of blocks is not a
+# judgement that none exist.
+SPECIALIST_SHA = "79f5c86ce189bf1e4b6fc3314e9f52f60953ff897c479b7608992b4c336d75d7"
 
 
 class Stored:

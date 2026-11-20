@@ -5,7 +5,7 @@ import {
   type PlanSuggestion,
   type SuggestionChoice,
 } from "./design-plan";
-import type { DesignPlanRecord } from "./design-plan";
+import type { DesignPlanRecord, HotspotBlock } from "./design-plan";
 import { SupervisorMark } from "./DesignRequest";
 
 export function usePlanSuggestion(plan: DesignPlanRecord, enabled: boolean) {
@@ -137,6 +137,7 @@ function SuggestionCard({
           {item.kind === "alternative" ? " Alternative." : ""}
           {item.justification ? ` ${item.justification}` : ""}
           {item.note ? ` ${item.note}` : ""}
+          <HotspotBlocks blocks={item.blocks} />
         </label>
       ))}
       {suggestion.applicable && choices.length > 0 ? (
@@ -170,6 +171,28 @@ function SuggestionCard({
         <p>Structure: {suggestion.structureSha256 || "Not recorded"}</p>
       </details>
     </article>
+  );
+}
+
+// The range and the count come from the structure. Contact is not shown: nothing has measured it yet.
+function HotspotBlocks({ blocks }: { blocks?: HotspotBlock[] }) {
+  if (!blocks || blocks.length === 0) {
+    return null;
+  }
+  const ordered = [...blocks].sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99));
+  return (
+    <ul aria-label="Hotspot blocks">
+      {ordered.map((block) => (
+        <li key={block.id}>
+          <b>{block.id}</b> {block.label} — {block.n} residue{block.n === 1 ? "" : "s"} ({block.residues.join(", ")}).
+          {block.priority === null ? " Priority not recorded." : ` Priority ${block.priority}.`}
+          {block.selectivity ? ` Selectivity ${block.selectivity}.` : " Selectivity not recorded."}
+          {block.rationale ? ` ${block.rationale}` : ""}
+          {block.risks ? ` Risk: ${block.risks}` : ""}
+          <span> Contact with this block is not measured yet.</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

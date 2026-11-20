@@ -145,8 +145,23 @@ export async function reviseDesignPlan(
   }
 }
 
+export type HotspotBlock = {
+  id: string;
+  label: string;
+  chain: string;
+  lo: number;
+  hi: number;
+  n: number;
+  residues: string[];
+  priority: number | null;
+  selectivity: string;
+  rationale: string;
+  risks: string;
+};
+
 export type SuggestionChoice = {
   field: string;
+  blocks?: HotspotBlock[];
   label: string;
   current: string | number | null;
   suggested: string | number;
@@ -494,6 +509,31 @@ function parseChoice(value: unknown): SuggestionChoice[] {
     applicable: row.applicable === true,
     justification: typeof row.justification === "string" ? row.justification : undefined,
     note: typeof row.note === "string" ? row.note : undefined,
+    blocks: Array.isArray(row.blocks) ? row.blocks.flatMap(parseBlock) : undefined,
+  }];
+}
+
+// The server measures lo, hi and n from the structure, so a block missing them was not validated there.
+function parseBlock(value: unknown): HotspotBlock[] {
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+  const row = value as Record<string, unknown>;
+  if (typeof row.id !== "string" || typeof row.lo !== "number" || typeof row.hi !== "number") {
+    return [];
+  }
+  return [{
+    id: row.id,
+    label: typeof row.label === "string" ? row.label : row.id,
+    chain: typeof row.chain === "string" ? row.chain : "",
+    lo: row.lo,
+    hi: row.hi,
+    n: typeof row.n === "number" ? row.n : 0,
+    residues: Array.isArray(row.residues) ? row.residues.filter((item): item is string => typeof item === "string") : [],
+    priority: typeof row.priority === "number" ? row.priority : null,
+    selectivity: typeof row.selectivity === "string" ? row.selectivity : "",
+    rationale: typeof row.rationale === "string" ? row.rationale : "",
+    risks: typeof row.risks === "string" ? row.risks : "",
   }];
 }
 

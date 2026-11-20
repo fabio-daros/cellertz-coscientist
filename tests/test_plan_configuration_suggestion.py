@@ -612,3 +612,78 @@ def test_general_context_is_not_sent_as_interface_evidence():
     assert shown["specialist_response"]["complete"] is True
     assert "system_messages" in shown
     assert "validation_result" in shown
+
+
+def _blocks_shown(blocks):
+    evidence = "PD-L1 binding site includes PDB chain A residue 20 of the selected structure."
+    model = ScriptedModel(
+        {"task": "Review the binding region.", "delegate_to": HOTSPOT_AGENT},
+        {
+            "summary": "One supported residue.",
+            "hotspots": [
+                {"chain": "A", "residue": 20, "evidence": evidence, "references": ["ref.pdl1"]},
+            ],
+            "blocks": blocks,
+        },
+    )
+    knowledge = Knowledge((Item("ref.pdl1", "PD-L1 interface", evidence),))
+    return suggester(model, knowledge).suggest(request=request(), plan=plan())
+
+
+def test_a_block_groups_accepted_hotspots_and_its_range_is_measured():
+    shown = _blocks_shown(
+        [
+            {
+                "id": "A",
+                "residues": ["A20"],
+                "priority": 1,
+                "selectivity": "high",
+                "rationale": "Core contact region.",
+                "risks": "Competes with the native ligand.",
+                # The agent must not declare these; they are measured.
+                "lo": 1,
+                "hi": 500,
+                "n": 99,
+            }
+        ]
+    )
+    hotspot = next(item for item in shown["suggestions"] if item["field"] == "hotspot_assumption")
+    block = hotspot["blocks"][0]
+    assert block["id"] == "A"
+    assert block["residues"] == ["A20"]
+    assert (block["lo"], block["hi"], block["n"]) == (20, 20, 1)
+    assert block["label"] == "A20"
+    assert block["chain"] == "A"
+    assert block["priority"] == 1
+    assert block["selectivity"] == "HIGH"
+    assert block["risks"] == "Competes with the native ligand."
+
+
+def test_a_block_cannot_add_a_residue_that_was_not_accepted():
+    shown = _blocks_shown(
+        [{"id": "A", "residues": ["A20", "A999"], "priority": 1, "selectivity": "HIGH", "rationale": "r", "risks": "x"}]
+    )
+    hotspot = next(item for item in shown["suggestions"] if item["field"] == "hotspot_assumption")
+    assert hotspot["blocks"][0]["residues"] == ["A20"]
+    assert hotspot["suggested"] == "A20"
+    assert any("A999" in note and "dropped" in note for note in shown["system_messages"])
+
+
+def test_a_block_of_only_unaccepted_residues_is_refused():
+    shown = _blocks_shown(
+        [{"id": "B", "residues": ["A999"], "priority": 1, "selectivity": "HIGH", "rationale": "r", "risks": "x"}]
+    )
+    hotspot = next(item for item in shown["suggestions"] if item["field"] == "hotspot_assumption")
+    assert hotspot["blocks"] == []
+    assert any("Block B was refused" in note for note in shown["system_messages"])
+
+
+def test_an_unusable_selectivity_or_priority_is_not_recorded():
+    shown = _blocks_shown(
+        [{"id": "A", "residues": ["A20"], "priority": 0, "selectivity": "CERTAIN", "rationale": "r", "risks": "x"}]
+    )
+    hotspot = next(item for item in shown["suggestions"] if item["field"] == "hotspot_assumption")
+    block = hotspot["blocks"][0]
+    assert block["selectivity"] == ""
+    assert block["priority"] is None
+    assert any("selectivity was not recorded" in note for note in shown["system_messages"])

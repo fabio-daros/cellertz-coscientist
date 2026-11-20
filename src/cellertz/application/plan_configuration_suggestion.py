@@ -87,8 +87,14 @@ _SUPERVISOR_QUESTION = f"{_DELEGATION_TASK} {_DELEGATION_GOVERNANCE}"
 _SPECIALIST_PREAMBLE = (
     "You are the Hotspot Identification Agent. This is your own task, separate from "
     "the Supervisor. Reply with one JSON object and no other text. Keys are summary, "
-    "hotspots, uncertainties, and length_alternatives. A hotspot has chain, residue, "
-    "evidence, and references. Cite only reference ids present in the retrieved "
+    "hotspots, blocks, uncertainties, and length_alternatives. A hotspot has chain, residue, "
+    "evidence, and references. A block groups hotspots that act as one binding region and "
+    "has id, residues, priority, selectivity, rationale, and risks. residues lists chain and "
+    "residue number joined, such as A157, and each one must also appear in hotspots. "
+    "priority is 1 for the region to try first. selectivity is HIGH, MEDIUM, or LOW. risks "
+    "says in one sentence what a binder on this region would compete with or lose. Do not "
+    "state a residue range, a residue count, or how much of a partner epitope a block "
+    "covers: those are measured from the structure, not declared. Cite only reference ids present in the retrieved "
     "knowledge. A residue is not evidence merely because it exists in the PDB, its "
     "number appears in a note, or the note is in the vault. The cited note must name "
     "the requested target and support the binding-region claim in the selected "
@@ -946,6 +952,7 @@ def _validated_suggestions(
         if label not in kept:
             kept.append(label)
             evidence.append({"residue": label, "evidence": note, "references": cited})
+    blocks = _validated_blocks(payload.get("blocks"), kept, system)
     suggestions: list[dict[str, Any]] = []
     if kept:
         current = fields.get("hotspot_assumption") if fields.get("hotspot_strategy") == "residues" else "none"
@@ -958,6 +965,7 @@ def _validated_suggestions(
                 "source": "hotspot_identification_agent",
                 "kind": "agent_recommendation",
                 "evidence": evidence,
+                "blocks": blocks,
                 "applicable": True,
             }
         )
@@ -1080,6 +1088,89 @@ def _complete_texts(raw: Any) -> tuple[list[str], str | None]:
         elif not (item is None or item == ""):
             refused = True
     return kept, ("refused_items" if refused else None)
+
+
+_SELECTIVITY = ("HIGH", "MEDIUM", "LOW")
+_RESIDUE_LABEL = re.compile(r"^([A-Za-z])(\d{1,6})$")
+
+
+def _validated_blocks(
+    raw: Any,
+    kept: list[str],
+    system: list[str],
+) -> list[dict[str, Any]]:
+    """Group accepted hotspots into binding regions the agent judged together.
+
+    A block never widens the recommendation: a residue it names that did not
+    survive hotspot validation is dropped, so a block cannot smuggle in a
+    residue the structure or the retrieved knowledge did not support. The
+    range and the count are measured from the residues that remain, because
+    those are facts about the structure rather than the agent's arithmetic.
+    """
+
+    items, note = _object_list(raw)
+    if note == "refused_string":
+        system.append("Blocks were refused because the specialist returned a string instead of a list.")
+    elif note == "refused_items":
+        system.append("Block items that were not objects were refused.")
+    elif note == "refused_type":
+        system.append("Blocks were refused because the specialist did not return a list.")
+    blocks: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index, item in enumerate(items):
+        block_id = item.get("id")
+        block_id = block_id.strip() if isinstance(block_id, str) and block_id.strip() else chr(65 + index)
+        if block_id in seen:
+            system.append(f"Block {block_id} was refused because that id is already used.")
+            continue
+        named, _ = _identifier_list(item.get("residues"))
+        residues = [label for label in named if label in kept]
+        dropped = [label for label in named if label not in kept]
+        for label in dropped:
+            system.append(f"Block {block_id} named {label}, which is not an accepted hotspot. It was dropped.")
+        if not residues:
+            system.append(f"Block {block_id} was refused because none of its residues is an accepted hotspot.")
+            continue
+        selectivity = item.get("selectivity")
+        selectivity = selectivity.strip().upper() if isinstance(selectivity, str) else ""
+        if selectivity not in _SELECTIVITY:
+            system.append(f"Block {block_id} selectivity was not recorded because it is not HIGH, MEDIUM, or LOW.")
+            selectivity = ""
+        priority = item.get("priority")
+        if type(priority) is not int or isinstance(priority, bool) or priority < 1:
+            system.append(f"Block {block_id} priority was not recorded because it is not a positive whole number.")
+            priority = None
+        numbered = sorted(
+            (int(match.group(2)), label)
+            for label, match in ((label, _RESIDUE_LABEL.match(label)) for label in residues)
+            if match is not None
+        )
+        if not numbered:
+            system.append(f"Block {block_id} was refused because its residues carry no residue number.")
+            continue
+        chain = str(_RESIDUE_LABEL.match(numbered[0][1]).group(1))
+        lo, hi = numbered[0][0], numbered[-1][0]
+        seen.add(block_id)
+        blocks.append(
+            {
+                "id": block_id,
+                "label": f"{chain}{lo}-{chain}{hi}" if lo != hi else f"{chain}{lo}",
+                "chain": chain,
+                "lo": lo,
+                "hi": hi,
+                "n": len(numbered),
+                "residues": [label for _number, label in numbered],
+                "priority": priority,
+                "selectivity": selectivity,
+                "rationale": _one_text(item.get("rationale")),
+                "risks": _one_text(item.get("risks")),
+            }
+        )
+    return blocks
+
+
+def _one_text(raw: Any) -> str:
+    return raw.strip() if isinstance(raw, str) and raw.strip() else ""
 
 
 def _object_list(raw: Any) -> tuple[list[dict[str, Any]], str | None]:
