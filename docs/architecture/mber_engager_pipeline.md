@@ -108,16 +108,33 @@ different protocols are not comparable.
 
 ## The mBER swap point
 
-`MBERAdapter` already takes the command from the request:
+Today's mBER is the public `manifoldbio/mber-open` (MIT). Verified against the
+repository on 2026-11-20, not inferred:
 
-```
-constraints.mber_command = ["/opt/mber-edroaldo/bin/mber",
-                            "--settings", "{work_dir}/settings.yaml"]
-```
+- The command is **`mber-vhh`**, not `mber`, and it takes the whole campaign as
+  `mber-vhh --settings <file>` (YAML or JSON). The flag form
+  (`--input-pdb --output-dir --chains --hotspots ...`) is the alternative.
+- Settings keys: `output.dir`, `target.pdb|name|chains|hotspots`,
+  `binder.masked_sequence`, `stopping.num_accepted|max_trajectories`,
+  `filters.min_iptm|min_plddt`. The CD22 and TACI specifications already carry
+  every one of them.
+- A run writes `accepted.csv`, `Accepted/` and `runs/<trajectory>/`, and
+  re-running resumes from the row count in `accepted.csv`.
+- **The repository has no tag and no release**, so a commit is the only
+  concrete version. `mber_settings.MBER_OPEN_COMMIT` pins it.
+- Install is conda + `pip install -e protocols` + `download_weights.sh` (~9 GB:
+  AlphaFold2, NanoBodyBuilder2, ESM2). Tested on A10G, A100, L4, L40S, H100;
+  at least 32 GB of VRAM recommended.
 
-`{work_dir}` is substituted; `mber_bin` + `settings` is the alternative. The
-professor's modified mBER is therefore a configuration change, not a code
-change.
+`MBERAdapter` takes the command from `constraints.mber_command`
+(`{work_dir}` is substituted) or from `mber_bin` + `settings`. What was
+missing is that **nothing ever wrote the settings file** — the adapter passes a
+path that no caller created, which is why the generator never ran outside its
+own tests. `application/mber_settings.py` builds that document from a campaign
+specification.
+
+The professor's modified mBER is a later configuration change on top of this,
+once his fork has a version and a host.
 
 **The admin offers a short list of registered profiles, never a free-text
 command.** A text field whose value becomes argv on a GPU host is arbitrary
