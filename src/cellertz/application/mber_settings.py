@@ -123,6 +123,7 @@ def write_mber_vhh_settings(
     output_dir: str | Path,
     prepared_pdb: str | Path,
     path: str | Path,
+    seed_from: SeedDesign | None = None,
 ) -> Path:
     """Write the settings as JSON, which the tool reads as well as YAML.
 
@@ -132,7 +133,7 @@ def write_mber_vhh_settings(
     """
 
     target = Path(path)
-    document = mber_vhh_settings(specification, output_dir, prepared_pdb)
+    document = mber_vhh_settings(specification, output_dir, prepared_pdb, seed_from=seed_from)
     target.write_text(json.dumps(document, indent=2, sort_keys=True), encoding="utf-8")
     return target
 

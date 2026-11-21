@@ -590,60 +590,99 @@ def screen_developability(
             "detail": "A served PDB does not match the verified hash, so the screen was not run on it.",
             "models": {},
         }
-    ligand = sorted({int(number) for number in ligand_residues or ()})
     contacts = geometric_contacts(item)
-    models: dict[str, Any] = {}
-    for model_id, model in item["models"].items():
-        # Chain B, the same binder chain ``_contacts_for_pdb`` reads.
-        residues, thiols = _binder_chain(model["pdb_path"].read_text(encoding="utf-8"), "B")
-        sequence = "".join(name for _, name in residues)
-        cysteines = _cysteine_pairing(residues, thiols)
-        sequons = _glycosylation_sequons(residues)
-        charge = sum(sequence.count(name) for name in "KR") - sum(sequence.count(name) for name in "DE")
-        reached = set(contacts["models"][model_id]["calculated"]["target_residues"])
-        occluded = [number for number in ligand if number in reached]
-        rejected = None
-        if cysteines["unpaired"]:
-            rejected = "unpaired_cysteine"
-        elif sequons:
-            rejected = "glycosylation_sequon"
-        elif occlusion_limit is not None and ligand and len(occluded) > occlusion_limit:
-            rejected = "occlusion_footprint"
-        elif charge > NET_CHARGE_LIMIT:
-            rejected = "net_charge"
-        models[model_id] = {
-            "binder_chain": "B",
-            "sequence": sequence,
-            "length": len(sequence),
-            "cysteines": cysteines,
-            "sequons": sequons,
-            "net_charge": charge,
-            "net_charge_limit": NET_CHARGE_LIMIT,
-            "net_charge_rule": "K+R minus D+E, at neutral pH; histidine is not counted",
-            "occlusion": (
-                {"status": "not_declared"}
-                if not ligand
-                else {
-                    "status": "measured",
-                    "ligand_residues": len(ligand),
-                    "footprint": len(occluded),
-                    "occluded_residues": occluded,
-                    "limit": occlusion_limit,
-                    # Whether covering the ligand's site is the goal or the
-                    # fault is the campaign's call, so a declared footprint
-                    # without a declared limit is a number, not a gate.
-                    "is_a_gate": occlusion_limit is not None,
-                }
-            ),
-            "rejected_by": rejected,
-            "verdict": "rejected" if rejected else "passed_measured_filters",
-            "unscreened": [] if ligand else ["occlusion_footprint"],
-        }
+    models = {
+        model_id: screen_structure(
+            model["pdb_path"].read_text(encoding="utf-8"),
+            contacts["models"][model_id]["calculated"]["target_residues"],
+            ligand_residues=ligand_residues,
+            occlusion_limit=occlusion_limit,
+            reached_definition=f"heavy-atom contact within {CONTACT_ANGSTROM} angstrom",
+        )
+        for model_id, model in item["models"].items()
+    }
     return {
         "status": "calculated",
         "thresholds_from": THRESHOLDS_FROM,
         "filter_order": list(FILTER_ORDER),
         "models": models,
+    }
+
+
+def net_charge(sequence: str) -> int:
+    """K+R minus D+E, at neutral pH. Histidine is not counted.
+
+    One rule, used by the screen and by the two-axis composite's charge term.
+    """
+
+    upper = sequence.upper()
+    return sum(upper.count(name) for name in "KR") - sum(upper.count(name) for name in "DE")
+
+
+NET_CHARGE_RULE = "K+R minus D+E, at neutral pH; histidine is not counted"
+
+
+def screen_structure(
+    pdb: str,
+    target_residues_reached: object,
+    ligand_residues: object = (),
+    occlusion_limit: int | None = None,
+    binder_chain: str = "B",
+    reached_definition: str = "supplied by the caller",
+) -> dict[str, Any]:
+    """The atlas pre-filters on one structure, in his order.
+
+    Separated from the catalogue so one rule serves both a recorded attempt
+    and a design mBER has just written. Which residues count as reached is the
+    caller's definition and is named in the result: heavy-atom contact and
+    shielded surface are different sets, and the larger includes the smaller.
+    """
+
+    ligand = sorted({int(number) for number in ligand_residues or ()})
+    reached = {int(number) for number in target_residues_reached or ()}
+    residues, thiols = _binder_chain(pdb, binder_chain)
+    sequence = "".join(name for _, name in residues)
+    cysteines = _cysteine_pairing(residues, thiols)
+    sequons = _glycosylation_sequons(residues)
+    charge = net_charge(sequence)
+    occluded = [number for number in ligand if number in reached]
+    rejected = None
+    if cysteines["unpaired"]:
+        rejected = "unpaired_cysteine"
+    elif sequons:
+        rejected = "glycosylation_sequon"
+    elif occlusion_limit is not None and ligand and len(occluded) > occlusion_limit:
+        rejected = "occlusion_footprint"
+    elif charge > NET_CHARGE_LIMIT:
+        rejected = "net_charge"
+    return {
+        "binder_chain": binder_chain,
+        "sequence": sequence,
+        "length": len(sequence),
+        "cysteines": cysteines,
+        "sequons": sequons,
+        "net_charge": charge,
+        "net_charge_limit": NET_CHARGE_LIMIT,
+        "net_charge_rule": NET_CHARGE_RULE,
+        "reached_definition": reached_definition,
+        "occlusion": (
+            {"status": "not_declared"}
+            if not ligand
+            else {
+                "status": "measured",
+                "ligand_residues": len(ligand),
+                "footprint": len(occluded),
+                "occluded_residues": occluded,
+                "limit": occlusion_limit,
+                # Whether covering the ligand's site is the goal or the fault
+                # is the campaign's call, so a declared footprint without a
+                # declared limit is a number, not a gate.
+                "is_a_gate": occlusion_limit is not None,
+            }
+        ),
+        "rejected_by": rejected,
+        "verdict": "rejected" if rejected else "passed_measured_filters",
+        "unscreened": [] if ligand else ["occlusion_footprint"],
     }
 
 

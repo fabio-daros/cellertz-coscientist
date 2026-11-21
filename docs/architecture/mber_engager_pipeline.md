@@ -227,6 +227,47 @@ the installation registers the profiles, a person picks one.
    another scaffold, a span over the framework, and a seeding that leaves
    nothing open are each refused rather than quietly accepted.
 
+## One path, joined
+
+`application/mber_campaign.py` is the single join. Before it, each piece had
+only its own tests and none had seen a real mBER output.
+
+```
+specification --mber_settings--> settings.json
+      |
+      |  launch_request: the adapter gets constraints.mber_command,
+      |  built from a binary the installation registers, never from a field
+      v
+mber-vhh --settings            (the GPU host; this module runs nothing)
+      |  MBERParser           accepted.csv -> candidates
+      v
+screen_structure               the atlas pre-filters, his order, first
+      |
+      v
+rank_engager_designs           two axes, worse of the two
+```
+
+What it enforces, because a cohort's percentiles depend on who is in it:
+
+- **The screen runs before the ranking.** A rejected design never reaches the
+  percentiles, which is the point of pre-filtering.
+- **The row count is read before parsing**, since the parser caps its result
+  at the requested candidate count and a silently shortened cohort would move
+  every percentile in it.
+- **A design that cannot be measured is named, not dropped**: a missing
+  structure, an unrecorded `i_ptm`, or a sequence in `accepted.csv` that
+  disagrees with the structure's own chain B — the last one matters because
+  the charge and the liabilities are read off the structure while the ranked
+  sequence comes from the table, so a mismatch means two different molecules.
+- **One surface pass per design.** The occlusion measurement yields both the
+  residues the binder covers and the area it buries, and those agree with the
+  per-chain calculation to within a square angstrom.
+
+`screen_structure` is the screen's per-structure core, extracted so a recorded
+attempt and a design mBER has just written go through the same rule. Which
+residues count as reached is the caller's definition and is named in the
+result: heavy-atom contact for the catalogue, shielded surface for mBER.
+
 ## Two numbering frames, and the error between them
 
 The attempt structures on record are numbered **chain A, 1 to 115**. The
