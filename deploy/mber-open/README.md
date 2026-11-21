@@ -120,6 +120,16 @@ in its argv — never a free-text command, which is the rule in
   matrix, so it stays uncomputable from mBER output without an independent
   refold. See the scoring section of
   `docs/architecture/mber_engager_pipeline.md`.
+- **Yield, as observed: 1 accepted design in 3 trajectories.** Two produced
+  nothing (best evaluated `i_ptm` 0.68), the third accepted on its first
+  binder at `i_ptm` 0.7833, `plddt` 0.9230. Three trajectories is far too few
+  to call a rate, but it is not the 1-in-50 the first two suggested.
+- **`complex_pdb_path` and `relaxed_pdb_path` are absolute paths**, into
+  `<output_dir>/Accepted/`. Settled by a run that accepted something.
+- **The accepted complex is chain A 1 to 115 and chain B 1 to 118** — so mBER
+  renumbers the target on output exactly as the BindCraft attempts do, and
+  `pdl1_numbering_offset` detects the same offset of 17 on it. That function
+  was built against a BindCraft output and works unchanged on an mBER one.
 - Structures are written per binder as
   `runs/<trajectory>/evaluation_data/binders/<trajectory>_binder-<n>_iptm-<score>_{complex,monomer,relaxed}.pdb`,
   and `design_summary.yaml` records the target as an absolute path. What

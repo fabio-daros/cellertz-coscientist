@@ -265,6 +265,21 @@ What it enforces, because a cohort's percentiles depend on who is in it:
   residues the binder covers and the area it buries, and those agree with the
   per-chain calculation to within a square angstrom.
 
+**Run against real mBER output on 2026-11-21**, after a batch of
+single-trajectory runs accepted one design. Every link held: `MBERParser`
+digested the real `accepted.csv` row, the absolute `complex_pdb_path` resolved,
+the sequence in the table matched chain B of the structure, the screen passed
+the design, and the ranking's `i_ptm >= 0.80` gate **rejected** it at 0.7833.
+
+That rejection is the two protocols behaving as intended, not a fault: mBER's
+own filter accepts at 0.75, the atlas ranks at 0.80, and a design can pass the
+generator and fail the ranking. A platform that quietly ranked it anyway would
+be mixing the two.
+
+What that exercise did **not** test is science. It ran their PDL1 example
+through the CD22 specification, so the scaffold's CDR spans and the target
+identity do not describe the structure being measured. It tested the plumbing.
+
 `screen_structure` is the screen's per-structure core, extracted so a recorded
 attempt and a design mBER has just written go through the same rule. Which
 residues count as reached is the caller's definition and is named in the
