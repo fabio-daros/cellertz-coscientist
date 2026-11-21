@@ -194,7 +194,11 @@ class RegisteredInputCatalog:
             target = _read_regular(self._files["target_structure"], flags)
             settings = _read_regular(self._files["settings"], flags)
             profile = _read_regular(self._files["advanced_profile"], flags)
-            canonical = _canonical_profile(profile)
+            # An absent file reads as None, and canonicalising None raised
+            # AttributeError out of a status method rather than reporting the
+            # root as unverified, which is what a root holding only some of
+            # the three files does.
+            canonical = None if profile is None else _canonical_profile(profile)
         except (OSError, ValueError, TypeError):
             return None
         if target is None or settings is None or canonical is None:
