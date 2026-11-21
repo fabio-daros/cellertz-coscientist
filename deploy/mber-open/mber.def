@@ -1,0 +1,102 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+# mber-open as one Apptainer image, so the runner manifest has an
+# image_digest to name. Built with:
+#
+#   apptainer build --fakeroot \
+#     /home/fabio/containers/cellertz/mber/mber.sif deploy/mber-open/mber.def
+#
+# The weights are NOT in here. They are 8.3 GB, they change on their own
+# schedule, and their paths are hardcoded in mBER's source under ~/.mber, so
+# HOME is /mber in this image and the weights are bound over /mber/.mber:
+#
+#   apptainer run --nv --bind <weights>:/mber/.mber mber.sif --settings s.json
+#
+# This recipe is not bit-reproducible and cannot be: mBER's requirements.txt
+# pins neither its own upper bounds nor its transitive ones, so two builds a
+# month apart differ. That is precisely why the SIF's own sha256 is the
+# reproducibility unit and the manifest asks for it, exactly as the BindCraft
+# SIF's verified hash is for PDL1.
+#
+# Why each pinned thing below is pinned is in deploy/mber-open/README.md.
+
+%post
+    set -eux
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update
+    apt-get install -y --no-install-recommends \
+        ca-certificates curl bzip2 git
+    rm -rf /var/lib/apt/lists/*
+
+    COMMIT=5cc8e0534158647e9706b2655630f4449686c600
+
+    mkdir -p /opt/bin /mber/.mber
+    curl -fsSL https://micro.mamba.pm/api/micromamba/linux-64/latest \
+        | tar -xj -C /opt/bin --strip-components=1 bin/micromamba
+
+    git clone https://github.com/manifoldbio/mber-open.git /opt/mber-open
+    git -C /opt/mber-open checkout "${COMMIT}"
+    # An image whose version is not the recorded one cannot be the recorded one.
+    test "$(git -C /opt/mber-open rev-parse HEAD)" = "${COMMIT}"
+
+    # The conda half first. Their environment.yml runs pip with --index-url,
+    # which replaces PyPI rather than adding to it.
+    /opt/bin/micromamba create --yes --prefix /opt/env \
+        --channel conda-forge --channel bioconda \
+        python=3.11 pip 'openmm>=8.4.0' 'pdbfixer>=1.12' anarci ffmpeg
+
+    PIP="/opt/bin/micromamba run --prefix /opt/env python -m pip"
+
+    # Two installs. The root package declares no console script; protocols
+    # declares mber-vhh=mber_protocols.stable.VHH_binder_design.cli:main.
+    ${PIP} install -e /opt/mber-open
+    ${PIP} install -e /opt/mber-open/protocols
+
+    # Torch last and from the CUDA 12.8 index. PyPI's current build targets
+    # CUDA 13 and reports "driver too old" against a 12.2 driver.
+    ${PIP} install --index-url https://download.pytorch.org/whl/cu128 \
+        --force-reinstall torch torchvision torchaudio
+
+    # numpy<2 is their pin, which the torch reinstall undoes. matplotlib<3.9 is
+    # ours: 3.9 removed matplotlib.cm.get_cmap, which colabdesign still calls
+    # from af_model.animate(), which mBER calls unconditionally at teardown.
+    ${PIP} install 'numpy<2' 'matplotlib<3.9'
+
+    /opt/bin/micromamba run --prefix /opt/env python - <<'PY'
+import importlib.metadata as md
+for name in ("mber", "torch", "jax", "colabdesign", "numpy", "matplotlib"):
+    print(name, md.version(name))
+import matplotlib.cm as cm
+assert hasattr(cm, "get_cmap"), "matplotlib too new for colabdesign"
+PY
+
+%environment
+    export PATH=/opt/env/bin:/opt/bin:$PATH
+    export LD_LIBRARY_PATH=/opt/env/lib:$LD_LIBRARY_PATH
+    # mBER hardcodes ~/.mber/af_params and ~/.mber/nbb2_weights and reads no
+    # environment variable for them, so HOME is where the weights are bound.
+    export HOME=/mber
+    export HF_HOME=/mber/.mber/huggingface
+    # JAX would otherwise preallocate the card and leave nothing for the torch
+    # ESM2 model mBER builds per trajectory. One trajectory per process is
+    # still required; see the batch stage in install.sh.
+    export XLA_PYTHON_CLIENT_PREALLOCATE=false
+
+%runscript
+    exec mber-vhh "$@"
+
+%labels
+    mber.repository https://github.com/manifoldbio/mber-open
+    mber.commit 5cc8e0534158647e9706b2655630f4449686c600
+    mber.package_version 1.0.0
+    weights.bind /mber/.mber
+
+%help
+    mber-open, pinned at one commit. Weights are bound, not baked:
+
+      apptainer run --nv --bind <weights>:/mber/.mber mber.sif --settings s.json
+
+    Run one trajectory per process. Two caching allocators, JAX's and torch's,
+    ratchet against each other inside one process and the second trajectory
+    fails whichever asks second.
