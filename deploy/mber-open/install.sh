@@ -157,15 +157,16 @@ export HF_HOME="${WEIGHTS}/huggingface"
 # under 4 GiB of it PyTorch's. A single-trajectory run never shows this and
 # every real run does.
 #
-# Turning preallocation off is not enough, and it was measured: with it off
-# JAX still held ~27 GiB after a trajectory, because AF2 genuinely used that
-# and JAX's caching allocator does not return memory to the driver. The
-# platform allocator uses cudaMalloc/cudaFree so the memory comes back between
-# trajectories. It is slower than the caching allocator; a hard
-# XLA_PYTHON_CLIENT_MEM_FRACTION ceiling was the alternative and was rejected
-# because a ceiling low enough to leave room for torch may be too low for AF2.
+# No allocator setting fixes this inside one process, and three runs measured
+# it: preallocation off still left JAX holding ~27 GiB, and the platform
+# allocator got to trajectory 3 before failing the other way round, with JAX
+# refused 26 MiB because torch now held the card. mBER builds a torch ESM2 per
+# trajectory and frees none of them, so the two caching allocators ratchet
+# against each other whatever either is told.
+#
+# One trajectory per process is the answer, and it is the 'batch' stage, not a
+# variable. Preallocation stays off so a single trajectory leaves torch room.
 export XLA_PYTHON_CLIENT_PREALLOCATE=false
-export XLA_PYTHON_CLIENT_ALLOCATOR=platform
 exec "${MAMBA}" run --prefix "${ENV_PREFIX}" mber-vhh "\$@"
 WRAP
   chmod +x "${ROOT}/mber-vhh.sh"
@@ -218,6 +219,53 @@ stage_smoke() {
   fi
 }
 
+stage_batch() {
+  # One trajectory per process, repeated.
+  #
+  #   ./install.sh batch [trajectories] [target_accepted]   default 20 1
+  #
+  # Three runs established that no allocator setting makes 20 trajectories fit
+  # in one process: mBER builds a torch ESM2 per trajectory and frees none,
+  # and JAX's allocator does not return memory either, so whichever framework
+  # asks second is refused. A fresh process per trajectory starts with an empty
+  # card and cannot ratchet.
+  #
+  # It costs the AF2 compile per trajectory, and it relies on their documented
+  # resume: re-running into the same directory continues from the row count
+  # already in accepted.csv. That is also the shape a registered profile should
+  # launch -- one authorized, discrete, deadline-bounded trajectory.
+  local trajectories="${2:-20}"
+  local target="${3:-1}"
+  local pdb="${SRC}/protocols/src/mber_protocols/stable/VHH_binder_design/examples/PDL1.pdb"
+  local out="${ROOT}/smoke/batch-$(date -u +%Y%m%dT%H%M%SZ)"
+  test -f "${pdb}" || { echo "example PDB missing" >&2; exit 1; }
+  mkdir -p "${out}"
+  log "batch of ${trajectories} single-trajectory runs into ${out}"
+  local accepted=0 failed=0 index
+  for index in $(seq 1 "${trajectories}"); do
+    accepted=$(( $(wc -l < "${out}/accepted.csv" 2>/dev/null || echo 1) - 1 ))
+    if [ "${accepted}" -ge "${target}" ]; then
+      echo "stopping at ${accepted} accepted after $((index - 1)) trajectories"
+      break
+    fi
+    printf '\n-- trajectory %s/%s (accepted so far: %s)\n' "${index}" "${trajectories}" "${accepted}"
+    if ! "${ROOT}/mber-vhh.sh" \
+        --input-pdb "${pdb}" --output-dir "${out}" --chains A --target-name PDL1 \
+        --hotspots A56 --num-accepted "${target}" --max-trajectories 1 \
+        --no-animations --no-pickle --no-png >> "${out}/trajectories.log" 2>&1; then
+      failed=$((failed + 1))
+      echo "trajectory ${index} failed; see ${out}/trajectories.log"
+    fi
+  done
+  accepted=$(( $(wc -l < "${out}/accepted.csv" 2>/dev/null || echo 1) - 1 ))
+  log "result"
+  echo "accepted: ${accepted} | failed trajectories: ${failed} | directory: ${out}"
+  if [ "${accepted}" -gt 0 ]; then
+    log "accepted.csv"
+    cat "${out}/accepted.csv"
+  fi
+}
+
 stage_verify() {
   log "sizes"
   du -sh "${SRC}" "${ENV_PREFIX}" "${WEIGHTS}" 2>/dev/null || true
@@ -252,6 +300,7 @@ case "${1:-}" in
   weights)   stage_weights ;;
   configure) stage_configure ;;
   smoke)     stage_smoke "$@" ;;
+  batch)     stage_batch "$@" ;;
   verify)    stage_verify ;;
-  *) echo "usage: $0 {clone|env|weights|configure|smoke|verify}" >&2; exit 2 ;;
+  *) echo "usage: $0 {clone|env|weights|configure|smoke|batch|verify}" >&2; exit 2 ;;
 esac
