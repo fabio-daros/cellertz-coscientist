@@ -92,12 +92,29 @@ in its argv — never a free-text command, which is the rule in
 - Weights 8.3 GB: `af_params` 5.3 GB, `huggingface` 2.5 GB (ESM2),
   `nbb2_weights` 672 MB, plus `stereo_chemical_props.txt`.
 - Environment 12 GB, source 6.4 MB. `matplotlib 3.8.4`.
-- **One trajectory took 432.82 s** on that card (design logits 261 s, PSSM
-  sampling 172 s), measured on their bundled PDL1 example with
-  `--max-trajectories 1`. Treat it as a floor: `greedy_tries` can multiply it
-  on a trajectory that gets further, and how many trajectories one accepted
-  design costs is not yet known. The CD22 stopping policy asks for 5000
-  accepted designs out of at most 50000 trajectories, which is not this
-  machine's work.
+- **One trajectory costs about 8.8 minutes** on that card: 433.6 s of
+  trajectory plus 97.0 s evaluating the binders it produced. Measured twice on
+  their bundled PDL1 example with `--max-trajectories 1`.
+- **One trajectory yielded 10 candidate binders and 0 accepted ones.** That is
+  `greedy_tries: 10`, each folded and scored. All ten passed `plddt >= 0.70`
+  (0.88 to 0.90) and none reached `i_ptm >= 0.75` (0.56 to 0.67), so mBER's own
+  filter rejected them. `accepted.csv` therefore held its header and no rows,
+  which is the legitimate outcome and not a failure; the difference from the
+  matplotlib crash is in the log, not in the file. Note the atlas's own gate
+  for ranking is `i_ptm >= 0.80`, stricter than the generator's filter.
+- At roughly 8.8 minutes per trajectory and no accepted design in one, the CD22
+  stopping policy of 5000 accepted designs out of at most 50000 trajectories is
+  not this machine's work.
+- **mBER writes no PAE matrix**, re-checked against a real run and not only
+  against their source: `evaluation_data.json` holds `pae` and `i_pae` as
+  scalars (0.205, 0.226) beside `i_ptm` and `plddt`. ipSAE needs a per-residue
+  matrix, so it stays uncomputable from mBER output without an independent
+  refold. See the scoring section of
+  `docs/architecture/mber_engager_pipeline.md`.
+- Structures are written per binder as
+  `runs/<trajectory>/evaluation_data/binders/<trajectory>_binder-<n>_iptm-<score>_{complex,monomer,relaxed}.pdb`,
+  and `design_summary.yaml` records the target as an absolute path. What
+  `accepted.csv` puts in `complex_pdb_path` is still unconfirmed, because no
+  run has yet produced an accepted row.
 - Installing it does not make it runnable by the platform. The runner manifest
   and lifting `_BLOCKED_PROFILES` are separate, and neither is done.

@@ -149,8 +149,10 @@ once his fork has a version and a host.
 
 The platform's primary signal is raw ipSAE, and
 `BindCraftIpSAEEvidenceProvider.evaluate` computes it from a `*_pae.npz` plus
-the model PDB. mBER emits no PAE matrix, so **the specialist chain cannot score
-an mBER design as it stands**: `journey_specialist_progress` reads BindCraft's
+the model PDB. mBER emits no PAE matrix — confirmed on 2026-11-21 against a
+real run, where `evaluation_data.json` carries `pae` and `i_pae` as scalars
+(0.205 and 0.226) beside `i_ptm` and `plddt`, not as per-residue matrices. So
+**the specialist chain cannot score an mBER design as it stands**: `journey_specialist_progress` reads BindCraft's
 stats CSV through `BindCraftAdapter` and scores with
 `BindCraftIpSAEScoreProvider`. Generation normalisation is fine — the parser
 matches the real header — and everything after it is BindCraft-shaped.
