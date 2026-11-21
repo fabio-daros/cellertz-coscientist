@@ -98,3 +98,68 @@ def test_the_audit_says_which_numbering_it_compared_in() -> None:
     assert numbering["offset_from_declared_frame"] == 17
     assert "names another residue" in numbering["warning"]
     assert numbering["block_residues_compared_in"] == "the structure's own numbering"
+
+
+def test_the_audit_now_reports_reachability_and_chance() -> None:
+    """The two things the atlas's 6 Nov re-audit added, on a real attempt."""
+
+    block = {"id": "A", "residues": ["A56", "A58", "A63"]}
+    audited = audit_hotspot_blocks([block], item(), null_draws=50)
+
+    chance = audited["chance"]
+    assert chance["status"] == "calculated"
+    assert chance["declared"] == [56, 58, 63]
+    assert sorted(chance["reachable"] + chance["buried"] + chance["not_in_structure"]) == [56, 58, 63]
+    assert chance["buried_limit"] == 0.05
+    # The denominator is the reachable count, not the declared one.
+    row = audited["blocks"][0]
+    assert row["declared"] == 3
+    assert row["reachable"] == len(chance["reachable"])
+    if chance["reachable"]:
+        null = chance["null_model"]
+        assert null["draws"] == 50
+        assert null["seed"] == 20261106, "a null model without its seed cannot be re-checked"
+        assert 0.0 <= null["null"] <= 1.0
+        assert null["designs"] >= 1
+
+
+def test_the_chance_model_can_be_skipped() -> None:
+    """A caller that only wants contact counts does not pay for 400 draws."""
+
+    audited = audit_hotspot_blocks([{"id": "A", "residues": ["A56"]}], item(), null_draws=0)
+
+    assert audited["chance"]["status"] == "calculated"
+    assert audited["chance"]["null_model"] == {"status": "not_requested"}
+    assert audited["blocks"][0]["contact_n"] >= 0
+
+
+def test_a_structure_the_sasa_cannot_read_degrades_to_a_status() -> None:
+    """Reporting real contacts must survive a surface that cannot be computed.
+
+    Driven at _chance_model directly: geometric_contacts reads the same file,
+    so an item with an absent path never reaches here through the audit.
+    """
+
+    from pathlib import Path as _Path
+
+    from cellertz.application.attempt_evidence import _chance_model
+
+    found = _chance_model(
+        [{"id": "A", "residues": ["A56"]}],
+        {"models": {"m1": {"pdb_path": _Path("/nonexistent/absent.pdb")}}},
+        {"m1": {56}},
+        draws=10,
+    )
+
+    assert found["status"] == "not_measurable"
+    assert "detail" in found
+
+
+def test_the_chance_model_refuses_to_invent_a_denominator() -> None:
+    from cellertz.application.attempt_evidence import _chance_model
+
+    assert _chance_model([], item(), {}, draws=10)["status"] == "no_block_declared_a_residue"
+    assert (
+        _chance_model([{"id": "A", "residues": ["A56"]}], {"models": {}}, {}, draws=10)["status"]
+        == "structure_absent"
+    )

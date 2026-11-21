@@ -206,6 +206,9 @@ function HotspotBlocks({ blocks }: { blocks?: HotspotBlock[] }) {
           {block.selectivity ? ` Selectivity ${block.selectivity}.` : " Selectivity not recorded."}
           {block.rationale ? ` ${block.rationale}` : ""}
           {block.risks ? ` Risk: ${block.risks}` : ""}
+          {block.overBlockLimit ? (
+            <span> Over the hotspot guard&rsquo;s limit of 6 residues for one block.</span>
+          ) : null}
           <span> Contact with this block is not measured yet.</span>
         </li>
       ))}

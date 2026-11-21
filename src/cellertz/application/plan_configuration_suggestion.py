@@ -966,6 +966,7 @@ def _validated_suggestions(
                 "kind": "agent_recommendation",
                 "evidence": evidence,
                 "blocks": blocks,
+                "hotspot_guard": hotspot_guard(blocks),
                 "applicable": True,
             }
         )
@@ -1135,6 +1136,35 @@ _SELECTIVITY = ("HIGH", "MEDIUM", "LOW")
 _RESIDUE_LABEL = re.compile(r"^([A-Za-z])(\d{1,6})$")
 
 
+# The limits the atlas records for hotspot_guard.py, which produced the
+# verdicts on its 76 blocks. A block over the limit is *marked*, never dropped:
+# the atlas's own finding is that a declared block is a claim to be audited
+# after the run, so the guard records a verdict and the audit measures it.
+MAX_BLOCK_RESIDUES = 6
+MAX_TOTAL_RESIDUES = 40
+
+
+def hotspot_guard(blocks: list[dict[str, Any]]) -> dict[str, Any]:
+    """Verdicts on a set of declared blocks, at the atlas's own limits.
+
+    Two separate judgements. ``max_block`` is a property of one block: more
+    than six residues in a single patch is a wider claim than the optimiser
+    has ever honoured. ``max_total`` is a property of the set, so it is
+    reported for the set rather than blamed on whichever block happened to be
+    last — the atlas gives no rule for attributing a budget to one member.
+    """
+
+    total = sum(block.get("n", 0) for block in blocks if isinstance(block.get("n"), int))
+    over = [block["id"] for block in blocks if block.get("over_block_limit") is True]
+    return {
+        "max_block": MAX_BLOCK_RESIDUES,
+        "max_total": MAX_TOTAL_RESIDUES,
+        "total_residues": total,
+        "over_block_limit": over,
+        "over_total_limit": total > MAX_TOTAL_RESIDUES,
+    }
+
+
 def _validated_blocks(
     raw: Any,
     kept: list[str],
@@ -1194,11 +1224,19 @@ def _validated_blocks(
         # A spatially clustered patch is often not a run of consecutive numbers,
         # and calling such a set a range would overstate what was recommended.
         contiguous = len(numbered) == hi - lo + 1
+        over_block_limit = len(numbered) > MAX_BLOCK_RESIDUES
+        if over_block_limit:
+            system.append(
+                f"Block {block_id} names {len(numbered)} residues, over the "
+                f"hotspot guard's max_block of {MAX_BLOCK_RESIDUES}. It is "
+                "recorded with that verdict, not dropped."
+            )
         seen.add(block_id)
         blocks.append(
             {
                 "id": block_id,
                 "contiguous": contiguous,
+                "over_block_limit": over_block_limit,
                 "label": (f"{chain}{lo}-{chain}{hi}" if contiguous else f"{chain}{lo}..{chain}{hi}")
                 if lo != hi
                 else f"{chain}{lo}",
@@ -1212,6 +1250,13 @@ def _validated_blocks(
                 "rationale": _one_text(item.get("rationale")),
                 "risks": _one_text(item.get("risks")),
             }
+        )
+    guard = hotspot_guard(blocks)
+    if guard["over_total_limit"]:
+        system.append(
+            f"The blocks name {guard['total_residues']} residues in total, over "
+            f"the hotspot guard's max_total of {MAX_TOTAL_RESIDUES}. Every block "
+            "is recorded; the set is what exceeds the budget."
         )
     return blocks
 

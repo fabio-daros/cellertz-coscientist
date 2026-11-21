@@ -15,7 +15,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+# Heavy atom <= 5 A, which is what the atlas's footer states its own contact
+# counts were measured at.
 CONTACT_ANGSTROM = 5.0
+# The target chain in every attempt structure on record, BindCraft's and
+# mBER's alike; the binder is B.
+_TARGET_CHAIN = "A"
+# The atlas's own draw count for the null model, 6 Nov 2026.
+NULL_DRAWS = 400
 
 _SPECIALIST = {
     "list_verified_attempts": ("ranking", "Lists verified attempts. It does not rank them."),
@@ -422,13 +429,33 @@ def geometric_contacts(item: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def audit_hotspot_blocks(blocks: list[dict[str, Any]], item: dict[str, Any]) -> dict[str, Any]:
+def audit_hotspot_blocks(
+    blocks: list[dict[str, Any]],
+    item: dict[str, Any],
+    null_draws: int = NULL_DRAWS,
+) -> dict[str, Any]:
     """How much of each declared block the designs actually reached.
 
     The atlas records this per block as contact_n and contact_pct, measured
     after the run. A block is a claim until this is computed, and the professor's
     campaigns turned on exactly this number: a declared block the designs never
     touched is a specification the optimiser ignored, not a binding site.
+
+    Its 6 Nov 2026 re-audit added the two things that give those percentages a
+    denominator and something to compare against, and both are here:
+
+    - **Reachability.** A buried hotspot cannot be a design target. GPC3's
+      ILE215 sits at relative SASA 0.018, and removing it from the denominator
+      is what moved that campaign's mode from 8 of 9 to 7 of 8 — and surfaced
+      a design the old cut had thrown away. So each block reports its
+      reachable count beside its declared one.
+    - **Chance.** Recall against 400 random size-matched contiguous surface
+      patches. Without it "median 3 of 8" has nothing to compare to; with it,
+      the atlas's unseeded GPC3 arm is 2.95x chance with only 8.7% of designs
+      individually clear, against 9x for the seeded arms.
+
+    ``null_draws`` of 0 skips the chance model, which is how a caller that only
+    wants the contact counts avoids paying for it.
     """
 
     contacts = geometric_contacts(item)
@@ -442,6 +469,8 @@ def audit_hotspot_blocks(blocks: list[dict[str, Any]], item: dict[str, Any]) -> 
         model_id: set(model["calculated"]["target_residues"])
         for model_id, model in contacts["models"].items()
     }
+    chance = _chance_model(blocks, item, reached, null_draws)
+    buried = set(chance.get("buried") or ())
     audited = []
     for block in blocks:
         numbers = []
@@ -449,6 +478,7 @@ def audit_hotspot_blocks(blocks: list[dict[str, Any]], item: dict[str, Any]) -> 
             match = _RESIDUE_NUMBER.match(str(label))
             if match is not None:
                 numbers.append(int(match.group(2)))
+        reachable = [number for number in numbers if number not in buried]
         per_model = {
             model_id: sorted(number for number in numbers if number in hit)
             for model_id, hit in reached.items()
@@ -467,18 +497,95 @@ def audit_hotspot_blocks(blocks: list[dict[str, Any]], item: dict[str, Any]) -> 
                 "contact_pct": round(100 * len(best) / len(numbers)) if numbers else 0,
                 "contacted_residues": best,
                 "per_model": per_model,
+                # The reachable count is the honest denominator: a buried
+                # hotspot is not a design target for the designs or for the
+                # random patches they are compared against.
+                "reachable": len(reachable),
+                "buried_residues": sorted(number for number in numbers if number in buried),
+                "contact_pct_reachable": (
+                    round(100 * len([n for n in best if n not in buried]) / len(reachable))
+                    if reachable
+                    else None
+                ),
             }
         )
     return {
         "status": "calculated",
         "cutoff_angstrom": CONTACT_ANGSTROM,
         "declared_but_not_reached_is_not_a_binding_site": True,
+        "chance": chance,
         # Which numbering the comparison happened in. A block declared against
         # the registered target file (chain A, 18 to 132) and measured on a
         # structure numbered from 1 would name a residue 17 positions away.
         "numbering": _numbering_note(item),
         "blocks": audited,
     }
+
+
+def _chance_model(
+    blocks: list[dict[str, Any]],
+    item: dict[str, Any],
+    reached: dict[str, set[int]],
+    draws: int,
+) -> dict[str, Any]:
+    """Reachability and enrichment over random patches, or why neither ran.
+
+    Measured in the **structure's** own numbering, the same frame the contact
+    counts use, so the two agree with each other. Whether that frame is the
+    one the blocks were declared in is the ``numbering`` note's business.
+
+    A structure this cannot read degrades to a status: an audit that reports
+    real contact counts should not be lost because the solvent-accessible
+    surface could not be computed.
+    """
+
+    from cellertz.domains.protein_design.scoring.hotspot_null_model import (
+        audit_against_null,
+        reachable_hotspots,
+    )
+    from cellertz.domains.protein_design.scoring.interface_area import InterfaceAreaError
+
+    declared: set[int] = set()
+    for block in blocks:
+        for label in block.get("residues") or []:
+            match = _RESIDUE_NUMBER.match(str(label))
+            if match is not None:
+                declared.add(int(match.group(2)))
+    if not declared:
+        return {"status": "no_block_declared_a_residue"}
+    model = next(iter(item["models"].values()), None)
+    path = None if model is None else model.get("pdb_path")
+    if path is None:
+        return {"status": "structure_absent"}
+    try:
+        split = reachable_hotspots(path, sorted(declared), _TARGET_CHAIN)
+    except (InterfaceAreaError, OSError, KeyError, ValueError) as error:
+        return {"status": "not_measurable", "detail": type(error).__name__}
+    found = {
+        "status": "calculated",
+        "declared": split["declared"],
+        "reachable": split["reachable"],
+        "buried": split["buried"],
+        "not_in_structure": split["not_in_structure"],
+        "relative_sasa": split["relative_sasa"],
+        "buried_limit": split["buried_limit"],
+        "accessible_residues": split["accessible_residues"],
+        "declared_share_of_surface": split["declared_share_of_surface"],
+    }
+    if draws < 1:
+        return {**found, "null_model": {"status": "not_requested"}}
+    if not split["reachable"]:
+        return {**found, "null_model": {"status": "every_declared_hotspot_is_buried"}}
+    footprints = {model_id: sorted(hit) for model_id, hit in reached.items() if hit}
+    if not footprints:
+        return {**found, "null_model": {"status": "no_design_reached_the_target"}}
+    try:
+        null = audit_against_null(
+            path, split["reachable"], footprints, _TARGET_CHAIN, draws=draws
+        )
+    except (InterfaceAreaError, OSError, ValueError) as error:
+        return {**found, "null_model": {"status": "not_measurable", "detail": type(error).__name__}}
+    return {**found, "null_model": null}
 
 
 def _numbering_note(item: dict[str, Any]) -> dict[str, Any]:

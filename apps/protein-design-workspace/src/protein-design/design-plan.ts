@@ -159,6 +159,9 @@ export type HotspotBlock = {
   hi: number;
   n: number;
   contiguous: boolean;
+  // hotspot_guard's verdict, at the atlas's max_block. A wide block is marked,
+  // never dropped: a declared block is a claim the audit measures after a run.
+  overBlockLimit: boolean;
   residues: string[];
   priority: number | null;
   selectivity: string;
@@ -537,6 +540,7 @@ function parseBlock(value: unknown): HotspotBlock[] {
     hi: row.hi,
     n: typeof row.n === "number" ? row.n : 0,
     contiguous: row.contiguous === true,
+    overBlockLimit: row.over_block_limit === true,
     residues: Array.isArray(row.residues) ? row.residues.filter((item): item is string => typeof item === "string") : [],
     priority: typeof row.priority === "number" ? row.priority : null,
     selectivity: typeof row.selectivity === "string" ? row.selectivity : "",
