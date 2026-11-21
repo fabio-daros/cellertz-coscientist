@@ -255,7 +255,15 @@ def trajectory_argv(
     gpu_index: int,
     weights_dir: Path,
 ) -> tuple[str, ...]:
-    """One Apptainer invocation. The image's runscript is ``mber-vhh``."""
+    """One Apptainer invocation. The image's runscript is ``mber-vhh``.
+
+    The two cache variables are not decoration. HOME is the bind mount point
+    and the image is read-only, so torch, matplotlib and fontconfig each
+    default to an unwritable path. Observed on the first real launch: "kernel
+    cache directory could not be created", which disables CUDA kernel caching
+    for the whole process. The built image predates these two lines in
+    ``mber.def``, so the caller supplies them.
+    """
 
     return (
         str(apptainer_bin),
@@ -263,6 +271,10 @@ def trajectory_argv(
         "--nv",
         "--env",
         f"CUDA_VISIBLE_DEVICES={gpu_index}",
+        "--env",
+        "XDG_CACHE_HOME=/tmp/cache",
+        "--env",
+        "MPLCONFIGDIR=/tmp/matplotlib",
         "--bind",
         f"{weights_dir}:{WEIGHTS_BIND}",
         str(sif_path),

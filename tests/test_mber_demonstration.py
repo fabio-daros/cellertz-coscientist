@@ -167,6 +167,11 @@ def test_the_weights_are_bound_and_the_card_is_named(attempts: Path) -> None:
     assert "CUDA_VISIBLE_DEVICES=0" in argv
     assert any(part.endswith(f":{WEIGHTS_BIND}") for part in argv), argv
     assert argv[-2] == "--settings"
+    # HOME is the bind mount point in a read-only image, so without these two
+    # the first real launch logged "kernel cache directory could not be
+    # created" and ran with CUDA kernel caching disabled.
+    assert "XDG_CACHE_HOME=/tmp/cache" in argv
+    assert "MPLCONFIGDIR=/tmp/matplotlib" in argv
 
 
 def test_a_launch_cannot_ask_for_a_campaign(attempts: Path) -> None:

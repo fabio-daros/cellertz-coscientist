@@ -184,3 +184,36 @@ against the 0.75 filter. So the image designs, evaluates and writes its state,
 and the one-trajectory-per-process orchestration holds through the container
 exactly as it does natively. The absence of an accepted design there is the
 generator's own filter, not a fault of the image.
+
+## The launcher, run
+
+2026-11-21, one trajectory driven through `MberDemonstrationLauncher` — the
+same `DemonstrationLaunch` the plan service builds, the same `launch()`, so
+this is the frontend's path and not `install.sh batch`:
+
+```
+launched true, trajectories 1, accepted_designs 0,
+profile_id pdl1-mber-apptainer-demonstration-v1,
+generator_version mber-open-1.0.0@5cc8e0534158647e9706b2655630f4449686c600
+```
+
+440.8 s of trajectory, about 11 minutes wall, the full `runs/<trajectory>/`
+tree written, and `i_ptm` topping out at **0.74** against the generator's 0.75
+filter: rejected by one hundredth. The ninth trajectory of the day, and the
+yield stands at 1 accepted in 9.
+
+Two things the log showed that `install.sh`'s wrapper had been hiding:
+
+**The cache variables have to be on the command line.** HOME is the bind mount
+point and the image is read-only, so torch's kernel cache defaults to
+`/mber/.cache/torch/kernels` and cannot be created — "This disables kernel
+caching". The built image predates `MPLCONFIGDIR` and `XDG_CACHE_HOME` in
+`mber.def`, and calling `apptainer run` directly loses what the wrapper
+exports, so `trajectory_argv` passes both with `--env`.
+
+**ESM2's weights load from the bind, but the run still talks to
+huggingface.co.** The weights came off disk (540 shards instantly), yet
+`huggingface.co/api/models/facebook/esm2_t33_650M_UR50D/tree/main` was fetched
+first. That is a revision check, not a download. It is also an outbound
+dependency nobody declared: a node without egress has not been tested, and
+`HF_HUB_OFFLINE=1` is the thing to try there.
