@@ -16,6 +16,7 @@ cannot be patched.
 
 from __future__ import annotations
 
+import re
 import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
@@ -74,6 +75,42 @@ PATCHABLE_ORDER = (
     "length_max",
     "seed",
     "filter_policy",
+    # The atlas's step 0. Its unit of work is a complex — a target chain and
+    # the clinical binder or native ligand beside it — never a bare target,
+    # because the partner is the instrument every later step measures with.
+    "source_structure",
+    "target_chain",
+    "partner_chains",
+    "partner_direction",
+    "clinical_anchor",
+)
+# The atlas declares this per target as contact_good, and it is not a
+# constant: touching the partner is the failure on seven of its nine targets
+# and the goal on two (HSA against ALB8's validated epitope, GPC3 against the
+# 9NTQ binder). It inverts the meaning of every number in the block
+# classification, so it is recorded, never assumed.
+PARTNER_DIRECTIONS = frozenset({"compete", "avoid"})
+# A PDB identifier, not a path: a locator that can traverse is not an identity.
+_STRUCTURE_ID = re.compile(r"^[0-9A-Za-z]{4}$")
+_CHAIN_ID = re.compile(r"^[0-9A-Za-z]$")
+_ANCHOR_TEXT = re.compile(r"^[-0-9A-Za-z .+/()]{1,80}$")
+# One documented form for the whole complex: PDB:target/partner, as in
+# 7O52:U/H,L. Deliberately one syntax and not a prose parser — the real
+# extraction is the supervisor agent's, and this leaves the fields absent so
+# the agent asks rather than guessing a chain letter.
+_COMPLEX_FORM = re.compile(
+    r"\b(?P<pdb>[0-9A-Za-z]{4}):(?P<target>[0-9A-Za-z])/(?P<partner>[0-9A-Za-z](?:,[0-9A-Za-z])*)\b"
+)
+# Phrases that settle the direction on their own. Anything less explicit is
+# left for the agent to ask about, because this value inverts a sign.
+_AVOID_PHRASES = ("non-competing", "noncompeting", "nao competir", "não competir", "avoid the partner", "without competing")
+_COMPETE_PHRASES = ("compete with", "competir com", "same epitope", "mesmo epitopo", "mesmo epítopo", "block the partner")
+_ATLAS_FIELDS = (
+    "source_structure",
+    "target_chain",
+    "partner_chains",
+    "partner_direction",
+    "clinical_anchor",
 )
 PATCHABLE = frozenset(PATCHABLE_ORDER)
 REQUIRED = ("target_id", "objective", "generator", "n_candidates")
@@ -128,8 +165,26 @@ _QUESTIONS = {
     "length_max": "What integer length_max should be used?",
     "seed": "What integer seed from 0 through 4294967295 should be used?",
     "filter_policy": "Which filter policy should be used? The closed value is no_filters.",
+    "source_structure": (
+        "Which source structure holds the target together with its partner? "
+        "Give the four-character PDB identifier, not a file path."
+    ),
+    "target_chain": "Which chain in that structure is the target?",
+    "partner_chains": (
+        "Which chains are the partner — the clinical binder or the native "
+        "ligand? Give them comma separated, for example H,L."
+    ),
+    "partner_direction": (
+        "Should this engager compete with the partner for its epitope, or "
+        "avoid it? Answer compete or avoid. This is not inferable from the "
+        "target and it reverses how every block is judged."
+    ),
+    "clinical_anchor": (
+        "Which clinical agent anchors this programme? It becomes the epitope "
+        "the ranking is compared against."
+    ),
 }
-_OPTIONAL_RECORDED = frozenset({"seed", "filter_policy"})
+_OPTIONAL_RECORDED = frozenset({"seed", "filter_policy", *_ATLAS_FIELDS})
 _INTEGER_FIELDS = frozenset({"n_candidates", "length_min", "length_max", "seed"})
 _SEED_MAX = 4294967295
 FILTER_POLICIES = frozenset({"no_filters"})
@@ -523,6 +578,8 @@ def _validate_constraints(pairs: object) -> None:
 
 
 def _accepted_value(name: str, value: object) -> str | int:
+    if name in _ATLAS_FIELDS:
+        return _accepted_atlas_value(name, value)
     if name == "filter_policy":
         if type(value) is not str or value not in FILTER_POLICIES:
             raise ApplicationContractError("invalid_value")
@@ -543,6 +600,42 @@ def _accepted_value(name: str, value: object) -> str | int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 1:
         raise ApplicationContractError("invalid_value")
     return value
+
+
+def _accepted_atlas_value(name: str, value: object) -> str:
+    """The step-0 fields. Each is refused rather than coerced.
+
+    ``partner_direction`` is closed to two words because the block
+    classification's sign depends on it: a third value would leave every
+    contact percentage uninterpretable.
+    """
+
+    if not isinstance(value, str) or not value.strip():
+        raise ApplicationContractError("invalid_value")
+    text = " ".join(value.split())
+    if name == "source_structure":
+        if _STRUCTURE_ID.fullmatch(text) is None:
+            raise ApplicationContractError("invalid_value")
+        return text.upper()
+    if name == "target_chain":
+        if _CHAIN_ID.fullmatch(text) is None:
+            raise ApplicationContractError("invalid_value")
+        return text
+    if name == "partner_chains":
+        chains = [item.strip() for item in text.split(",") if item.strip()]
+        if not chains or len(chains) != len(set(chains)):
+            raise ApplicationContractError("invalid_value")
+        if any(_CHAIN_ID.fullmatch(item) is None for item in chains):
+            raise ApplicationContractError("invalid_value")
+        return ",".join(chains)
+    if name == "partner_direction":
+        folded = text.casefold()
+        if folded not in PARTNER_DIRECTIONS:
+            raise ApplicationContractError("invalid_value")
+        return folded
+    if _ANCHOR_TEXT.fullmatch(text) is None:
+        raise ApplicationContractError("invalid_value")
+    return text
 
 
 def _apply(
@@ -578,6 +671,19 @@ def _apply(
             if name in accepted:
                 accepted.pop(name)
                 issues.append(ValidationIssue(name, "invalid"))
+    target_chain = accepted.get("target_chain") or _stored_text(current.get("target_chain"))
+    partner_chains = accepted.get("partner_chains") or _stored_text(current.get("partner_chains"))
+    if (
+        isinstance(target_chain, str)
+        and isinstance(partner_chains, str)
+        and target_chain in partner_chains.split(",")
+    ):
+        # occluded_by_partners refuses this too: a chain cannot occlude itself,
+        # and the measurement would return the whole surface.
+        for name in ("target_chain", "partner_chains"):
+            if name in accepted:
+                accepted.pop(name)
+                issues.append(ValidationIssue(name, "invalid"))
     changed: list[str] = []
     merged: dict[str, RequestField] = {}
     for name in PATCHABLE_ORDER:
@@ -601,6 +707,12 @@ def _apply(
     return merged, tuple(issues), tuple(changed)
 
 
+def _stored_text(field: RequestField | None) -> str | None:
+    if field is None or not isinstance(field.value, str):
+        return None
+    return field.value
+
+
 def _stored_int(field: RequestField | None) -> int | None:
     if field is None or not isinstance(field.value, int) or isinstance(field.value, bool):
         return None
@@ -619,6 +731,15 @@ def _structural_issues(fields: Mapping[str, RequestField]) -> tuple[ValidationIs
         issues.append(ValidationIssue("length_max", "missing"))
     if high.value is not None and low.provenance == "absent":
         issues.append(ValidationIssue("length_min", "missing"))
+    # A direction with no partner judges nothing, and a partner with no
+    # direction leaves the classification's sign undecided. Same pairing the
+    # two length bounds already have.
+    partner = fields.get("partner_chains")
+    direction = fields.get("partner_direction")
+    if partner is not None and partner.value is not None and direction is None:
+        issues.append(ValidationIssue("partner_direction", "missing"))
+    if direction is not None and direction.value is not None and partner is None:
+        issues.append(ValidationIssue("partner_chains", "missing"))
     return tuple(issues)
 
 
@@ -652,7 +773,11 @@ def _ordered(fields: Mapping[str, RequestField]) -> tuple[RequestField, ...]:
         "ranking_signal",
         "boltz_role",
     )
-    recorded = tuple(fields[name] for name in ("seed", "filter_policy") if name in fields)
+    recorded = tuple(
+        fields[name]
+        for name in ("seed", "filter_policy", *_ATLAS_FIELDS)
+        if name in fields
+    )
     return tuple(fields[name] for name in names) + recorded
 
 
@@ -680,6 +805,39 @@ def _request_from(draft: ProteinDesignRequestDraft) -> ProteinDesignRequest | No
         constraints=constraints,  # type: ignore[arg-type]
         filter_policy=filter_policy,
     )
+
+
+def _atlas_proposals(message: str, folded: str) -> list[FieldProposal]:
+    """Step-0 fields, only where the text settles them.
+
+    A direction read wrongly from a sentence would invert every contact
+    percentage in the block classification, so a message carrying phrases from
+    both families is proposed as ambiguous and the agent asks.
+    """
+
+    proposals: list[FieldProposal] = []
+    found = _COMPLEX_FORM.search(message)
+    if found is not None:
+        proposals.append(FieldProposal("source_structure", found.group("pdb")))
+        proposals.append(FieldProposal("target_chain", found.group("target")))
+        proposals.append(FieldProposal("partner_chains", found.group("partner")))
+    # An explicit negation consumes its own words before the competing
+    # phrases are looked for: "nao competir com o parceiro" contains
+    # "competir com", and reading it as compete would invert the sign.
+    remaining = folded
+    avoid = False
+    for phrase in _AVOID_PHRASES:
+        if phrase in remaining:
+            avoid = True
+            remaining = remaining.replace(phrase, " ")
+    compete = any(phrase in remaining for phrase in _COMPETE_PHRASES)
+    if avoid and compete:
+        proposals.append(FieldProposal("partner_direction", ambiguous=True))
+    elif avoid:
+        proposals.append(FieldProposal("partner_direction", "avoid"))
+    elif compete:
+        proposals.append(FieldProposal("partner_direction", "compete"))
+    return proposals
 
 
 def _token_char(char: str) -> bool:
@@ -749,6 +907,7 @@ class DeterministicDraftExtractor:
         del draft
         folded = " ".join(message.casefold().split())
         proposals: list[FieldProposal] = []
+        proposals.extend(_atlas_proposals(message, folded))
         if "pdl1" in folded:
             proposals.append(FieldProposal("target_id", "PDL1"))
         elif "bcma" in folded:

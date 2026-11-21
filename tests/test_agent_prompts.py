@@ -22,8 +22,11 @@ from cellertz.application.request_supervisor import (
     resolved_prompt,
 )
 
-# The Supervisor prompt as it stood before it was ever split.
-RECORDED_SHA = "495fdd31a26980f8e328c1012b2e78c134315ca26050a3d4a3b969a3b68afd9f"
+# The Supervisor prompt. Changing governance moves this hash on purpose: the
+# pin is what makes a silent edit impossible. Moved 2026-11-21 when the atlas's
+# step-0 fields were added and the agent was forbidden to infer
+# partner_direction.
+RECORDED_SHA = "9a2719d575b13eebf528456d0a750eb5b1a937b4a3368e9f8a3a04b6e6b8a4fa"
 
 
 class StoredBody:
