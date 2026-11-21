@@ -20,10 +20,19 @@ The pinned commit is the one in `application/mber_settings.MBER_OPEN_COMMIT`,
 and the script refuses to continue on any other: an install whose version is
 not the recorded one cannot be the recorded one.
 
-## Four things that are not in their README
+## Five things that are not in their README
 
-Each cost an iteration on 2026-11-21. None is a fault of theirs; all four are
+Each cost an iteration on 2026-11-21. None is a fault of theirs; all five are
 silent.
+
+**0. `download_weights.sh` reports success whatever happened.** Run outside the
+environment it prints `ModuleNotFoundError: No module named 'transformers'` at
+its ESM2 step, continues, and exits 0, leaving a 5 GB hole that shows up later
+as a network fetch in the middle of a run. The `weights` stage therefore runs
+the script through the environment **and** checks for a model file itself,
+failing if none is there. Its exit code is not evidence. AlphaFold2's and
+NanoBodyBuilder2's weights are only checked by presence, since no checksums
+are published.
 
 **1. `mber-vhh` comes from a second install.** The root package declares no
 console script. `protocols/setup.py` declares
@@ -71,5 +80,8 @@ in its argv — never a free-text command, which is the rule in
   commits; the recorded generator version carries both.
 - `torch.cuda.is_available()` True, `jax.devices()` `[CudaDevice(id=0)]`,
   `numpy 1.26.4` (their `numpy<2` pin), on an RTX 5000 Ada with 32 GB.
+- Weights 8.3 GB: `af_params` 5.3 GB, `huggingface` 2.5 GB (ESM2),
+  `nbb2_weights` 672 MB, plus `stereo_chemical_props.txt`.
+- Environment 12 GB, source 6.4 MB.
 - Installing it does not make it runnable by the platform. The runner manifest
   and lifting `_BLOCKED_PROFILES` are separate, and neither is done.

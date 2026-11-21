@@ -90,12 +90,25 @@ stage_env() {
 
 stage_weights() {
   test -d "${SRC}" || { echo "run 'clone' first" >&2; exit 1; }
+  test -x "${ENV_PREFIX}/bin/python" || { echo "run 'env' first" >&2; exit 1; }
   mkdir -p "${WEIGHTS}"
   log "weights into ${WEIGHTS}"
+  # Through the environment, not the system python: the ESM2 step of their
+  # script calls python with transformers, and outside the environment it
+  # fails with ModuleNotFoundError while the script still exits 0. A quiet
+  # 5 GB hole, which only shows up as a network fetch on the first run.
+  #
   # The script takes the destination as a positional argument, so the ~9 GB
   # land beside the SIF instead of in ~/.mber. ESMFold (~16 GB) is not asked
   # for: nbb2 is the VHH folding model the protocol defaults to.
-  bash "${SRC}/download_weights.sh" "${WEIGHTS}"
+  "${MAMBA}" run --prefix "${ENV_PREFIX}" bash "${SRC}/download_weights.sh" "${WEIGHTS}"
+  # Their script reports success whatever happened, so check the one piece it
+  # can silently miss.
+  if [ -z "$(find "${WEIGHTS}/huggingface" -name '*.safetensors' -o -name '*.bin' 2>/dev/null | head -1)" ]; then
+    echo "ESM2 did not land in ${WEIGHTS}/huggingface" >&2
+    exit 1
+  fi
+  echo "ESM2 present"
 }
 
 stage_configure() {
