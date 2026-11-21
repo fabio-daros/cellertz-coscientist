@@ -26,6 +26,7 @@ from datetime import UTC, datetime
 from typing import Any, Protocol
 from uuid import uuid4
 
+from cellertz.application.scientific_runner_readiness import registered_tool_target
 from cellertz.application.contracts import ApplicationContractError, ExecutionBudget, _text
 from cellertz.application.pdl1_selection import selection_document
 from cellertz.application.request_draft import (
@@ -564,11 +565,14 @@ class HumanApprovalGate:
             )
         request = _request_from(draft)
         budget = self._budget(session_id)
-        if request is None or budget is None or request.generator != "bindcraft":
-            return GateReply(
-                "profile_not_allowlisted", _PROFILE_TEXT, session_id, approval=approval
-            )
-        if request.target_id != "PDL1":
+        # The generator and the target must be a pair the installation
+        # registers. Checking them separately would admit bindcraft against
+        # CD22, a combination nobody has validated.
+        if (
+            request is None
+            or budget is None
+            or not registered_tool_target(request.generator, request.target_id)
+        ):
             return GateReply(
                 "profile_not_allowlisted", _PROFILE_TEXT, session_id, approval=approval
             )

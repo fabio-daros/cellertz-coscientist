@@ -39,6 +39,7 @@ from cellertz.application.scientific_runner_readiness import (
     PDL1_PROFILE_ID,
     TACI_PROFILE_ID,
     ReadinessReply,
+    registered_identity,
     readiness_reply_is_public,
 )
 
@@ -1384,12 +1385,10 @@ def _public_authorization_shape(record: ScientificRunAuthorization) -> bool:
 
 
 def _identity_ok(record: ScientificRunAuthorization) -> bool:
-    if (
-        record.profile_id not in {PDL1_PROFILE_ID, DOCKER_PROFILE_ID}
-        or record.tool_name != "bindcraft"
-    ):
-        return False
-    if record.target_scope != "PDL1":
+    # The registered table decides, so a profile cannot be used with a tool or
+    # a target it was not registered for, and mBER's CD22 and TACI profiles
+    # are accepted on the same terms BindCraft's PDL1 ones always were.
+    if not registered_identity(record.profile_id, record.tool_name, record.target_scope):
         return False
     if not _version(record.tool_version) or not _version(record.runtime_name):
         return False

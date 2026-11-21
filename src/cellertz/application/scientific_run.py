@@ -19,6 +19,7 @@ from typing import Any, Protocol
 from uuid import uuid4
 
 from cellertz.application.contracts import ApplicationContractError, _text
+from cellertz.application.scientific_runner_readiness import registered_identity
 from cellertz.application.scientific_authorization import (
     ScientificAuthorizationService,
     ScientificAuthorizationStoreError,
@@ -28,6 +29,11 @@ from cellertz.application.scientific_authorization import (
     budget_document,
     same_document,
 )
+
+_PROFILE = "pdl1-bindcraft-historical-v1"
+# Kept because tests and the apptainer demonstration name them; the
+# authorization chain now asks registered_identity instead.
+_PROFILES = frozenset({_PROFILE, "pdl1-bindcraft-docker-v1"})
 
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _RUN_ID = re.compile(r"^run_[0-9a-f]{32}$")
@@ -80,8 +86,6 @@ _PUBLIC_KEYS = frozenset(
 )
 _MAX_ARTIFACT_BYTES = 65536
 _MAX_NOTE_CHARS = 4000
-_PROFILE = "pdl1-bindcraft-historical-v1"
-_PROFILES = frozenset({_PROFILE, "pdl1-bindcraft-docker-v1"})
 _EXECUTION_SCHEMA = "cellertz.scientific_execution_record.v1"
 _CANDIDATE_SCHEMA = "cellertz.scientific_candidate.v1"
 _CANDIDATE_KEYS = frozenset({"candidate_id", "schema", "sequence", "target_scope"})
@@ -346,9 +350,7 @@ def _run_shape(run: ScientificRun) -> bool:
         or _DIGEST.fullmatch(run.request_digest) is None
         or _OBSERVATION_ID.fullmatch(run.readiness_observation_id) is None
         or not _stamp_ok(run.readiness_observed_at)
-        or run.profile_id not in _PROFILES
-        or run.tool_name != "bindcraft"
-        or run.target_scope != "PDL1"
+        or not registered_identity(run.profile_id, run.tool_name, run.target_scope)
         or _TOKEN.fullmatch(run.tool_version) is None
         or _TOKEN.fullmatch(run.runtime_name) is None
         or _TOKEN.fullmatch(run.runtime_version) is None
@@ -1483,11 +1485,7 @@ class ScientificRunService:
         record = reply.authorization
         if record is None or record.consumed_at is not None or record.status != "authorized":
             return None
-        if (
-            record.profile_id not in _PROFILES
-            or record.tool_name != "bindcraft"
-            or record.target_scope != "PDL1"
-        ):
+        if not registered_identity(record.profile_id, record.tool_name, record.target_scope):
             return None
         return record
 

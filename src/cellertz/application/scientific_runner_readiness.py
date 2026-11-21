@@ -194,6 +194,31 @@ _PROFILE_IDENTITY = {
 }
 
 
+_REGISTERED_PAIRS = frozenset(_PROFILE_IDENTITY.values())
+
+
+def registered_identity(
+    profile_id: object,
+    tool_name: object,
+    target_scope: object,
+) -> bool:
+    """Whether this profile, tool and target are a triple the installation registers.
+
+    One table instead of a conjunction repeated down the authorization chain.
+    What the table buys is the **pairing**: bindcraft against CD22 is refused
+    even though bindcraft and CD22 each appear in it, and a profile cannot be
+    used with a tool it was not registered for.
+    """
+
+    return _PROFILE_IDENTITY.get(profile_id) == (tool_name, target_scope)  # type: ignore[arg-type]
+
+
+def registered_tool_target(tool_name: object, target_scope: object) -> bool:
+    """The same pairing where no profile has been chosen yet, as on a draft."""
+
+    return (tool_name, target_scope) in _REGISTERED_PAIRS
+
+
 class _ManifestRejected(Exception):
     def __init__(self, code: str) -> None:
         super().__init__(code)
