@@ -20,10 +20,19 @@ The pinned commit is the one in `application/mber_settings.MBER_OPEN_COMMIT`,
 and the script refuses to continue on any other: an install whose version is
 not the recorded one cannot be the recorded one.
 
-## Five things that are not in their README
+## Six things that are not in their README
 
-Each cost an iteration on 2026-11-21. None is a fault of theirs; all five are
+Each cost an iteration on 2026-11-21. None is a fault of theirs; all six are
 silent.
+
+**-1. `matplotlib<3.9` is required, and no requirement file says so.**
+matplotlib 3.9 removed `matplotlib.cm.get_cmap`, which colabdesign 1.1.3 still
+calls in `shared/plot.py:117`, reached from `af_model.animate()`. mBER calls
+`animate()` in `core/modules/trajectory.py:480` inside `_update_design_state`
+**unconditionally**, so `--no-animations` does not avoid it. Every trajectory
+therefore dies at teardown with `AttributeError` *after* the design work is
+finished: 432 seconds of GPU spent, `accepted.csv` written with its header and
+no rows. Their requirements pin an upper bound on neither package.
 
 **0. `download_weights.sh` reports success whatever happened.** Run outside the
 environment it prints `ModuleNotFoundError: No module named 'transformers'` at
@@ -82,6 +91,13 @@ in its argv — never a free-text command, which is the rule in
   `numpy 1.26.4` (their `numpy<2` pin), on an RTX 5000 Ada with 32 GB.
 - Weights 8.3 GB: `af_params` 5.3 GB, `huggingface` 2.5 GB (ESM2),
   `nbb2_weights` 672 MB, plus `stereo_chemical_props.txt`.
-- Environment 12 GB, source 6.4 MB.
+- Environment 12 GB, source 6.4 MB. `matplotlib 3.8.4`.
+- **One trajectory took 432.82 s** on that card (design logits 261 s, PSSM
+  sampling 172 s), measured on their bundled PDL1 example with
+  `--max-trajectories 1`. Treat it as a floor: `greedy_tries` can multiply it
+  on a trajectory that gets further, and how many trajectories one accepted
+  design costs is not yet known. The CD22 stopping policy asks for 5000
+  accepted designs out of at most 50000 trajectories, which is not this
+  machine's work.
 - Installing it does not make it runnable by the platform. The runner manifest
   and lifting `_BLOCKED_PROFILES` are separate, and neither is done.

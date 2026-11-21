@@ -112,10 +112,19 @@ stage_weights() {
 }
 
 stage_configure() {
-  log "numpy"
+  log "numpy and matplotlib"
   # requirements.txt says numpy<2, and the torch reinstall above dragged 2.x
   # back in. AlphaFold and ColabDesign are the reason for that pin.
-  "${MAMBA}" run --prefix "${ENV_PREFIX}" python -m pip install --quiet 'numpy<2'
+  #
+  # matplotlib<3.9 is ours, and it is not cosmetic. matplotlib 3.9 removed
+  # matplotlib.cm.get_cmap, which colabdesign 1.1.3 still calls in
+  # shared/plot.py:117, reached from af_model.animate(). mBER calls animate()
+  # in trajectory.py:480 inside _update_design_state **unconditionally**, so
+  # --no-animations does not avoid it: every trajectory dies at teardown with
+  # AttributeError after the design work is already done. Their requirements
+  # pin neither package's upper bound.
+  "${MAMBA}" run --prefix "${ENV_PREFIX}" python -m pip install --quiet \
+    'numpy<2' 'matplotlib<3.9'
 
   log "~/.mber"
   # The weight paths are hardcoded in their source as ~/.mber/af_params,
