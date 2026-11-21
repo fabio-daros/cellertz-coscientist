@@ -27,12 +27,16 @@ from cellertz.application.contracts import ApplicationContractError
 from cellertz.application.vhh_campaign import VHHCampaignSpecification
 
 MBER_OPEN_REPOSITORY = "https://github.com/manifoldbio/mber-open"
-# Read from the GitHub API on 2026-11-20. The repository has no tags and no
-# releases, so this commit is the version. "latest" is rejected by contract.
+# Read from the GitHub API on 2026-11-20. The repository carries no tag and no
+# release, and "latest" is rejected by contract.
 MBER_OPEN_COMMIT = "5cc8e0534158647e9706b2655630f4449686c600"
 MBER_OPEN_COMMITTED_AT = "2026-10-21T22:37:33Z"
+# Declared by the package's own setup.py. It does not distinguish one commit
+# from another, so it is recorded beside the commit and never instead of it:
+# two installs can both answer 1.0.0 and not be the same code.
+MBER_PACKAGE_VERSION = "1.0.0"
 MBER_VHH_COMMAND = "mber-vhh"
-GENERATOR_VERSION = f"mber-open@{MBER_OPEN_COMMIT}"
+GENERATOR_VERSION = f"mber-open-{MBER_PACKAGE_VERSION}@{MBER_OPEN_COMMIT}"
 # README: tested on A10G, A100, L4, L40S and H100; at least 32 GB of VRAM
 # recommended. Not a promise that a smaller card fails.
 RECOMMENDED_VRAM_GB = 32

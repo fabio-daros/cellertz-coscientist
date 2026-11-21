@@ -43,10 +43,19 @@ def versioned():
     )
 
 
-def test_the_pinned_version_is_a_commit_because_the_repository_has_no_tag() -> None:
+def test_the_pinned_version_carries_the_commit_and_not_only_the_package_number() -> None:
+    """The package declares 1.0.0 and the repository carries no tag.
+
+    Two installs can both answer 1.0.0 and not be the same code, so the
+    commit is what makes the recorded version identify something.
+    """
+
+    from cellertz.application.mber_settings import MBER_PACKAGE_VERSION
+
     assert len(MBER_OPEN_COMMIT) == 40
     assert set(MBER_OPEN_COMMIT) <= set("0123456789abcdef")
-    assert GENERATOR_VERSION == f"mber-open@{MBER_OPEN_COMMIT}"
+    assert GENERATOR_VERSION == f"mber-open-{MBER_PACKAGE_VERSION}@{MBER_OPEN_COMMIT}"
+    assert MBER_PACKAGE_VERSION in GENERATOR_VERSION
     assert GENERATOR_VERSION.casefold() != "latest"
 
 
