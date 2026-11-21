@@ -327,6 +327,19 @@ class RegisteredInputCatalog:
             },
         }
 
+    @property
+    def input_root(self) -> Path | None:
+        """Where the registered files sit. A location, so not gated on verification.
+
+        ``verified_paths`` answers only for a root whose every required role
+        verifies, which a target-only root never does under the three-role
+        default. A reader that needs the directory itself — the recorded
+        preparation beside the inputs, for instance — needs it either way.
+        """
+
+        path = self._files.get("target_structure")
+        return None if path is None else path.parent
+
     def verified_paths(self) -> dict[str, Path] | None:
         if self.identities() is None:
             return None

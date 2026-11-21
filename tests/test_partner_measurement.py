@@ -132,3 +132,47 @@ def test_bytes_that_change_between_the_two_reads_are_refused(tmp_path) -> None:
     assert loaded[0] == hashlib.sha256(COMPLEX.encode("utf-8")).hexdigest()
     (root / "complex.pdb").unlink()
     assert catalog.verified_complex_bytes() is None
+
+
+def test_a_complex_that_is_not_the_recorded_source_is_refused(monkeypatch, tmp_path) -> None:
+    """The root's own preparation.json names the bytes it ran on.
+
+    The CD22 root records source_sha256 a25c467d..., and the complex placed
+    beside it hashes to exactly that. A complex that does not is refused before
+    it can steer an approval, which the numbering alone would not catch.
+    """
+
+    import json
+
+    root = _root(tmp_path)
+    (root / "preparation.json").write_text(
+        json.dumps({"source_sha256": "0" * 64}), encoding="utf-8"
+    )
+
+    found = _measure(monkeypatch, root)
+
+    assert found["status"] == "complex_is_not_the_recorded_source"
+    assert "did not come from this file" in found["limitation"]
+
+
+def test_the_recorded_source_matching_lets_the_measurement_through(monkeypatch, tmp_path) -> None:
+    import json
+
+    root = _root(tmp_path)
+    (root / "preparation.json").write_text(
+        json.dumps({"source_sha256": hashlib.sha256(COMPLEX.encode("utf-8")).hexdigest()}),
+        encoding="utf-8",
+    )
+
+    assert _measure(monkeypatch, root)["status"] == "measured"
+
+
+def test_a_preparation_record_that_names_no_source_is_not_itself_a_refusal(
+    monkeypatch, tmp_path
+) -> None:
+    """The PD-L1 root records no preparation at all, and that is not an error."""
+
+    root = _root(tmp_path)
+    (root / "preparation.json").write_text("not json", encoding="utf-8")
+
+    assert _measure(monkeypatch, root)["status"] == "measured"

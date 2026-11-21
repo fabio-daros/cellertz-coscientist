@@ -662,15 +662,16 @@ def _partner_measurement(
     that is missing is reported as missing rather than filled in: the atlas's
     direction reverses the meaning of every percentage below it.
 
-    The complex is tied to the prepared target by residue number. A preparation
-    only ever removes — solvent, heteroatoms, the partner chains — so the
-    prepared file's numbers must be a subset of the source's target chain, and
-    a complex that fails that is a different protein rather than this one's
-    source.
+    The complex is tied to the prepared target twice. Where the root records a
+    preparation, its ``source_sha256`` is the bytes the prepared target was
+    made from, and a complex that is not those bytes is refused outright.
+    Where it does not, the tie is the numbering: a preparation only ever
+    removes — solvent, heteroatoms, the partner chains — so the prepared file's
+    numbers must be a subset of the source's target chain.
 
-    shortcut: the tie is the numbering, not the preparation's recorded
-    source_sha256, because preparation.json is not a registered input. Upgrade
-    when it is.
+    shortcut: a root with no preparation.json has only the numbering tie, which
+    a different protein over the same residue range would pass. Upgrade by
+    recording a preparation for that root.
     """
 
     from cellertz.application.generation_plan import open_registered_input_catalog
@@ -696,7 +697,8 @@ def _partner_measurement(
                 "clinical partner is measured against declared chains, never guessed."
             ),
         }
-    loaded = open_registered_input_catalog().verified_complex_bytes()
+    catalog = open_registered_input_catalog()
+    loaded = catalog.verified_complex_bytes()
     if loaded is None:
         return {
             "status": "complex_not_registered",
@@ -707,6 +709,18 @@ def _partner_measurement(
             ),
         }
     digest, body = loaded
+    recorded = _recorded_source_sha(catalog)
+    if recorded is not None and recorded != digest:
+        return {
+            "status": "complex_is_not_the_recorded_source",
+            "declared": declared,
+            "complex_sha256": digest,
+            "limitation": (
+                "This root's recorded preparation was executed on bytes with digest "
+                f"{recorded}, and the registered complex is {digest}. The prepared target "
+                "did not come from this file."
+            ),
+        }
     try:
         contact = partner_contact_residues(
             body.decode("utf-8", errors="replace"),
@@ -739,6 +753,24 @@ def _partner_measurement(
         "complex_sha256": digest,
         **contact,
     }
+
+
+def _recorded_source_sha(catalog: Any) -> str | None:
+    """The digest the root's recorded preparation says it was executed on.
+
+    Absent for a root that records no preparation, which is why its absence is
+    not itself a refusal.
+    """
+
+    root = catalog.input_root
+    if root is None:
+        return None
+    try:
+        recorded = json.loads((root / "preparation.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    found = recorded.get("source_sha256") if isinstance(recorded, dict) else None
+    return found if isinstance(found, str) and _SHA256.match(found) else None
 
 
 def _recorded_partner(partner: Mapping[str, Any]) -> dict[str, Any]:
@@ -1238,6 +1270,7 @@ def declared_hotspot_blocks(
     return {"status": "suggestion_absent", "blocks": [], "residues": residues}
 
 
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _SELECTIVITY = ("HIGH", "MEDIUM", "LOW")
 _RESIDUE_LABEL = re.compile(r"^([A-Za-z])(\d{1,6})$")
 
