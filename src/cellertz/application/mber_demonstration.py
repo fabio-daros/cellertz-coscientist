@@ -346,6 +346,10 @@ class MberDemonstrationLauncher:
     profile_id = PROFILE_ID
     sif_path = SIF_PATH
     sif_sha256 = SIF_SHA256
+    # settings.json and advanced.json are BindCraft's configuration. This
+    # launcher writes mBER's own settings per trajectory from the campaign
+    # specification, so requiring those two would verify bytes nothing opens.
+    required_input_roles = ("target_structure",)
 
     def __init__(
         self,

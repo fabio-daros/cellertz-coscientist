@@ -62,6 +62,10 @@ from cellertz.domains.protein_design.execution.bindcraft_apptainer import (
 
 _SHA = re.compile(r"^[0-9a-f]{64}$")
 _ROLES = ("target_structure", "settings", "advanced_profile")
+# The identity of a root whose generator writes its own configuration, so the
+# only registered file is the prepared target. Named distinctly from
+# SELECTION_SCHEMA so the two can never be compared as equal by accident.
+GENERATOR_INPUT_SCHEMA = "generator-input-selection-v1"
 _REQUIRED_OUTPUT_KINDS = ("execution_record", "candidate_record")
 _KIND_BY_FILENAME = {
     "scientific-execution-record.json": "execution_record",
@@ -171,9 +175,25 @@ def governed_host_readiness() -> dict[str, Any]:
 class RegisteredInputCatalog:
     """Server-owned input files. Replies contain roles and digests only."""
 
-    def __init__(self, files: Mapping[str, Path], *, configuration: str = "configured") -> None:
+    def __init__(
+        self,
+        files: Mapping[str, Path],
+        *,
+        configuration: str = "configured",
+        required_roles: tuple[str, ...] | None = None,
+    ) -> None:
         self._files = {role: Path(files[role]) for role in _ROLES if role in files}
         self._configuration = configuration
+        # Which roles have to verify for this root to be an input identity.
+        # settings and advanced_profile are BindCraft's configuration; a
+        # generator that writes its own reads neither, and requiring them
+        # would mean verifying bytes nothing opens. target_structure is not
+        # optional for anyone: it is the science.
+        requested = _ROLES if required_roles is None else tuple(required_roles)
+        roles = tuple(role for role in _ROLES if role in requested)
+        if "target_structure" not in roles:
+            raise ApplicationContractError("required_input_roles_must_include_target")
+        self._required = roles
 
     def registration_status(self) -> str:
         """Why these files are or are not an input identity. This does not trust a stated hash."""
@@ -185,11 +205,13 @@ class RegisteredInputCatalog:
         return "verified"
 
     def identities(self) -> dict[str, Any] | None:
-        if any(role not in self._files for role in _ROLES):
+        if any(role not in self._files for role in self._required):
             return None
         flags = _open_flags()
         if flags is None:
             return None
+        if self._required != _ROLES:
+            return self._target_only_identity(flags)
         try:
             target = _read_regular(self._files["target_structure"], flags)
             settings = _read_regular(self._files["settings"], flags)
@@ -262,6 +284,45 @@ class RegisteredInputCatalog:
             recorded["hotspot_assumption"] = hotspot
         return recorded
 
+    def _target_only_identity(self, flags: int) -> dict[str, Any] | None:
+        """A root whose only verified role is the prepared target structure.
+
+        This does not loosen ``Pdl1ValidatedInputIdentity`` or
+        ``Pdl1InputSelection``: both still require their four digests and the
+        three-role path above is unchanged. It reproduces the one guarantee
+        ``verify_pdl1_inputs`` adds over hashing once — the file is read
+        twice and the digests compared, so bytes that changed between the
+        hash and the use are refused — and nothing else, because there is no
+        settings or profile document here to canonicalise.
+        """
+
+        path = self._files["target_structure"]
+        try:
+            first = _read_regular(path, flags)
+            second = _read_regular(path, flags)
+        except (OSError, ValueError, TypeError):
+            return None
+        if first is None or second is None:
+            return None
+        digest = hashlib.sha256(first).hexdigest()
+        if hashlib.sha256(second).hexdigest() != digest:
+            return None
+        return {
+            "artifacts": [
+                {
+                    "role": "target_structure",
+                    "artifact_id": "registered_target_structure",
+                    "sha256": digest,
+                    "verified": True,
+                }
+            ],
+            "input_selection": {
+                "schema": GENERATOR_INPUT_SCHEMA,
+                "manifest_digest": hashlib.sha256(f"{digest}\n".encode()).hexdigest(),
+                "target_structure_sha256": digest,
+            },
+        }
+
     def verified_paths(self) -> dict[str, Path] | None:
         if self.identities() is None:
             return None
@@ -296,6 +357,7 @@ class RegisteredInputCatalog:
 
 def open_registered_input_catalog(
     environ: Mapping[str, str] | None = None,
+    required_roles: tuple[str, ...] | None = None,
 ) -> RegisteredInputCatalog:
     """Build the startup catalog. An empty root stays unverified.
 
@@ -306,12 +368,16 @@ def open_registered_input_catalog(
     env = os.environ if environ is None else environ
     raw = env.get(INPUT_ROOT_ENV, "").strip()
     if raw == "":
-        return RegisteredInputCatalog({}, configuration="input_root_unconfigured")
+        return RegisteredInputCatalog(
+            {}, configuration="input_root_unconfigured", required_roles=required_roles
+        )
     if not os.path.isabs(raw) or any(char in raw for char in "\x00\n\r"):
-        return RegisteredInputCatalog({}, configuration="input_root_invalid")
+        return RegisteredInputCatalog(
+            {}, configuration="input_root_invalid", required_roles=required_roles
+        )
     root = Path(raw)
     files = {role: root / name for role, name in _ROLE_FILES.items()}
-    return RegisteredInputCatalog(files)
+    return RegisteredInputCatalog(files, required_roles=required_roles)
 
 
 @dataclass

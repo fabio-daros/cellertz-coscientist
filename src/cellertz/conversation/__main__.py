@@ -161,7 +161,11 @@ def main(*, control: object | None = None, deadline: object | None = None) -> No
         generation_plans = GenerationPlanService(
             scientific_runs,
             store=plan_store,
-            inputs=open_registered_input_catalog(),
+            # The launcher says which input roles it needs, as it says which
+            # image it runs. A launcher that declares none needs all three.
+            inputs=open_registered_input_catalog(
+                required_roles=getattr(demonstration, "required_input_roles", None)
+            ),
             authorizations=authorizations,
             session_id=demo.session_id,
             demonstration=demonstration,

@@ -406,3 +406,88 @@ TACI launch needs a prepared structure in that catalog, and that is a data
 step, not a code one. `_PROFILE_IDENTITY` is untouched: the demonstration path
 does not consult it, so nothing in the authorization chain was widened to make
 this run.
+
+## The CD22 target, and who decides which inputs count
+
+The registered input catalog is three files: `target.pdb`, `settings.json`,
+`advanced.json`. The last two are BindCraft's configuration, and the mBER
+launcher reads neither — it writes mBER's own settings per trajectory from the
+campaign specification. So a CD22 root holding only a prepared target was
+reported `input_files_unverified`, and the three ways out were not equal:
+fabricating the two BindCraft files would have put verified digests on bytes
+nothing opens.
+
+The launcher declares which roles it needs, as it declares which image it
+runs. `MberDemonstrationLauncher.required_input_roles` is
+`("target_structure",)`; a launcher that declares none needs all three, which
+is BindCraft. `target_structure` cannot be dropped by anyone — settings are a
+generator's business, the structure is the science.
+
+Nothing was loosened to do it. `Pdl1ValidatedInputIdentity` and
+`Pdl1InputSelection` still require their four digests and the three-role path
+is byte-for-byte what it was; the target-only path is a second, narrower
+identity beside it, under its own schema name so the two can never compare
+equal. It reproduces the one guarantee `verify_pdl1_inputs` adds over hashing
+once — the file is read twice and the digests compared — and claims nothing
+else, because there is no settings or profile document to canonicalise.
+
+### Preparation is executed now, not just recorded
+
+`TargetPreparationStep` named six operations and nothing performed one: the
+steps recorded what someone did by hand, so the record and the file could
+disagree silently. `target_preparation` runs exactly the recorded steps in the
+recorded order, refuses an operation it cannot perform rather than skipping
+it, and then checks the result against the claim: the prepared chain has to be
+the declared one and **every epitope residue has to survive**, because a
+hotspot list pointing at residues the file lacks is fiction.
+
+Transforms are at the column level, not through a structure parser, because
+the campaigns are explicit that residue numbers were measured on the original
+chain and kept after relabelling.
+
+### What 7O52 actually gave us
+
+The recorded four CD22 steps — desolvate, extract chain U, relabel to A, set
+segid — leave **30 heteroatoms**: one glycerol, one NAG, two sulfates,
+numbered 701 to 704. AlphaFold2 and ColabDesign model protein, and the
+professor's verified PD-L1 input is 921 `ATOM` records with no heteroatom at
+all, so `cd22_catalog_preparation` declares three removals of its own rather
+than editing the recorded specification, and writes a manifest separating what
+was recorded from what we added.
+
+Measured on the way, nearest heavy atom to any of the 24 recorded epitope
+residues:
+
+| species | atoms | nearest epitope atom |
+| --- | --- | --- |
+| SO4 | 10 | **2.7 A** |
+| NAG | 14 | **4.1 A** |
+| GOL | 6 | 10.2 A |
+
+Two of those matter. A crystallisation sulfate 2.7 A from the epitope is
+inside hydrogen-bonding distance of it, which bears on how that 24-residue
+list was derived from contacts in the first place. And the glycan at 4.1 A is
+real: CD22 carries it in vivo, so a binder aimed at this face meets occlusion
+the stripped structure no longer shows. That is what the occlusion pass
+measures, against a declared ligand footprint — once someone declares the
+glycan as one.
+
+Result: chain A, 162 residues, 507 to 682, 1286 atoms, no heteroatom, all 24
+epitope residues present, and Biopython parses it with no non-standard
+residue.
+
+### What a CD22 run still needs
+
+Two things, and neither is the catalog:
+
+- **A CD22 demonstration specification.** `cd22_operational_reference()`
+  carries `generator_version=None` and `write_mber_vhh_settings` refuses
+  without it, and the demonstration specification in `mber_demonstration` is
+  PD-L1's. Small.
+- **A clinical epitope and a frame offset for CD22.** The ranking weighs
+  `epitope_jaccard_clinical` at 1.2 and refuses without one, and the offset
+  between the prepared frame (507-682) and mBER's output frame has no
+  established-by-identity helper the way PD-L1 does. Until both exist a CD22
+  launch would design on the card and then report
+  `clinical_epitope_frame_unverified` rather than rank — which is honest, but
+  it is not the atlas.
