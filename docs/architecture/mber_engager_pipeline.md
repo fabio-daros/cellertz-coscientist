@@ -119,7 +119,16 @@ repository on 2026-11-20, not inferred:
   `filters.min_iptm|min_plddt`. The CD22 and TACI specifications already carry
   every one of them.
 - A run writes `accepted.csv`, `Accepted/` and `runs/<trajectory>/`, and
-  re-running resumes from the row count in `accepted.csv`.
+  re-running resumes from the row count in `accepted.csv`. The header, read at
+  the pinned commit, is exactly `trajectory_name, binder_index, binder_seq,
+  i_ptm, plddt, ptm, complex_pdb_path, relaxed_pdb_path`, and `MBERParser`
+  already matches it. Accepted PDBs are named
+  `{trajectory_name}_binder-{binder_index}_iptm-{i_ptm:.4f}_complex.pdb`.
+- **mBER writes no PAE matrix.** There is no `.npz` in the repository, and
+  `evaluation.py` persists `aux["log"]`, which holds `pae` and `i_pae` as
+  scalars. What reaches disk is PDBs, those scalars, and
+  `design_state.pickle` unless `--no-pickle`. This matters more than anything
+  else here: see "Scoring mBER" below.
 - **The repository has no tag and no release**, so a commit is the only
   concrete version. `mber_settings.MBER_OPEN_COMMIT` pins it.
 - Install is conda + `pip install -e protocols` + `download_weights.sh` (~9 GB:
@@ -135,6 +144,31 @@ specification.
 
 The professor's modified mBER is a later configuration change on top of this,
 once his fork has a version and a host.
+
+## Scoring mBER
+
+The platform's primary signal is raw ipSAE, and
+`BindCraftIpSAEEvidenceProvider.evaluate` computes it from a `*_pae.npz` plus
+the model PDB. mBER emits no PAE matrix, so **the specialist chain cannot score
+an mBER design as it stands**: `journey_specialist_progress` reads BindCraft's
+stats CSV through `BindCraftAdapter` and scores with
+`BindCraftIpSAEScoreProvider`. Generation normalisation is fine — the parser
+matches the real header — and everything after it is BindCraft-shaped.
+
+Two ways out, and only one of them is honest:
+
+- **Re-fold independently and keep the PAE.** This is what the CD22 and TACI
+  protocols already declare: `evaluation_strategy = "independent_refold"`.
+  ipSAE then stays ipSAE, computed by us from a matrix we wrote.
+- **Rank with the professor's own two-axis formula (step 4)**, which needs
+  i_pTM and a quality composite, not ipSAE. `accepted.csv` carries `i_ptm`
+  already, and the composite's terms come from the structure.
+
+Substituting mBER's `i_ptm` for `ranking_score` is not an option: the adapter
+forbids emitting `ranking_score` or `ipsae`, the platform's invariant says
+i_pTM is not ipSAE, and the atlas's own finding is that one blended axis was
+wrong. **Step 4 is therefore not decoration; it is the scoring path an mBER run
+can actually feed.**
 
 **The admin offers a short list of registered profiles, never a free-text
 command.** A text field whose value becomes argv on a GPU host is arbitrary
