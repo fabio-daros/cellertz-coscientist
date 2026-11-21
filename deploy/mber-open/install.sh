@@ -151,12 +151,21 @@ stage_configure() {
 # install.sh; the platform's registered profile should name this file.
 set -euo pipefail
 export HF_HOME="${WEIGHTS}/huggingface"
-# JAX preallocates most of the card by default. mBER builds a torch ESM2 model
-# per trajectory in TemplateModule._setup_models, so from the SECOND
-# trajectory on there is nothing left for it: 31.51 of 31.60 GiB in use, only
-# 3.93 GiB of it PyTorch's, and CUDA OutOfMemory while allocating 26 MiB.
-# A single-trajectory run never shows this, and every real run does.
+# mBER builds a torch ESM2 model per trajectory in
+# TemplateModule._setup_models, and JAX and torch share one card. From the
+# SECOND trajectory on, torch cannot get 26 MiB: 31.3 of 31.6 GiB in use with
+# under 4 GiB of it PyTorch's. A single-trajectory run never shows this and
+# every real run does.
+#
+# Turning preallocation off is not enough, and it was measured: with it off
+# JAX still held ~27 GiB after a trajectory, because AF2 genuinely used that
+# and JAX's caching allocator does not return memory to the driver. The
+# platform allocator uses cudaMalloc/cudaFree so the memory comes back between
+# trajectories. It is slower than the caching allocator; a hard
+# XLA_PYTHON_CLIENT_MEM_FRACTION ceiling was the alternative and was rejected
+# because a ceiling low enough to leave room for torch may be too low for AF2.
 export XLA_PYTHON_CLIENT_PREALLOCATE=false
+export XLA_PYTHON_CLIENT_ALLOCATOR=platform
 exec "${MAMBA}" run --prefix "${ENV_PREFIX}" mber-vhh "\$@"
 WRAP
   chmod +x "${ROOT}/mber-vhh.sh"
