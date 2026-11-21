@@ -25,8 +25,13 @@ From: ubuntu:22.04
     set -eux
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
+    # build-essential is not optional: freesasa publishes no wheel for this
+    # platform and compiles from source. The native install only worked
+    # because the host had a compiler, which is exactly the kind of thing a
+    # container exposes. It is left in the image rather than purged, because
+    # purging it risks taking runtime C++ libraries with it for 200 MB.
     apt-get install -y --no-install-recommends \
-        ca-certificates curl bzip2 git
+        ca-certificates curl bzip2 git build-essential
     rm -rf /var/lib/apt/lists/*
 
     COMMIT=5cc8e0534158647e9706b2655630f4449686c600
