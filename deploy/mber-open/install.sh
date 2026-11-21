@@ -158,13 +158,21 @@ WRAP
 }
 
 stage_smoke() {
-  # Their own example, capped to one accepted design and one trajectory. The
-  # example's own settings say 100 and 10000, which is days of GPU. This asks
-  # only whether the install runs at all.
+  # Their own example, capped. The example's own settings say 100 accepted out
+  # of 10000 trajectories, which is days of GPU.
+  #
+  #   ./install.sh smoke [max_trajectories] [num_accepted]   default 1 1
+  #
+  # num_accepted is a stopping condition, not a quota: the run ends at the
+  # first acceptance, so a larger trajectory budget costs nothing when the
+  # yield is good and bounds the loss when it is not. Measured cost is about
+  # 8.8 minutes per trajectory on this card.
+  local max_traj="${2:-1}"
+  local n_accept="${3:-1}"
   #
   # The flag form is used rather than --settings: their documentation does not
   # say whether file keys and flags can be mixed, or which wins.
-  local out="${ROOT}/smoke/$(date -u +%Y%m%dT%H%M%SZ)"
+  local out="${ROOT}/smoke/$(date -u +%Y%m%dT%H%M%SZ)-t${max_traj}"
   local pdb="${SRC}/protocols/src/mber_protocols/stable/VHH_binder_design/examples/PDL1.pdb"
   test -f "${pdb}" || { echo "example PDB missing: ${pdb}" >&2; exit 1; }
   test -s "${WEIGHTS}/af_params/params_model_1_multimer_v3.npz" \
@@ -182,8 +190,8 @@ stage_smoke() {
     --chains A \
     --target-name PDL1 \
     --hotspots A56 \
-    --num-accepted 1 \
-    --max-trajectories 1 \
+    --num-accepted "${n_accept}" \
+    --max-trajectories "${max_traj}" \
     --no-animations --no-pickle --no-png
   log "what it wrote"
   find "${out}" -maxdepth 2 | head -30
@@ -191,7 +199,7 @@ stage_smoke() {
     log "accepted.csv header, against what MBERParser expects"
     head -2 "${out}/accepted.csv"
   else
-    echo "no accepted.csv: one trajectory need not clear i_ptm 0.75 / plddt 0.70"
+    echo "no accepted.csv at all"
   fi
 }
 
@@ -228,7 +236,7 @@ case "${1:-}" in
   env)       stage_env ;;
   weights)   stage_weights ;;
   configure) stage_configure ;;
-  smoke)     stage_smoke ;;
+  smoke)     stage_smoke "$@" ;;
   verify)    stage_verify ;;
   *) echo "usage: $0 {clone|env|weights|configure|smoke|verify}" >&2; exit 2 ;;
 esac
