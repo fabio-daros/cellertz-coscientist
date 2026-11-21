@@ -40,6 +40,35 @@ WEIGHTS: dict[str, float] = {
     "isomerisation": -0.3,
     "met_trp_in_cdr": -0.2,
 }
+# The atlas's BCMA panel: clear i_ptm >= 0.80, then rank on the worse of the
+# two percentiles. i_pTM leads because Chow et al. rank by it before selection.
+ORDERING_I_PTM_GATED = "i_ptm_gated"
+# The atlas's GPC3 panel: the epitope filter runs first and i_pTM only breaks
+# ties, because on that target i_pTM points the wrong way — pooled Spearman
+# -0.199 against hotspot coverage, and the single best i_pTM in the set
+# (0.8675) binds the wrong face. "Applied first it selects exactly the designs
+# you do not want." The effect is entirely between campaigns: within one arm
+# the correlation is indistinguishable from zero, which is the mBER preprint's
+# own caveat that it ranks within a campaign aimed at one site.
+ORDERING_EPITOPE_FIRST = "epitope_first"
+ORDERINGS = (ORDERING_I_PTM_GATED, ORDERING_EPITOPE_FIRST)
+_INTERPRETATIONS = {
+    ORDERING_I_PTM_GATED: (
+        (
+            "i_pTM gates and then forms one of two axes, as the atlas's BCMA "
+            "panel ranks. On a target where i_pTM anti-correlates with epitope "
+            "coverage this ordering selects against the epitope; that has to "
+            "be measured per target rather than assumed."
+        ),
+    ),
+    ORDERING_EPITOPE_FIRST: (
+        (
+            "The epitope filter ran upstream and i_pTM only breaks ties, as "
+            "the atlas's GPC3 panel ranks. No i_pTM gate was applied, so a "
+            "low-i_pTM design on the right face is not excluded."
+        ),
+    ),
+}
 # Both must be exceeded for a design to be dropped as a near-duplicate.
 JACCARD_LIMIT = 0.85
 IDENTITY_LIMIT = 0.85
@@ -107,14 +136,19 @@ class RankedEngagerDesign:
 class EngagerRanking:
     designs: tuple[RankedEngagerDesign, ...]
     rejected_by_gate: tuple[str, ...] = ()
-    normalisation: str = "each term to its cohort percentile before weighting"
+    normalisation: str = "each term z-scored across the cohort before weighting"
+    ordering: str = ORDERING_I_PTM_GATED
     interpretations: tuple[str, ...] = field(default_factory=tuple)
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "protocol_id": PROTOCOL_ID,
             "protocol_version": PROTOCOL_VERSION,
-            "i_ptm_gate": I_PTM_GATE,
+            # Which of the atlas's two orderings produced these numbers. Two
+            # rankings of one cohort under different orderings are different
+            # claims and must not be compared row by row.
+            "ordering": self.ordering,
+            "i_ptm_gate": I_PTM_GATE if self.ordering == ORDERING_I_PTM_GATED else None,
             "weights": dict(WEIGHTS),
             "normalisation": self.normalisation,
             "interpretations": list(self.interpretations),
@@ -129,14 +163,23 @@ def rank_engager_designs(
     clinical_epitopes: list[frozenset[int]] | tuple[frozenset[int], ...],
     cdr_spans: list[tuple[int, int]] | tuple[tuple[int, int], ...],
     select: int | None = None,
+    ordering: str = ORDERING_I_PTM_GATED,
 ) -> EngagerRanking:
-    """Rank a cohort on the worse of its two percentiles.
+    """Rank a cohort under one of the atlas's two orderings.
 
     ``clinical_epitopes`` is the benchmark antibody's epitope, or both of its
     nanobodies: the atlas takes the better Jaccard of the two. It carries a
     weight of 1.2, so the cohort cannot be ranked without it rather than being
     ranked on a formula with a term silently set to zero.
+
+    ``ordering`` is a declared scientific choice, never inferred. The atlas
+    runs both and they disagree about where i_pTM belongs; which one a target
+    deserves is settled by measuring i_pTM against epitope coverage on that
+    target, not by this function.
     """
+
+    if ordering not in ORDERINGS:
+        raise EngagerRankingError(f"unknown_ordering:{ordering}")
 
     if not clinical_epitopes:
         raise EngagerRankingError("clinical_epitope_not_declared")
@@ -145,34 +188,55 @@ def rank_engager_designs(
     identifiers = [design.design_id for design in designs]
     if len(identifiers) != len(set(identifiers)):
         raise EngagerRankingError("duplicate_design_id")
-    gated = [design for design in designs if design.i_ptm >= I_PTM_GATE]
-    rejected = tuple(
-        design.design_id for design in designs if design.i_ptm < I_PTM_GATE
-    )
+    if ordering == ORDERING_I_PTM_GATED:
+        gated = [design for design in designs if design.i_ptm >= I_PTM_GATE]
+        rejected = tuple(
+            design.design_id for design in designs if design.i_ptm < I_PTM_GATE
+        )
+    else:
+        # No i_pTM gate: on a target where it anti-correlates with coverage,
+        # gating on it first discards the designs on the right face.
+        gated, rejected = list(designs), ()
     if not gated:
-        return EngagerRanking(designs=(), rejected_by_gate=rejected)
+        return EngagerRanking(
+            designs=(), rejected_by_gate=rejected, ordering=ordering,
+            interpretations=_INTERPRETATIONS[ordering],
+        )
 
     terms = [_terms(design, clinical_epitopes, cdr_spans) for design in gated]
-    # Each term reaches the weighted sum as its own cohort percentile, so one
-    # term's unit (buried area in square angstroms) cannot swamp another's
-    # (a Jaccard in 0..1).
-    per_term = {
-        name: _percentiles([row[name] for row in terms]) for name in WEIGHTS
-    }
+    # z-scored, which is what the atlas states: "Composite is a z-scored
+    # weighted sum over the 612." It was per-term percentiles here, which was
+    # this platform's reading of weights whose combination the atlas had not
+    # spelled out in the panel I had transcribed. It does spell it out, and a
+    # z-score keeps the distance between values that a rank discards.
+    per_term = {name: _z_scores([row[name] for row in terms]) for name in WEIGHTS}
     composites = [
         sum(WEIGHTS[name] * per_term[name][index] for name in WEIGHTS)
         for index in range(len(gated))
     ]
     i_ptm_percentile = _percentiles([design.i_ptm for design in gated])
     composite_percentile = _percentiles(composites)
-    scores = [
-        min(i_ptm_percentile[index], composite_percentile[index])
-        for index in range(len(gated))
-    ]
+    if ordering == ORDERING_EPITOPE_FIRST:
+        # The GPC3 panel: i_ptm there anti-correlates with hotspot coverage
+        # (pooled Spearman -0.199) and the best i_ptm in the set binds the
+        # wrong face, so it breaks ties and never leads. The epitope filter
+        # itself is upstream — the screen a cohort passes before it gets here.
+        scores = list(composite_percentile)
+    else:
+        scores = [
+            min(i_ptm_percentile[index], composite_percentile[index])
+            for index in range(len(gated))
+        ]
     front = _pareto_front(i_ptm_percentile, composite_percentile)
     order = sorted(
         range(len(gated)),
-        key=lambda index: (-scores[index], gated[index].design_id),
+        # i_ptm is the tie-break under EPITOPE_FIRST and nothing but a stable
+        # ordering under the gated protocol, where it already set the score.
+        key=lambda index: (
+            -scores[index],
+            -i_ptm_percentile[index] if ordering == ORDERING_EPITOPE_FIRST else 0.0,
+            gated[index].design_id,
+        ),
     )
     chosen = _greedy_diverse(order, gated, select)
     ranked = []
@@ -195,13 +259,8 @@ def rank_engager_designs(
     return EngagerRanking(
         designs=tuple(ranked),
         rejected_by_gate=rejected,
-        interpretations=(
-            # The atlas states the weights but not how terms of different units
-            # are brought together. Percentile normalisation is ours and has to
-            # be confirmed against his own run before a number is quoted as his.
-            "Per-term percentile normalisation before weighting is this "
-            "platform's reading of the formula, not a stated step of it.",
-        ),
+        ordering=ordering,
+        interpretations=_INTERPRETATIONS[ordering],
     )
 
 
@@ -268,6 +327,26 @@ def sequence_identity(left: str, right: str) -> float:
         return 0.0
     matches = sum(1 for a, b in zip(left.upper(), right.upper()) if a == b)
     return matches / longest
+
+
+def _z_scores(values: list[float]) -> list[float]:
+    """Each value in cohort standard deviations from the cohort mean.
+
+    The atlas's own normalisation: "Composite is a z-scored weighted sum."
+    A term with no spread carries no information about this cohort, so it
+    contributes zero rather than an arbitrary constant that the weights would
+    then scale.
+    """
+
+    count = len(values)
+    if count < 2:
+        return [0.0] * count
+    mean = sum(values) / count
+    variance = sum((value - mean) ** 2 for value in values) / (count - 1)
+    if variance <= 0:
+        return [0.0] * count
+    deviation = variance**0.5
+    return [(value - mean) / deviation for value in values]
 
 
 def _percentiles(values: list[float]) -> list[float]:

@@ -39,13 +39,14 @@ from cellertz.application.mber_settings import (
     write_mber_vhh_settings,
 )
 from cellertz.application.vhh_campaign import VHHCampaignSpecification
-from cellertz.domains.protein_design.agents.generation import GenerationRequest
 from cellertz.domains.protein_design.adapters.mber import (
     STATS_FILENAME,
     MBERArtifacts,
     MBERParser,
 )
+from cellertz.domains.protein_design.agents.generation import GenerationRequest
 from cellertz.domains.protein_design.scoring.engager_two_axis import (
+    ORDERING_I_PTM_GATED,
     EngagerDesign,
     rank_engager_designs,
 )
@@ -106,8 +107,14 @@ def rank_mber_output(
     ligand_residues: object = (),
     occlusion_limit: int | None = None,
     select: int | None = None,
+    ordering: str = ORDERING_I_PTM_GATED,
 ) -> dict[str, Any]:
     """Screen a finished mBER cohort, then rank what survives.
+
+    ``ordering`` picks between the atlas's two: i_pTM gated, as its BCMA panel
+    ranks, or epitope-first with i_pTM as a tie-break, as its GPC3 panel does
+    because i_pTM anti-correlates with coverage there. It is a declared choice
+    per target, never inferred from the cohort.
 
     His order, not ours: the pre-filters run first and a rejected design never
     reaches the ranking. A design whose structure is missing is reported by
@@ -191,7 +198,9 @@ def rank_mber_output(
         )
 
     ranking = (
-        rank_engager_designs(designs, clinical_epitopes, cdr_spans, select=select).to_dict()
+        rank_engager_designs(
+            designs, clinical_epitopes, cdr_spans, select=select, ordering=ordering
+        ).to_dict()
         if designs
         else {"designs": [], "status": "no_design_survived_the_screen"}
     )

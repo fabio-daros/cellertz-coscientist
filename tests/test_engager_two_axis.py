@@ -11,6 +11,8 @@ import pytest
 
 from cellertz.domains.protein_design.scoring.engager_two_axis import (
     I_PTM_GATE,
+    ORDERING_EPITOPE_FIRST,
+    ORDERING_I_PTM_GATED,
     PROTOCOL_ID,
     WEIGHTS,
     EngagerDesign,
@@ -87,10 +89,63 @@ def test_every_score_carries_the_protocol_that_produced_it() -> None:
     assert document["designs"][0]["score_rule"] == "the worse of the two percentiles"
 
 
-def test_the_normalisation_is_declared_as_our_reading_not_his_method() -> None:
+def test_the_normalisation_is_the_z_score_the_atlas_states() -> None:
+    """It was per-term percentiles here, which was my reading, not his method.
+
+    The atlas spells it out in the GPC3 panel: "Composite is a z-scored
+    weighted sum over the 612." A z-score keeps the distance between values
+    that a rank discards, so two designs far apart on buried area stay far
+    apart in the composite.
+    """
+
     ranking = ranked([design("a"), design("b", i_ptm=0.95)])
-    assert "percentile" in ranking.normalisation
-    assert any("not a stated step" in note for note in ranking.interpretations)
+
+    assert "z-scored" in ranking.normalisation
+    assert "percentile" not in ranking.normalisation
+    assert ranking.ordering == ORDERING_I_PTM_GATED
+    assert ranking.to_dict()["ordering"] == ORDERING_I_PTM_GATED
+
+
+def test_the_two_orderings_are_separate_claims() -> None:
+    """The atlas runs both and they disagree about where i_pTM belongs."""
+
+    cohort = [design("a", i_ptm=0.95), design("b", i_ptm=0.70, buried_area=2600.0)]
+
+    gated = rank_engager_designs(cohort, CLINICAL, CDRS)
+    epitope_first = rank_engager_designs(
+        cohort, CLINICAL, CDRS, ordering=ORDERING_EPITOPE_FIRST
+    )
+
+    # The gated protocol throws the low-i_ptm design away before scoring.
+    assert gated.rejected_by_gate == ("b",)
+    assert [row.design_id for row in gated.designs] == ["a"]
+    # Epitope-first keeps it: on such a target i_ptm points the wrong way.
+    assert epitope_first.rejected_by_gate == ()
+    assert {row.design_id for row in epitope_first.designs} == {"a", "b"}
+    assert epitope_first.to_dict()["i_ptm_gate"] is None
+    assert any("only breaks ties" in note for note in epitope_first.interpretations)
+
+
+def test_epitope_first_breaks_ties_on_i_ptm() -> None:
+    """After the epitope filter it is a tie-breaker, never a lead."""
+
+    tied = [
+        design("low", i_ptm=0.70, buried_area=1500.0),
+        design("high", i_ptm=0.99, buried_area=1500.0),
+    ]
+
+    ranking = rank_engager_designs(
+        tied, CLINICAL, CDRS, ordering=ORDERING_EPITOPE_FIRST
+    )
+
+    assert [row.design_id for row in ranking.designs] == ["high", "low"]
+    assert ranking.designs[0].score == ranking.designs[1].score, "the composite tied"
+
+
+def test_an_unnamed_ordering_is_refused() -> None:
+    with pytest.raises(EngagerRankingError) as error:
+        rank_engager_designs([design("a")], CLINICAL, CDRS, ordering="whatever")
+    assert "unknown_ordering" in str(error.value)
 
 
 def test_the_cohort_is_refused_without_the_clinical_epitope_the_formula_weights() -> None:

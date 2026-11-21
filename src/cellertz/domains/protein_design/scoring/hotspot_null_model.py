@@ -236,7 +236,7 @@ def hotspot_null_model(
         patch = _grow_patch(centres, rng.choice(pool), size)
         recalls.append(len(wanted & set(patch)) / len(wanted))
     recalls.sort()
-    index = min(len(recalls) - 1, int(math.ceil(0.95 * len(recalls))) - 1)
+    index = min(len(recalls) - 1, math.ceil(0.95 * len(recalls)) - 1)
     return {
         "chain": chain,
         "hotspots": sorted(wanted),
