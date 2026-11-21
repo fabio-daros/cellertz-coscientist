@@ -16,7 +16,9 @@ import pytest
 
 from cellertz.application.cd22_catalog_preparation import (
     EPITOPE_PROXIMITY_ANGSTROM,
+    FRAGMENT_CAVEAT,
     REMOVED_HETEROATOMS,
+    FragmentRefused,
     catalog_steps,
     write_catalog_target,
 )
@@ -50,7 +52,7 @@ def _source() -> str:
 
 
 def test_the_catalog_target_has_no_heteroatom_left(tmp_path: Path) -> None:
-    manifest = write_catalog_target(_source(), tmp_path)
+    manifest = write_catalog_target(_source(), tmp_path, allow_fragment=True)
 
     written = (tmp_path / "target.pdb").read_text(encoding="utf-8")
     assert "HETATM" not in written
@@ -61,7 +63,7 @@ def test_the_catalog_target_has_no_heteroatom_left(tmp_path: Path) -> None:
 
 
 def test_every_recorded_epitope_residue_survives(tmp_path: Path) -> None:
-    write_catalog_target(_source(), tmp_path)
+    write_catalog_target(_source(), tmp_path, allow_fragment=True)
 
     written = (tmp_path / "target.pdb").read_text(encoding="utf-8")
     present = {
@@ -77,7 +79,7 @@ def test_the_manifest_separates_what_was_recorded_from_what_we_added(tmp_path: P
     """Editing the specification would change what the record says someone did."""
 
     manifest = json.loads(
-        (write_catalog_target(_source(), tmp_path) and (tmp_path / "preparation.json")).read_text(
+        (write_catalog_target(_source(), tmp_path, allow_fragment=True) and (tmp_path / "preparation.json")).read_text(
             encoding="utf-8"
         )
     )
@@ -94,7 +96,7 @@ def test_the_manifest_separates_what_was_recorded_from_what_we_added(tmp_path: P
 
 def test_the_digests_are_of_the_bytes(tmp_path: Path) -> None:
     source = _source()
-    manifest = write_catalog_target(source, tmp_path)
+    manifest = write_catalog_target(source, tmp_path, allow_fragment=True)
 
     assert manifest["source_sha256"] == hashlib.sha256(source.encode()).hexdigest()
     written = (tmp_path / "target.pdb").read_bytes()
@@ -126,3 +128,32 @@ def test_the_measured_proximity_is_recorded_not_guessed() -> None:
     assert EPITOPE_PROXIMITY_ANGSTROM["SO4"] < 3.0, "inside hydrogen-bonding distance"
     assert EPITOPE_PROXIMITY_ANGSTROM["NAG"] < 5.0, "the glycan is on the epitope face"
     assert EPITOPE_PROXIMITY_ANGSTROM["GOL"] > 10.0
+
+
+def test_a_fragment_is_refused_by_default(tmp_path: Path) -> None:
+    """The atlas invalidated two campaigns on exactly this defect."""
+
+    with pytest.raises(FragmentRefused) as refused:
+        write_catalog_target(_source(), tmp_path)
+
+    assert "seven ectodomain domains" in str(refused.value)
+    assert not (tmp_path / "target.pdb").exists(), "nothing is written on a refusal"
+    assert not (tmp_path / "preparation.json").exists()
+
+
+def test_the_override_stamps_the_file_as_not_campaign_material(tmp_path: Path) -> None:
+    manifest = write_catalog_target(_source(), tmp_path, allow_fragment=True)
+
+    assert manifest["campaign_usable"] is False
+    assert manifest["fragment"]["contains"] == "CD22 domains D6-D7"
+    assert manifest["fragment"]["ectodomain_domains"] == 7
+    assert "full-length" in manifest["fragment"]["reason"]
+    on_disk = json.loads((tmp_path / "preparation.json").read_text(encoding="utf-8"))
+    assert on_disk["campaign_usable"] is False, "the caveat travels with the file"
+
+
+def test_the_caveat_carries_the_atlas_lesson_verbatim() -> None:
+    assert FRAGMENT_CAVEAT["atlas_lesson"] == (
+        "Never hand-truncate on sequence. mBER already truncates on distance."
+    )
+    assert "not a campaign" in FRAGMENT_CAVEAT["usable_for"]

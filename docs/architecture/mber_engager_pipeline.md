@@ -491,3 +491,128 @@ Two things, and neither is the catalog:
   launch would design on the card and then report
   `clinical_epitope_frame_unverified` rather than rank — which is honest, but
   it is not the atlas.
+
+## Read from the atlas, not from this document
+
+On 2026-11-21 the artifact itself became readable rather than only this
+reverse-engineering of it. Four things changed, and three of them were
+corrections to work already shipped. What follows replaces the corresponding
+claims above where they disagree.
+
+### The guard the atlas ran
+
+Its footer: hotspot blocks are `hotspot_agent` output from 22 Sep 2026, and
+verdicts are `hotspot_guard.py` at `max_block 6`, `max_total 40`. Neither
+number existed here. `plan_configuration_suggestion.hotspot_guard` now records
+them, on the agent this platform already has
+(`hotspot_identification_agent.suggestion`).
+
+It **marks and never drops**. The atlas's own finding across seven independent
+instances is that a declared block does not steer the optimiser, so a block is
+a claim to audit afterwards; deleting an over-wide one would discard the claim
+instead of recording that it was too wide. `max_block` is a property of one
+block and `max_total` of the set, and the set-level verdict is not blamed on
+whichever block happened to be last.
+
+The contact definition is also the footer's: **heavy atom ≤ 5 Å**, which is
+what `CONTACT_ANGSTROM` already was. The CD22 fixture's declared
+`contact_cutoff_angstrom` of 4.5 is not that number and is not what any
+measurement here uses.
+
+### The audit had no denominator
+
+The atlas re-audited GPC3 on 6 Nov 2026 and its conclusions changed. Two
+additions, both now in `audit_hotspot_blocks`:
+
+**Reachability.** A buried hotspot cannot be a design target. GPC3's ILE215
+sits at relative SASA 0.018 and albumin's 319 at 0.036; excluding them is what
+moved GPC3's mode from 8 of 9 to 7 of 8 — and surfaced `GPC3_3139613`
+binder-0, the new rank 1 on the largest interface in the set, which the old
+8-of-9 cut had thrown away. 92–97% of seeded designs still register a 5 Å
+contact with buried ILE215, so contact counting alone does not catch this.
+The 0.05 cut is this platform's: the atlas gives examples, not a threshold.
+
+**Chance.** Recall against 400 random size-matched contiguous surface patches
+per design, grown from a random accessible residue outwards. Without it
+"median 3 of 8" has nothing to compare to. With it, GPC3's unseeded arm is
+2.95× chance with only **8.7%** of its designs individually clearing their own
+null, against ~9× for the three seeded arms. The draws and the seed are
+recorded: a null model whose seed is not written down cannot be re-checked.
+The atlas's caveat travels too — enrichment says little when the declared list
+is a large share of the surface, and on **TACI** 44% of a 34-residue surface
+returns 1.86.
+
+### The composite is z-scored, and there are two orderings
+
+Per-term percentile normalisation was declared above as this platform's
+reading. The atlas states its own, in the GPC3 panel: *"Composite is a
+z-scored weighted sum over the 612."* Corrected. A z-score keeps the distance
+between values that a rank discards.
+
+And the atlas runs **two orderings that disagree about where i_pTM belongs**,
+which this plan had collapsed into one:
+
+| | BCMA panel | GPC3 panel |
+| --- | --- | --- |
+| i_pTM | gate at ≥ 0.80, then one of two axes | tie-break only, no gate |
+| why | Chow et al. rank by i_pTM before selection | pooled Spearman **−0.199** against hotspot coverage |
+
+On GPC3 the off-epitope designs score *higher*, and the single best i_pTM in
+the whole set — 0.8675, `GPC3_3755394` binder-2 — binds the wrong face at 3 of
+8. *"Applied first it selects exactly the designs you do not want."* The
+effect is entirely between campaigns: within one arm the correlation is
+indistinguishable from zero, which is the mBER preprint's own caveat that it
+ranks within a campaign aimed at one site. `rank_engager_designs` takes the
+ordering as a declared argument, refuses a name it does not know, and records
+which one ran, because two rankings of one cohort under different orderings
+are different claims.
+
+GPC3's composite is a different weight set again — buried area 1.3 and
+interface hydrogen bonds 1.0 in place of J_clin 1.2, same liabilities — and is
+**not** implemented, because nothing here counts interface hydrogen bonds.
+
+### 7O52 cannot carry a CD22 campaign
+
+The atlas's albumin campaign B hand-cut the target to a contiguous 290-390
+window. Every design bound the artificial face the cut exposed: 100% clash
+with intact albumin, 82% on the FcRn footprint, enrichment **0.63× — below
+chance**. Campaign D gave mBER the whole 573-residue molecule and let its own
+25 Å distance truncator keep 153 residues in 8 segments, including the
+occluders the hand cut had removed; both failure modes vanished and enrichment
+rose to 8.39×. (That campaign had previously OOMed, read as the protein being
+too big. It was the JAX allocator —
+`XLA_PYTHON_CLIENT_PREALLOCATE=false` — the same wall this platform hit.)
+
+> **Never hand-truncate on sequence. mBER already truncates on distance.**
+
+The CD22 target prepared here from 7O52 fails that rule, and no preparation
+can fix it: 7O52 holds **D6-D7 of a seven-domain ectodomain**, D5 sits above
+D6 in the intact receptor, and the consensus footprint reaches the
+membrane-proximal 667-679. The missing domains are absent from the crystal
+rather than cut away by us. The atlas raises this on its own CD22 panel and
+ties it to the same question that invalidated its HSA and CD19 designs,
+answering that a full-length CD22 model is what it needs.
+
+So `write_catalog_target` **refuses by default**. `--allow-fragment` writes
+the file anyway and stamps `campaign_usable: false` into the manifest beside
+it, with the reason, so the caveat travels with the bytes. The file is
+measurement material against the m971 epitope on D6-D7; it is not a campaign
+target.
+
+Keeping the m971 Fab as context — the CD19 prescription, where the partner
+face had to be avoided — is the wrong move here, because m971's epitope is the
+one a CD22 binder is *for*. That is the occlusion-direction distinction
+already recorded above, in a case where it changes the preparation.
+
+### What the m971 measurement actually confirmed
+
+`occluded_by_partners(7O52, "U", ("H", "L"))` returns **26 protein residues**,
+and the atlas independently states m971's epitope is 26 residues and that
+*"all 24 declared residues (A624-A657) lie inside the m971 epitope"*. The
+measurement reproduces both. That validates the occlusion pass against a
+number from outside this codebase; it was not a new finding, and an earlier
+note here that treated it as one was wrong.
+
+It also showed the pass counts **waters as occluded residues** when run on a
+raw PDB — two HOH appeared in the 28-residue raw result. `remove_solvent` is
+step 1 of every recorded preparation, which is why.
