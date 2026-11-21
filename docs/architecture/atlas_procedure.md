@@ -304,3 +304,94 @@ verdict, and a declared direction per campaign.
 The gap that silently corrupts a record is **step 6**: until `specialist_scorer`
 is injected, a journey that completes on the server writes an ipSAE score with
 `ProteinIpSAECalculator` in its provenance.
+
+---
+
+## The journey we agreed to build
+
+Decided 2026-11-21. This is the target shape; each step above lands in it.
+
+```
+intent (free text)
+  -> analysis extracts: source complex + direction + clinical anchor
+      -> hotspot agent proposes blocks              [exists]
+          -> guard: verdict                          [built]
+              -> CLASSIFICATION against the partner   <- the gap
+                  -> human approval against the verdict, not a residue list
+                      -> campaign 1 on the GPU
+                          -> audit: reachability + null model    [built]
+                              -> pre-filters -> two-axis rank    [built, not injected]
+                                  -> lesson -> campaign N+1, seeded
+```
+
+### The intent box stays
+
+It is load-bearing, not decoration. The atlas's own CD16a note — *"If a
+non-competing engager was the goal, the hotspot block belongs near 136-143,
+which no campaign has tried"* — is an intent statement deciding a hotspot
+choice. Intent is what fixes the **direction**, which is step 3's declared
+input.
+
+### What the analysis extracts changes
+
+`request_draft` today requires `target_id`, `objective`, `generator`,
+`n_candidates`, with optional `length_min`, `length_max`, `seed`. Three of the
+four required fields are runner parameters, and `generator` is asked in prose
+and then validated against `registered_identity`, which already knows the
+answer.
+
+| today | should come from |
+| --- | --- |
+| `generator` | the installation (`registered_identity`) |
+| `n_candidates` | the stopping policy |
+| `length_min` / `length_max` | the scaffold |
+
+| not asked today | the atlas needs it first |
+| --- | --- |
+| source complex: PDB, target chain, partner chains, context chains | step 0 |
+| direction: compete with the partner, or avoid it | step 3 |
+| clinical anchor | the J_clin reference, and `exclusions` |
+
+**The fields stay in `GenerationRequest`.** It is an execution contract and it
+appears in the episodic memory of runs already recorded. What changes is that
+the user is no longer asked for them.
+
+### Approval moves from a list to a verdict
+
+Today the front renders each proposed block and ends with *"Contact with this
+block is not measured yet."* That sentence is exactly the gap. After step 3 a
+reviewer approves against a table:
+
+| block | n | guard | overlap | touches partner | direction wants it |
+| --- | --- | --- | --- | --- | --- |
+| E | 7 | ok | OVERLAPPING | 7 / 100% | ✗ |
+| J | 16 | oversized | ADJACENT | 2 / 12% | — |
+| B | 21 | oversized | ORTHOGONAL | 0 | ✓ |
+
+On CD19 that table would have shown, before any GPU time, that six of ten
+blocks touch 0% of the partner and the other four are `OVERLAPPING` with
+FMC63 — the approved CAR binder this engager must not compete with. The agent
+already says so in its `risks` prose; the verdict gives the number.
+
+### Rounds gain a seed and a lesson
+
+The parent/child lineage already present **is** the campaign series. Two things
+are missing from it:
+
+- **the seed** — a child round copies plan *fields*, not a parent **design**.
+  `seeded_masked_sequence` exists and nothing calls it. This is the lever that
+  took albumin from 2/14 to 13/14 and GPC3 from 2.95x to 9x.
+- **the lesson** — the atlas records four fields per campaign: what changed,
+  why, what happened, what it taught. `follow_up_decision` routes on launcher
+  status alone.
+
+### Build order
+
+1. **Partner classification.** No GPU, no new agent call, no new measurement:
+   `occluded_by_partners` already returns the contact set. Missing are the
+   partner chain in the input catalog, the four-way verdict, and a direction
+   declared per campaign.
+2. **The analysis extraction** — an agent prompt plus a reply validator.
+3. **Inject `specialist_scorer`**, which closes the step-6 gap where a journey
+   completing on the server still writes an ipSAE score.
+4. **Seed and lesson on rounds.**
