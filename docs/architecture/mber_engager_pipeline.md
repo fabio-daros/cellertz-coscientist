@@ -275,6 +275,15 @@ registered target file is numbered **18 to 132**. They are the same residues,
 shifted by 17, confirmed by all 22 interface identities in
 `pdl1_pd1_interface_4zqk` matching at that offset and only at that offset.
 
+**Which frame belongs to which side**, settled on 2026-11-21: mber-open's own
+bundled `examples/PDL1.pdb` is chain A numbered **18 to 132**, the same frame
+as the registered target file, and its example hotspot `A56` is Tyr56 — one of
+the 22 residues PD-1 contacts. So 18 to 132 is the **input** frame, shared by
+the target file, the vault's footprint and mBER's settings, and the renumbering
+to 1 to 115 happens on the **output** side. A hotspot written into a settings
+file therefore needs no shift; only a comparison against an output structure
+does.
+
 A residue number carried across those frames without the shift names a
 different residue. `pdl1_numbering_offset` establishes the offset from
 identity, never by assumption, and the native-ligand footprint is translated

@@ -135,6 +135,44 @@ WRAP
   echo "wrote ${ROOT}/mber-vhh.sh"
 }
 
+stage_smoke() {
+  # Their own example, capped to one accepted design and one trajectory. The
+  # example's own settings say 100 and 10000, which is days of GPU. This asks
+  # only whether the install runs at all.
+  #
+  # The flag form is used rather than --settings: their documentation does not
+  # say whether file keys and flags can be mixed, or which wins.
+  local out="${ROOT}/smoke/$(date -u +%Y%m%dT%H%M%SZ)"
+  local pdb="${SRC}/protocols/src/mber_protocols/stable/VHH_binder_design/examples/PDL1.pdb"
+  test -f "${pdb}" || { echo "example PDB missing: ${pdb}" >&2; exit 1; }
+  test -s "${WEIGHTS}/af_params/params_model_1_multimer_v3.npz" \
+    || test -d "${WEIGHTS}/af_params" \
+    || { echo "weights absent; run 'weights' first" >&2; exit 1; }
+  mkdir -p "${out}"
+  log "smoke run into ${out}"
+  # A56 is their example hotspot, and it is Tyr56, one of the 22 PD-L1
+  # residues PD-1 contacts in 4ZQK. Their example PDB is chain A numbered 18
+  # to 132, the same frame as the registered target file, so that number means
+  # the same residue in both.
+  "${ROOT}/mber-vhh.sh" \
+    --input-pdb "${pdb}" \
+    --output-dir "${out}" \
+    --chains A \
+    --target-name PDL1 \
+    --hotspots A56 \
+    --num-accepted 1 \
+    --max-trajectories 1 \
+    --no-animations --no-pickle --no-png
+  log "what it wrote"
+  find "${out}" -maxdepth 2 | head -30
+  if [ -f "${out}/accepted.csv" ]; then
+    log "accepted.csv header, against what MBERParser expects"
+    head -2 "${out}/accepted.csv"
+  else
+    echo "no accepted.csv: one trajectory need not clear i_ptm 0.75 / plddt 0.70"
+  fi
+}
+
 stage_verify() {
   log "sizes"
   du -sh "${SRC}" "${ENV_PREFIX}" "${WEIGHTS}" 2>/dev/null || true
@@ -168,6 +206,7 @@ case "${1:-}" in
   env)       stage_env ;;
   weights)   stage_weights ;;
   configure) stage_configure ;;
+  smoke)     stage_smoke ;;
   verify)    stage_verify ;;
-  *) echo "usage: $0 {clone|env|weights|configure|verify}" >&2; exit 2 ;;
+  *) echo "usage: $0 {clone|env|weights|configure|smoke|verify}" >&2; exit 2 ;;
 esac
