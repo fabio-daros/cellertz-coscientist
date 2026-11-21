@@ -138,3 +138,78 @@ def test_a_specification_for_another_generator_is_refused() -> None:
     with pytest.raises(ApplicationContractError) as error:
         mber_vhh_settings(other, "/runs/a", "/inputs/t.pdb")
     assert str(error.value) == "specification_is_not_an_mber_campaign"
+
+
+# --- seeding: the atlas's second lever -------------------------------------
+#
+# On albumin, seeding on a good design took the lineage from 2 of 14 to 13 of
+# 14. mBER has no seeding flag; the mechanism is the masked sequence.
+
+from cellertz.application.mber_settings import (  # noqa: E402
+    MASK,
+    SeedDesign,
+    seeded_masked_sequence,
+)
+
+SCAFFOLD = "EV**LV"
+PARENT = "EVQKLV"
+
+
+def test_seeding_holds_the_parent_where_the_bare_scaffold_left_a_hole() -> None:
+    # Redesign only position 3: position 4 keeps the parent's K.
+    assert seeded_masked_sequence(SCAFFOLD, PARENT, ((3, 3),)) == "EV*KLV"
+
+
+def test_a_parent_from_another_scaffold_is_refused_not_reseated() -> None:
+    with pytest.raises(ApplicationContractError) as error:
+        seeded_masked_sequence(SCAFFOLD, "QVQKLV", ((3, 3),))
+    assert str(error.value) == "seed_framework_differs_from_scaffold"
+
+
+def test_a_span_over_the_framework_is_refused() -> None:
+    with pytest.raises(ApplicationContractError) as error:
+        seeded_masked_sequence(SCAFFOLD, PARENT, ((1, 2),))
+    assert str(error.value) == "redesign_span_covers_framework"
+
+
+def test_seeding_that_leaves_nothing_open_is_refused() -> None:
+    """A lineage with no open position is not a design run."""
+
+    with pytest.raises(ApplicationContractError) as error:
+        seeded_masked_sequence(SCAFFOLD, PARENT, ())
+    assert str(error.value) == "seed_redesigns_nothing"
+
+
+def test_a_parent_of_the_wrong_length_or_with_a_mask_is_refused() -> None:
+    with pytest.raises(ApplicationContractError) as error:
+        seeded_masked_sequence(SCAFFOLD, "EVQK", ((3, 3),))
+    assert str(error.value) == "seed_length_differs_from_scaffold"
+    with pytest.raises(ApplicationContractError) as error:
+        seeded_masked_sequence(SCAFFOLD, "EV*KLV", ((3, 3),))
+    assert str(error.value) == "seed_is_not_a_concrete_sequence"
+
+
+def test_an_unseeded_campaign_still_sends_the_bare_scaffold() -> None:
+    specification = versioned()
+    settings = mber_vhh_settings(specification, "/runs/a", "/inputs/t.pdb")
+    assert settings["binder"]["masked_sequence"] == specification.scaffold.masked_sequence
+
+
+def test_a_seeded_campaign_sends_the_reseated_sequence_and_keeps_mbers_schema() -> None:
+    specification = versioned()
+    scaffold = specification.scaffold.masked_sequence
+    # A real parent: the scaffold with every design position filled in.
+    parent = "".join("G" if residue == MASK else residue for residue in scaffold)
+    settings = mber_vhh_settings(
+        specification,
+        "/runs/a",
+        "/inputs/t.pdb",
+        seed_from=SeedDesign("attempt.parent", parent, ((96, 109),)),
+    )
+    seeded = settings["binder"]["masked_sequence"]
+    assert seeded != scaffold
+    assert seeded.count(MASK) == 14  # CDR3 only, 96-109 inclusive
+    assert seeded[25:35] == "G" * 10  # CDR1 now carries the parent's residues
+    # The document must stay exactly on mBER's own keys.
+    assert set(settings["binder"]) == {"masked_sequence"}
+    assert set(settings) == {"output", "target", "binder", "stopping", "filters"}

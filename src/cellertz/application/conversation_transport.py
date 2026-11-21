@@ -523,7 +523,12 @@ def _add_developability_screen(document: Any) -> None:
 
     if not isinstance(document, dict) or not isinstance(document.get("results"), list):
         return
-    from cellertz.application.attempt_evidence import load_catalog, resolve_attempt_id, screen_developability
+    from cellertz.application.attempt_evidence import (
+        load_catalog,
+        native_ligand_footprint,
+        resolve_attempt_id,
+        screen_developability,
+    )
 
     catalog = None
     for result in document["results"]:
@@ -538,7 +543,12 @@ def _add_developability_screen(document: Any) -> None:
         if found["status"] != "ok":
             result["developability_screen"] = {"status": "attempt_not_in_catalog", "models": {}}
             continue
-        result["developability_screen"] = screen_developability(found["item"])
+        # No limit: how much of the ligand's site a design covers is measured,
+        # and whether that is the goal or the fault is the campaign's call.
+        footprint = native_ligand_footprint(found["item"])
+        screen = screen_developability(found["item"], footprint["residues"])
+        screen["native_ligand"] = footprint
+        result["developability_screen"] = screen
 
 
 def _declared_blocks_reader(generation_plans: Any, supervisor: Any) -> Any:

@@ -24,6 +24,12 @@ const owned = {
       developability_screen: {
         status: "calculated",
         thresholds_from: "engager_target_atlas_bcma_campaign",
+        native_ligand: {
+          status: "declared",
+          ligand: "PD-1",
+          source: "pdl1_pd1_interface_4zqk",
+          offset_from_declared_frame: 17,
+        },
         models: {
           model1: {
             length: 65,
@@ -31,10 +37,11 @@ const owned = {
             net_charge_limit: 2,
             cysteines: { unpaired: [], without_sg_atom: [] },
             sequons: [],
-            occlusion: { status: "not_declared", limit: 8 },
+            // Measured, not filtered: this campaign declared no limit.
+            occlusion: { status: "measured", footprint: 12, ligand_residues: 22, limit: null, is_a_gate: false },
             rejected_by: null,
             verdict: "passed_measured_filters",
-            unscreened: ["occlusion_footprint"],
+            unscreened: [],
           },
           model2: {
             length: 65,
@@ -42,7 +49,7 @@ const owned = {
             net_charge_limit: 2,
             cysteines: { unpaired: [22], without_sg_atom: [] },
             sequons: ["N31-A-T33"],
-            occlusion: { status: "measured", footprint: 3, ligand_residues: 18, limit: 8 },
+            occlusion: { status: "measured", footprint: 3, ligand_residues: 18, limit: 8, is_a_gate: true },
             rejected_by: "unpaired_cysteine",
             verdict: "rejected",
             unscreened: [],
@@ -178,22 +185,25 @@ it("shows only the selected request results and keeps the earlier failure", asyn
   expect(screen.queryByText("PDL1_l65_s597806_mpnn1.")).not.toBeInTheDocument();
 });
 
-it("screens the structure on screen, and says which filter did not run", async () => {
+it("screens the structure on screen, and separates a measurement from a filter", async () => {
   const user = userEvent.setup();
   window.history.replaceState({}, "", "/?panel=results&request=request_owned");
   render(<ProteinDesignModule />);
   const panel = await screen.findByRole("region", { name: "Developability screen" });
   expect(panel).toHaveTextContent("Passed every filter that could be measured.");
   expect(panel).toHaveTextContent("Net charge: -3 (limit +2, K+R minus D+E).");
-  expect(panel).toHaveTextContent("no ligand footprint is declared for this target");
-  expect(panel).toHaveTextContent("Not screened: occlusion_footprint.");
+  // Covering PD-1's site is what a PD-L1 blocker is for, so it is reported as
+  // a number and explicitly not as a filter.
+  expect(panel).toHaveTextContent("12 of 22 residues of PD-1's site are covered");
+  expect(panel).toHaveTextContent("declared no limit, so it is measured, not filtered");
+  expect(panel).toHaveTextContent("shifted to match it");
+  expect(panel).not.toHaveTextContent("Not screened:");
 
   await user.click(screen.getByRole("button", { name: "Structure prediction 2" }));
   expect(panel).toHaveTextContent("Rejected by a free cysteine thiol.");
   expect(panel).toHaveTextContent("Free cysteine thiols: 22.");
   expect(panel).toHaveTextContent("Glycosylation sequons: N31-A-T33.");
-  expect(panel).toHaveTextContent("3 of 18 declared ligand residues reached (limit 8).");
-  expect(panel).not.toHaveTextContent("Not screened:");
+  expect(panel).toHaveTextContent("3 of 18 residues of PD-1's site are covered (limit 8).");
 });
 
 it("reloads the selected request results without starting a run", async () => {

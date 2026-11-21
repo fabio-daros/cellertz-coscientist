@@ -19,6 +19,7 @@ no tag or release, so a commit is the only concrete version that exists.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -38,10 +39,26 @@ RECOMMENDED_VRAM_GB = 32
 _FILTER_KEYS = {"i_ptm": "min_iptm", "plddt": "min_plddt"}
 
 
+@dataclass(frozen=True)
+class SeedDesign:
+    """A design to start a lineage from, and what may still be redesigned.
+
+    The atlas's second lever: on albumin, seeding on a good design took the
+    lineage from 2 of 14 to 13 of 14. mBER has no separate seeding flag — the
+    mechanism is the masked sequence, with the parent's residues held where the
+    bare scaffold would have left a design position open.
+    """
+
+    design_id: str
+    sequence: str
+    redesign_spans: tuple[tuple[int, int], ...]
+
+
 def mber_vhh_settings(
     specification: VHHCampaignSpecification,
     output_dir: str | Path,
     prepared_pdb: str | Path,
+    seed_from: SeedDesign | None = None,
 ) -> dict[str, Any]:
     """The settings document ``mber-vhh --settings`` consumes.
 
@@ -49,6 +66,11 @@ def mber_vhh_settings(
     acceptance policy by metric name rather than defaulted, because mBER's own
     defaults and a campaign's recorded thresholds are different claims that
     happen to agree today.
+
+    The document stays exactly on mBER's own schema, so ``seed_from`` changes
+    the masked sequence and is not written into the file as an extra key: a
+    caller that needs to record which design a lineage came from already holds
+    it, and an unknown key could be refused by the tool's own loader.
     """
 
     structure = specification.target_structure
@@ -76,7 +98,17 @@ def mber_vhh_settings(
             "chains": chains,
             "hotspots": _hotspots(epitope),
         },
-        "binder": {"masked_sequence": scaffold.masked_sequence},
+        "binder": {
+            "masked_sequence": (
+                scaffold.masked_sequence
+                if seed_from is None
+                else seeded_masked_sequence(
+                    scaffold.masked_sequence,
+                    seed_from.sequence,
+                    seed_from.redesign_spans,
+                )
+            )
+        },
         "stopping": {
             "num_accepted": stopping.accepted_design_target,
             "max_trajectories": stopping.max_trajectories,
@@ -103,6 +135,56 @@ def write_mber_vhh_settings(
     document = mber_vhh_settings(specification, output_dir, prepared_pdb)
     target.write_text(json.dumps(document, indent=2, sort_keys=True), encoding="utf-8")
     return target
+
+
+MASK = "*"
+
+
+def seeded_masked_sequence(
+    scaffold_masked: str,
+    parent_sequence: str,
+    redesign_spans: tuple[tuple[int, int], ...] | list[tuple[int, int]],
+) -> str:
+    """The scaffold's mask, reseated on a parent design.
+
+    Framework stays the scaffold's. Inside a redesign span the position is
+    opened with ``*``. Every other design position takes the parent's residue,
+    which is what makes the trajectory start on the good design instead of on
+    the bare framework.
+
+    Spans are 1-based and inclusive, as the scaffold's CDR regions record them.
+    """
+
+    if len(parent_sequence) != len(scaffold_masked):
+        raise ApplicationContractError("seed_length_differs_from_scaffold")
+    if MASK in parent_sequence:
+        raise ApplicationContractError("seed_is_not_a_concrete_sequence")
+    if not redesign_spans:
+        raise ApplicationContractError("seed_redesigns_nothing")
+    open_positions: set[int] = set()
+    for start, end in redesign_spans:
+        if start < 1 or end < start or end > len(scaffold_masked):
+            raise ApplicationContractError("invalid_redesign_span")
+        for index in range(start - 1, end):
+            if scaffold_masked[index] != MASK:
+                # Opening a framework position would be a different scaffold,
+                # not a reseated lineage.
+                raise ApplicationContractError("redesign_span_covers_framework")
+            open_positions.add(index)
+    seeded = []
+    for index, scaffold_residue in enumerate(scaffold_masked):
+        if scaffold_residue != MASK:
+            if parent_sequence[index] != scaffold_residue:
+                # A parent whose framework differs came off another scaffold.
+                raise ApplicationContractError("seed_framework_differs_from_scaffold")
+            seeded.append(scaffold_residue)
+        elif index in open_positions:
+            seeded.append(MASK)
+        else:
+            seeded.append(parent_sequence[index])
+    if MASK not in seeded:
+        raise ApplicationContractError("seed_leaves_nothing_to_design")
+    return "".join(seeded)
 
 
 def mber_command(settings_path: str | Path, binary: str = MBER_VHH_COMMAND) -> list[str]:

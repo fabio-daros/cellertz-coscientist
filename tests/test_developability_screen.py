@@ -57,25 +57,88 @@ def test_occlusion_is_named_unscreened_rather_than_passed_when_no_ligand_is_decl
     assert screened["unscreened"] == ["occlusion_footprint"]
 
 
-def test_a_design_over_the_ligand_footprint_is_rejected_by_that_filter() -> None:
-    declared = reached()[: OCCLUSION_LIMIT + 2]
+def test_occlusion_is_measured_without_a_limit_and_is_not_a_gate() -> None:
+    """Covering the ligand's site is the goal of a blockade campaign.
+
+    The atlas's limit of 8 of 18 comes from a BCMA engager that had to leave
+    APRIL's site alone. Rejecting on occlusion by default would throw away
+    exactly the designs a PD-L1 blocker is for, so a declared footprint with
+    no declared limit is a number and not a filter.
+    """
+
+    declared = reached()
     screened = screen_developability(item(), declared)["models"]["model1"]
     assert screened["occlusion"]["footprint"] == len(declared)
-    assert screened["rejected_by"] == "occlusion_footprint"
+    assert screened["occlusion"]["is_a_gate"] is False
+    assert screened["occlusion"]["limit"] is None
+    assert screened["rejected_by"] is None
     assert screened["unscreened"] == []
 
 
-def test_a_ligand_footprint_inside_the_limit_is_measured_and_passes() -> None:
+def test_a_campaign_that_declares_the_limit_gets_the_atlas_filter_back() -> None:
+    declared = reached()[: OCCLUSION_LIMIT + 2]
+    screened = screen_developability(item(), declared, occlusion_limit=OCCLUSION_LIMIT)[
+        "models"
+    ]["model1"]
+    assert screened["occlusion"]["is_a_gate"] is True
+    assert screened["rejected_by"] == "occlusion_footprint"
+
+
+def test_a_ligand_footprint_inside_a_declared_limit_passes() -> None:
     declared = reached()[:3]
-    screened = screen_developability(item(), declared)["models"]["model1"]
+    screened = screen_developability(item(), declared, occlusion_limit=OCCLUSION_LIMIT)[
+        "models"
+    ]["model1"]
     assert screened["occlusion"] == {
         "status": "measured",
         "ligand_residues": 3,
         "footprint": 3,
         "occluded_residues": declared,
         "limit": OCCLUSION_LIMIT,
+        "is_a_gate": True,
     }
     assert screened["rejected_by"] is None
+
+
+def test_the_pdl1_footprint_is_translated_into_the_structures_numbering() -> None:
+    """The footprint is declared on a file numbered 18 to 132; the attempt
+    structures are numbered from 1. The offset is established by the identity
+    of all 22 recorded residues, never assumed."""
+
+    from cellertz.application.attempt_evidence import (
+        PDL1_PD1_FOOTPRINT,
+        native_ligand_footprint,
+    )
+
+    footprint = native_ligand_footprint(item())
+    assert footprint["status"] == "declared"
+    assert footprint["offset_from_declared_frame"] == 17
+    assert footprint["residues"] == tuple(number - 17 for number in PDL1_PD1_FOOTPRINT)
+    assert footprint["residues_in_declared_frame"] == PDL1_PD1_FOOTPRINT
+
+
+def test_the_design_on_record_covers_part_of_the_pd1_site() -> None:
+    """With the offset applied the design lands on PD-1's interface, which is
+    what a PD-L1 blocker is supposed to do. Without it, it would appear to
+    bind somewhere else entirely."""
+
+    from cellertz.application.attempt_evidence import native_ligand_footprint
+
+    footprint = native_ligand_footprint(item())
+    screened = screen_developability(item(), footprint["residues"])["models"]["model1"]
+    assert screened["occlusion"]["ligand_residues"] == 22
+    assert screened["occlusion"]["footprint"] == 12
+
+
+def test_a_structure_whose_identities_do_not_match_refuses_the_footprint(tmp_path) -> None:
+    from cellertz.application.attempt_evidence import pdl1_numbering_offset
+
+    # Right length, wrong protein: every residue is alanine.
+    lines = [
+        f"ATOM  {index:>5}  CA  ALA A{index:>4}    {0.0:>8.3f}{0.0:>8.3f}{0.0:>8.3f}  1.00  0.00           C"
+        for index in range(1, 116)
+    ]
+    assert pdl1_numbering_offset("\n".join(lines)) is None
 
 
 def test_a_ligand_residue_the_design_never_reached_is_not_counted_as_occluded() -> None:

@@ -208,8 +208,48 @@ the installation registers the profiles, a person picks one.
    the fixture's own rationale names the m971 Fab in 7O52, whose chains H and
    L it already records as the partners — but no prepared file with those
    chains is in hand.
-5. **Target preparation and seeding** exposed as plan fields, since they are the
-   two levers that work.
+5. **Target preparation and seeding**, the two levers that work. Built.
+
+   **Preparation.** `occluded_by_partners` measures which target residues a
+   partner chain covers, by solvent-accessible area. That one list answers
+   three questions: it is what extracting the target chain would leave
+   artificially exposed (the CD19 failure, 26 CD81-contact residues bare), it
+   is the natural ligand's footprint for the developability screen, and it is
+   the clinical benchmark epitope for the composite's J_clin. Cross-checked
+   against the independent 5 Å contact calculation: every contacted residue is
+   occluded, plus the ones the partner covers without touching, and the
+   per-residue areas sum to the chain's buried area.
+
+   **Seeding.** mBER has no seeding flag. The mechanism is the masked
+   sequence: `seeded_masked_sequence` reseats the scaffold's mask on a parent
+   design, holding the parent's residues wherever the bare scaffold would have
+   left a position open, and opening only the spans to redesign. A parent off
+   another scaffold, a span over the framework, and a seeding that leaves
+   nothing open are each refused rather than quietly accepted.
+
+## Two numbering frames, and the error between them
+
+The attempt structures on record are numbered **chain A, 1 to 115**. The
+registered target file is numbered **18 to 132**. They are the same residues,
+shifted by 17, confirmed by all 22 interface identities in
+`pdl1_pd1_interface_4zqk` matching at that offset and only at that offset.
+
+A residue number carried across those frames without the shift names a
+different residue. `pdl1_numbering_offset` establishes the offset from
+identity, never by assumption, and the native-ligand footprint is translated
+by it; the hotspot audit now states the frame it compared in and warns when an
+offset exists, because it cannot know which frame a declared block used.
+
+With the offset applied, the design on record covers 12 of PD-1's 22 interface
+residues on PD-L1. Without it, the same design would appear to bind elsewhere.
+
+## Occlusion is a measurement, and its direction is the campaign's
+
+The atlas's limit of 8 of 18 belongs to a BCMA engager that had to leave
+APRIL's site alone. A PD-L1 binder that covers PD-1's site is doing its job.
+So the screen measures occlusion whenever the footprint is declared and
+rejects only when a campaign declares a limit. A screen that rejected by
+default would discard exactly the designs a blockade campaign is for.
 6. **Visualization** in the workspace: 3Dmol (the atlas uses `3dmol@2.0.4`)
    showing the target with each block in its own colour, and the audit beside
    it.

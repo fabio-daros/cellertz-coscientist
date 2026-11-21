@@ -473,8 +473,51 @@ def audit_hotspot_blocks(blocks: list[dict[str, Any]], item: dict[str, Any]) -> 
         "status": "calculated",
         "cutoff_angstrom": CONTACT_ANGSTROM,
         "declared_but_not_reached_is_not_a_binding_site": True,
+        # Which numbering the comparison happened in. A block declared against
+        # the registered target file (chain A, 18 to 132) and measured on a
+        # structure numbered from 1 would name a residue 17 positions away.
+        "numbering": _numbering_note(item),
         "blocks": audited,
     }
+
+
+def _numbering_note(item: dict[str, Any]) -> dict[str, Any]:
+    """The structure's own chain A frame, and its offset from the declared one."""
+
+    frames = set()
+    offsets = set()
+    for model in item["models"].values():
+        try:
+            pdb = model["pdb_path"].read_text(encoding="utf-8")
+        except OSError:
+            return {"status": "structure_unreadable"}
+        numbers = sorted({resseq for chain, resseq, _, _, _ in _heavy_atoms(pdb) if chain == "A"})
+        if not numbers:
+            return {"status": "no_target_chain"}
+        frames.add((numbers[0], numbers[-1], len(numbers)))
+        offsets.add(pdl1_numbering_offset(pdb))
+    if len(frames) != 1:
+        return {"status": "models_disagree_on_numbering"}
+    first, last, count = frames.pop()
+    offset = offsets.pop() if len(offsets) == 1 else None
+    note: dict[str, Any] = {
+        "status": "read_from_structure",
+        "structure_chain_a": {"first": first, "last": last, "residues": count},
+        "declared_target_frame": {
+            "first": PDL1_DECLARED_FRAME[0],
+            "last": PDL1_DECLARED_FRAME[1],
+            "residues": PDL1_DECLARED_FRAME[2],
+        },
+        "block_residues_compared_in": "the structure's own numbering",
+    }
+    if offset:
+        note["offset_from_declared_frame"] = offset
+        note["warning"] = (
+            f"This structure is numbered {offset} positions below the registered target "
+            "file. A hotspot block declared in that file's numbering must be shifted by "
+            "the same amount before it is compared, or it names another residue."
+        )
+    return note
 
 
 _RESIDUE_NUMBER = re.compile(r"^([A-Za-z])(\d{1,6})$")
@@ -483,6 +526,27 @@ _RESIDUE_NUMBER = re.compile(r"^([A-Za-z])(\d{1,6})$")
 # accepted designs -> 7,540 on liabilities -> 842 on occlusion -> 754 on charge.
 # They are his numbers, not ours.
 THRESHOLDS_FROM = "engager_target_atlas_bcma_campaign"
+# PD-L1 residues that PD-1 contacts within 5 A in PDB 4ZQK, from the vault's
+# pdl1_pd1_interface_4zqk note. That note verifies the numbering against the
+# registered target file: chain A, residues 18 to 132, all 115 positions
+# agreeing in number and identity. The frame is checked below before these
+# numbers are used, because a footprint read into another numbering frame
+# would name the wrong residues.
+PDL1_PD1_FOOTPRINT = (
+    18, 19, 20, 23, 26, 54, 56, 58, 63, 66, 76,
+    113, 115, 117, 119, 120, 121, 122, 123, 124, 125, 126,
+)
+PDL1_PD1_FOOTPRINT_SOURCE = "pdl1_pd1_interface_4zqk"
+# The same note's residue identities. They are what establishes that a
+# renumbered structure is the same protein and not another one.
+PDL1_PD1_FOOTPRINT_IDENTITIES = {
+    18: "ALA", 19: "PHE", 20: "THR", 23: "VAL", 26: "ASP", 54: "ILE",
+    56: "TYR", 58: "GLU", 63: "ASN", 66: "GLN", 76: "VAL", 113: "ARG",
+    115: "MET", 117: "SER", 119: "GLY", 120: "GLY", 121: "ALA", 122: "ASP",
+    123: "TYR", 124: "LYS", 125: "ARG", 126: "ILE",
+}
+# Chain A of the registered target file, from the same note.
+PDL1_DECLARED_FRAME = (18, 132, 115)
 NET_CHARGE_LIMIT = 2
 OCCLUSION_LIMIT = 8
 # S-S is ~2.05 A; beyond this the two thiols are not bonded.
@@ -499,6 +563,7 @@ _THREE_TO_ONE = {
 def screen_developability(
     item: dict[str, Any],
     ligand_residues: object = (),
+    occlusion_limit: int | None = None,
 ) -> dict[str, Any]:
     """The atlas pre-filters, measured from the verified PDB.
 
@@ -509,6 +574,14 @@ def screen_developability(
 
     The sequence and the disulfide pairing are read from the structure, never
     from a review field. An unverified PDB refuses the screen.
+
+    Occlusion of the natural ligand's footprint is **measured whenever the
+    footprint is declared, and rejects only when a limit is given**. Its
+    direction belongs to the campaign, not to the screen: the atlas's limit of
+    8 of 18 comes from a BCMA engager that had to leave APRIL's site alone,
+    while a PD-L1 binder that covers PD-1's site is doing the job. A screen
+    that rejected on occlusion by default would throw away the designs a
+    blockade campaign wants.
     """
 
     if not item["pdb_verified"]:
@@ -534,7 +607,7 @@ def screen_developability(
             rejected = "unpaired_cysteine"
         elif sequons:
             rejected = "glycosylation_sequon"
-        elif ligand and len(occluded) > OCCLUSION_LIMIT:
+        elif occlusion_limit is not None and ligand and len(occluded) > occlusion_limit:
             rejected = "occlusion_footprint"
         elif charge > NET_CHARGE_LIMIT:
             rejected = "net_charge"
@@ -548,21 +621,22 @@ def screen_developability(
             "net_charge_limit": NET_CHARGE_LIMIT,
             "net_charge_rule": "K+R minus D+E, at neutral pH; histidine is not counted",
             "occlusion": (
-                {"status": "not_declared", "limit": OCCLUSION_LIMIT}
+                {"status": "not_declared"}
                 if not ligand
                 else {
                     "status": "measured",
                     "ligand_residues": len(ligand),
                     "footprint": len(occluded),
                     "occluded_residues": occluded,
-                    "limit": OCCLUSION_LIMIT,
+                    "limit": occlusion_limit,
+                    # Whether covering the ligand's site is the goal or the
+                    # fault is the campaign's call, so a declared footprint
+                    # without a declared limit is a number, not a gate.
+                    "is_a_gate": occlusion_limit is not None,
                 }
             ),
             "rejected_by": rejected,
             "verdict": "rejected" if rejected else "passed_measured_filters",
-            # shortcut: no plan field declares the natural ligand's footprint
-            # yet, so occlusion stays unscreened; declare it with target
-            # preparation (step 5 of the mBER pipeline).
             "unscreened": [] if ligand else ["occlusion_footprint"],
         }
     return {
@@ -703,3 +777,72 @@ def _heavy_atoms(pdb: str) -> list[tuple[str, int, float, float, float]]:
         seen.add(key)
         atoms.append((chain, resseq, x, y, z))
     return atoms
+
+
+def pdl1_numbering_offset(pdb: str) -> int | None:
+    """How far this structure's chain A is shifted from the verified frame.
+
+    The vault note records the identity of all 22 interface residues in the
+    registered target file's frame. An offset is accepted only when **every**
+    one of them matches by identity, which is what distinguishes a renumbered
+    copy of the same protein from a different protein.
+
+    The attempt structures on record are numbered 1 to 115 where the
+    registered target file is numbered 18 to 132: the same residues, shifted
+    by 17. Comparing a residue number across those two frames without this
+    offset names a different residue.
+    """
+
+    identities: dict[int, str] = {}
+    for line in pdb.splitlines():
+        if line.startswith("ATOM") and line[21:22].strip() == "A":
+            try:
+                identities[int(line[22:26])] = line[17:20].strip().upper()
+            except ValueError:
+                continue
+    if not identities:
+        return None
+    lowest = min(identities)
+    for offset in {verified - lowest for verified in PDL1_PD1_FOOTPRINT}:
+        if all(
+            identities.get(verified - offset) == PDL1_PD1_FOOTPRINT_IDENTITIES[verified]
+            for verified in PDL1_PD1_FOOTPRINT
+        ):
+            return offset
+    return None
+
+
+def native_ligand_footprint(item: dict[str, Any]) -> dict[str, Any]:
+    """The natural ligand's footprint, in this structure's own numbering.
+
+    Only PD-L1 has one recorded. The footprint is declared in the registered
+    target file's frame, and the attempt structures are renumbered, so it is
+    translated by an offset established from residue identity rather than
+    assumed. An unestablished offset refuses the footprint: naming the wrong
+    residues would be worse than naming none.
+    """
+
+    if not item["pdb_verified"]:
+        return {"status": "structure_not_verified", "residues": ()}
+    offsets = set()
+    for model in item["models"].values():
+        offsets.add(pdl1_numbering_offset(model["pdb_path"].read_text(encoding="utf-8")))
+    if len(offsets) != 1 or None in offsets:
+        return {
+            "status": "numbering_frame_does_not_match_any_recorded_footprint",
+            "residues": (),
+        }
+    offset = offsets.pop()
+    return {
+        "status": "declared",
+        "target": "PDL1",
+        "ligand": "PD-1",
+        "residues": tuple(number - offset for number in PDL1_PD1_FOOTPRINT),
+        "residues_in_declared_frame": PDL1_PD1_FOOTPRINT,
+        "offset_from_declared_frame": offset,
+        "offset_established_by": "identity of all 22 recorded interface residues",
+        "source": PDL1_PD1_FOOTPRINT_SOURCE,
+        # The note's own words: a contact in a deposited complex is geometry,
+        # not a measured contribution to binding.
+        "is_geometry_not_binding_energy": True,
+    }

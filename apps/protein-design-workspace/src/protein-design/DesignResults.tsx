@@ -48,14 +48,27 @@ type ScreenedModel = {
   net_charge_limit: number;
   cysteines: { unpaired: number[]; without_sg_atom: number[] };
   sequons: string[];
-  occlusion: { status: string; footprint?: number; ligand_residues?: number; limit: number };
+  occlusion: {
+    status: string;
+    footprint?: number;
+    ligand_residues?: number;
+    limit: number | null;
+    is_a_gate?: boolean;
+  };
   rejected_by: string | null;
   verdict: string;
   unscreened: string[];
 };
+type NativeLigand = {
+  status: string;
+  ligand?: string;
+  source?: string;
+  offset_from_declared_frame?: number;
+};
 type DevelopabilityScreen = {
   status: string;
   thresholds_from?: string;
+  native_ligand?: NativeLigand;
   models: Record<string, ScreenedModel>;
 };
 type AttemptResult = {
@@ -218,6 +231,20 @@ const SCREEN_ABSENT: Record<string, string> = {
   hash_mismatch: "A served PDB does not match the verified hash, so the screen was not run on it.",
 };
 
+function occlusionText(screened: ScreenedModel, ligand?: NativeLigand): string {
+  const occlusion = screened.occlusion;
+  if (occlusion.status !== "measured") {
+    return "no ligand footprint is declared for this target, so this was not measured.";
+  }
+  const name = ligand?.ligand ? `${ligand.ligand}'s` : "the natural ligand's";
+  const measured = `${occlusion.footprint} of ${occlusion.ligand_residues} residues of ${name} site are covered`;
+  // Whether covering the site is the goal or the fault belongs to the
+  // campaign, so without a declared limit this is a number, not a verdict.
+  return occlusion.is_a_gate
+    ? `${measured} (limit ${occlusion.limit}).`
+    : `${measured}. This campaign declared no limit, so it is measured, not filtered.`;
+}
+
 function DevelopabilityPanel({ screen, modelId }: { screen?: DevelopabilityScreen; modelId: string }) {
   if (!screen) {
     return null;
@@ -251,12 +278,14 @@ function DevelopabilityPanel({ screen, modelId }: { screen?: DevelopabilityScree
         <li>
           Net charge: {screened.net_charge} (limit +{screened.net_charge_limit}, K+R minus D+E).
         </li>
-        <li>
-          Ligand occlusion:{" "}
-          {screened.occlusion.status === "measured"
-            ? `${screened.occlusion.footprint} of ${screened.occlusion.ligand_residues} declared ligand residues reached (limit ${screened.occlusion.limit}).`
-            : "no ligand footprint is declared for this target, so this filter did not run."}
-        </li>
+        <li>Ligand occlusion: {occlusionText(screened, screen.native_ligand)}</li>
+        {screen.native_ligand?.offset_from_declared_frame ? (
+          <li>
+            The footprint was declared on a file numbered {screen.native_ligand.offset_from_declared_frame} positions
+            above this structure, and was shifted to match it. The offset was established from residue identity, not
+            assumed.
+          </li>
+        ) : null}
       </ul>
       {screened.unscreened.length > 0 ? (
         <p>Not screened: {screened.unscreened.join(", ")}. A design that passed is not a design that passed everything.</p>

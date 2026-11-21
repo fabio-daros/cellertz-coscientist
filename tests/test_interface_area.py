@@ -89,3 +89,84 @@ def test_a_missing_file_is_refused() -> None:
     with pytest.raises(InterfaceAreaError) as error:
         interface_buried_area("/nonexistent/model.pdb")
     assert str(error.value) == "structure_not_found"
+
+
+def test_occlusion_contains_every_close_contact_and_a_little_more() -> None:
+    """Cross-checked against the contact calculation, which is independent.
+
+    A residue within 5 A of the partner is necessarily shielded by it, so
+    occlusion must be a superset of contact. The extra residues are the ones
+    the partner covers without touching, and those are exactly the ones a
+    contact cutoff misses and a chain extraction leaves bare.
+    """
+
+    from cellertz.application.attempt_evidence import (
+        AttemptFiles,
+        geometric_contacts,
+        load_catalog,
+        workspace_root,
+    )
+    from cellertz.domains.protein_design.scoring.interface_area import occluded_by_partners
+
+    root = workspace_root()
+    item = load_catalog(
+        (
+            AttemptFiles(
+                review_json=root / "src" / "manual-attempt-2LUTUOX4.json",
+                pdb_dir=root / "public" / "manual-review" / "attempt.2LUTUOX4",
+            ),
+        )
+    )["attempt.2LUTUOX4"]
+    contacts = set(
+        geometric_contacts(item)["models"]["model1"]["calculated"]["target_residues"]
+    )
+    occluded = set(occluded_by_partners(PDB, "A", ("B",))["occluded_residues"])
+    assert contacts <= occluded
+    assert occluded - contacts
+
+
+def test_the_residue_areas_sum_to_the_chains_buried_area() -> None:
+    """Two routes to one number: per residue, and per chain."""
+
+    from cellertz.domains.protein_design.scoring.interface_area import occluded_by_partners
+
+    per_residue = occluded_by_partners(PDB, "A", ("B",))
+    per_chain = interface_buried_area(PDB, target_chain="A", binder_chain="B")
+    assert per_residue["total_occluded_area_angstrom2"] == pytest.approx(
+        per_chain["per_chain_buried"]["A"], abs=1.0
+    )
+
+
+def test_a_residue_the_partner_never_covers_is_not_listed(tmp_path) -> None:
+    from cellertz.domains.protein_design.scoring.interface_area import occluded_by_partners
+
+    path = tmp_path / "apart.pdb"
+    path.write_text(
+        "\n".join([atom(1, "A", 1, 0.0), atom(2, "B", 1, 50.0), "END", ""]),
+        encoding="utf-8",
+    )
+    measured = occluded_by_partners(path, "A", ("B",))
+    assert measured["occluded_residues"] == []
+    assert measured["total_occluded_area_angstrom2"] == 0.0
+
+
+def test_a_partner_that_is_not_in_the_file_is_named() -> None:
+    from cellertz.domains.protein_design.scoring.interface_area import (
+        InterfaceAreaError,
+        occluded_by_partners,
+    )
+
+    with pytest.raises(InterfaceAreaError) as error:
+        occluded_by_partners(PDB, "A", ("H", "L"))
+    assert str(error.value) == "chain_absent:H"
+
+
+def test_a_chain_cannot_be_its_own_partner() -> None:
+    from cellertz.domains.protein_design.scoring.interface_area import (
+        InterfaceAreaError,
+        occluded_by_partners,
+    )
+
+    with pytest.raises(InterfaceAreaError) as error:
+        occluded_by_partners(PDB, "A", ("A",))
+    assert str(error.value) == "target_cannot_be_its_own_partner"

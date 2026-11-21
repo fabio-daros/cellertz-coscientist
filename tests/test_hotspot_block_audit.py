@@ -80,3 +80,21 @@ def test_an_unverified_structure_refuses_the_audit_instead_of_reporting_zero() -
     audited = audit_hotspot_blocks([{"id": "A", "residues": ["A56"]}], broken)
     assert audited["status"] == "hash_mismatch"
     assert audited["blocks"] == []
+
+
+def test_the_audit_says_which_numbering_it_compared_in() -> None:
+    """The silent error this guards against.
+
+    A block declared against the registered target file (chain A, 18 to 132)
+    and measured on a structure numbered from 1 names a residue 17 positions
+    away. The audit cannot know which frame a declared block used, so it
+    states the frame it measured in and the offset it detected.
+    """
+
+    audited = audit_hotspot_blocks([{"id": "A", "residues": ["A56"]}], item())
+    numbering = audited["numbering"]
+    assert numbering["structure_chain_a"] == {"first": 1, "last": 115, "residues": 115}
+    assert numbering["declared_target_frame"] == {"first": 18, "last": 132, "residues": 115}
+    assert numbering["offset_from_declared_frame"] == 17
+    assert "names another residue" in numbering["warning"]
+    assert numbering["block_residues_compared_in"] == "the structure's own numbering"
