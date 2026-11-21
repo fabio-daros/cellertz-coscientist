@@ -151,6 +151,12 @@ stage_configure() {
 # install.sh; the platform's registered profile should name this file.
 set -euo pipefail
 export HF_HOME="${WEIGHTS}/huggingface"
+# JAX preallocates most of the card by default. mBER builds a torch ESM2 model
+# per trajectory in TemplateModule._setup_models, so from the SECOND
+# trajectory on there is nothing left for it: 31.51 of 31.60 GiB in use, only
+# 3.93 GiB of it PyTorch's, and CUDA OutOfMemory while allocating 26 MiB.
+# A single-trajectory run never shows this, and every real run does.
+export XLA_PYTHON_CLIENT_PREALLOCATE=false
 exec "${MAMBA}" run --prefix "${ENV_PREFIX}" mber-vhh "\$@"
 WRAP
   chmod +x "${ROOT}/mber-vhh.sh"

@@ -20,10 +20,19 @@ The pinned commit is the one in `application/mber_settings.MBER_OPEN_COMMIT`,
 and the script refuses to continue on any other: an install whose version is
 not the recorded one cannot be the recorded one.
 
-## Six things that are not in their README
+## Seven things that are not in their README
 
-Each cost an iteration on 2026-11-21. None is a fault of theirs; all six are
+Each cost an iteration on 2026-11-21. None is a fault of theirs; all seven are
 silent.
+
+**-2. `XLA_PYTHON_CLIENT_PREALLOCATE=false` is required for any run longer
+than one trajectory.** JAX preallocates most of the card by default, and mBER
+builds a **torch** ESM2 model per trajectory in
+`core/modules/template.py:_setup_models`. From the second trajectory on there
+is nothing left for it: 31.51 of 31.60 GiB in use, only 3.93 GiB of that
+PyTorch's, and `torch.OutOfMemoryError` while allocating 26 MiB. A
+single-trajectory run never shows this and every real run does, which makes it
+the worst of the seven to discover late. The wrapper exports it.
 
 **-1. `matplotlib<3.9` is required, and no requirement file says so.**
 matplotlib 3.9 removed `matplotlib.cm.get_cmap`, which colabdesign 1.1.3 still
