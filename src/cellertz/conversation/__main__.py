@@ -147,7 +147,17 @@ def main(*, control: object | None = None, deadline: object | None = None) -> No
             root = os.environ.get("CELLERTZ_APPTAINER_DEMONSTRATION_ROOT", "").strip()
             if root:
                 reap_abandoned(Path(root))
-            demonstration = ApptainerDemonstrationLauncher()
+            # Which generator the run action reaches. BindCraft stays the
+            # default, so this variable is the only thing that swaps it.
+            generator = os.environ.get("CELLERTZ_DEMONSTRATION_GENERATOR", "bindcraft").strip().lower()
+            if generator == "mber":
+                from cellertz.application.mber_demonstration import MberDemonstrationLauncher
+
+                demonstration = MberDemonstrationLauncher()
+            elif generator == "bindcraft":
+                demonstration = ApptainerDemonstrationLauncher()
+            else:
+                raise ScientificRunConfigurationError("invalid_demonstration_generator")
         generation_plans = GenerationPlanService(
             scientific_runs,
             store=plan_store,

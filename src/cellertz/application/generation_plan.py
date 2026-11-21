@@ -862,7 +862,12 @@ class GenerationPlanService:
             explicit_gpu_index,
         )
 
-        refused = {"status": "launch_rejected", "launched": False, "approved": False, "profile_id": PROFILE_ID}
+        # The launcher names the image it runs. A launcher that declares none is
+        # the BindCraft one, which is where these constants came from.
+        profile_id = getattr(self._demonstration, "profile_id", PROFILE_ID)
+        sif_path = getattr(self._demonstration, "sif_path", SIF_PATH)
+        sif_sha256 = getattr(self._demonstration, "sif_sha256", SIF_SHA256)
+        refused = {"status": "launch_rejected", "launched": False, "approved": False, "profile_id": profile_id}
         if self._demonstration is None:
             return {**refused, "status": "demonstration_not_configured"}
         plan = self._plans.get(plan_id)
@@ -920,8 +925,8 @@ class GenerationPlanService:
                 attempt_directory=Path(attempt_directory),
                 gpu_index=gpu_index,
                 apptainer_bin=Path(os.environ.get("CELLERTZ_APPTAINER_BIN", "/usr/bin/apptainer")),
-                sif_path=Path(SIF_PATH),
-                expected_sif_sha256=SIF_SHA256,
+                sif_path=Path(sif_path),
+                expected_sif_sha256=sif_sha256,
             )
         )
         plan.dispatches[key] = {"content": content, "reply": reply}
@@ -951,11 +956,15 @@ class GenerationPlanService:
             explicit_gpu_index,
         )
 
+        # As in launch_apptainer_demonstration: the launcher names its image.
+        profile_id = getattr(self._demonstration, "profile_id", PROFILE_ID)
+        sif_path = getattr(self._demonstration, "sif_path", SIF_PATH)
+        sif_sha256 = getattr(self._demonstration, "sif_sha256", SIF_SHA256)
         refused = {
             "status": "launch_rejected",
             "launched": False,
             "automatic_retry": False,
-            "profile_id": PROFILE_ID,
+            "profile_id": profile_id,
         }
         if self._demonstration is None:
             return {**refused, "status": "demonstration_not_configured"}
@@ -996,8 +1005,8 @@ class GenerationPlanService:
                 attempt_directory=Path(attempt_directory),
                 gpu_index=gpu_index,
                 apptainer_bin=Path(os.environ.get("CELLERTZ_APPTAINER_BIN", "/usr/bin/apptainer")),
-                sif_path=Path(SIF_PATH),
-                expected_sif_sha256=SIF_SHA256,
+                sif_path=Path(sif_path),
+                expected_sif_sha256=sif_sha256,
                 n_designs=n_designs,
             )
         )

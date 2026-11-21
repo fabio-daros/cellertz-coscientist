@@ -322,3 +322,87 @@ default would discard exactly the designs a blockade campaign is for.
    it.
 
 Steps 1 and 2 need no container and no GPU.
+
+## The run button reaches mBER
+
+The frontend's run action already reached a GPU through a path that is not the
+Docker production path and never went through `register_pdl1_executor`:
+
+```
+POST action=apptainer-demonstration | explicit_run
+  -> GenerationPlanService.launch_apptainer_demonstration / launch_explicit_run
+       human approval, idempotency, verified input identity, GPU index
+  -> <launcher>.launch(DemonstrationLaunch)        duck-typed, not a subclass
+  -> GroupSupervisedRuntime.execute(ExecutionRequest)
+       process group, wall clock, parent watch   <- generic, zero BindCraft
+  -> apptainer run --nv ... <sif>
+```
+
+Everything above the launcher is the generator's business only in three
+places, so `mber_demonstration.MberDemonstrationLauncher` replaces the
+launcher and nothing else. `GenerationPlanService` asks the launcher which
+image it runs (`profile_id`, `sif_path`, `sif_sha256`) instead of importing
+BindCraft's constants; a launcher that declares none is BindCraft's, which is
+where those constants came from. `CELLERTZ_DEMONSTRATION_GENERATOR=mber`
+selects it at the composition root. The frontend is unchanged: it posts a plan
+id, a revision and a digest, and whichever launcher the server built answers.
+
+Three differences are structural, which is why this is a sibling module and
+not a flag:
+
+- **One trajectory per process.** mBER builds a torch ESM2 per trajectory and
+  frees none while JAX holds AlphaFold2's allocation. BindCraft runs its whole
+  budget in one process; mBER cannot. The loop is that fact.
+- **A hotspot list does not steer mBER.** The epitope is still declared, for
+  the ranking to measure against afterwards, and the launch never reports that
+  the run was steered by it.
+- **The output tree is mBER's**: `accepted.csv` and absolute structure paths,
+  read by `rank_mber_output`, not by `ingest_bindcraft_output`.
+
+### What bounds it
+
+The recorded CD22 policy is 5000 accepted designs out of at most 50000
+trajectories. At the observed yield — 1 accepted design in 8 trajectories,
+about 8.8 minutes each — that is of the order of 6000 GPU-hours, which no
+button may start. So:
+
+- `MAX_DEMONSTRATION_TRAJECTORIES` is 8 and a larger request is **refused**,
+  not clamped.
+- The displayed design count becomes `stopping.num_accepted`, and the loop
+  stops as soon as it is met. A run that silently did less than the screen
+  said is worse than no run.
+- The reply reports `trajectories` (what ran) beside `trajectory_budget`
+  (what was allowed), and `scientific_validation` is false.
+
+### The cohort is ranked together
+
+Percentiles are computed over a cohort, so the trajectories of one launch are
+merged into one `accepted.csv` and ranked once. The structure paths inside it
+are absolute, so they resolve from the merged directory. Trajectories whose
+columns differ are a refusal, not a silent union.
+
+The clinical epitope the ranking needs is the PD-1 interface on PD-L1 — the
+site a blocker has to cover. It is declared in the registered file's frame and
+translated into the output frame by `pdl1_numbering_offset` on a real output
+structure. If no structure establishes the offset, the launch reports
+`clinical_epitope_frame_unverified` and does not rank: a clinical Jaccard
+computed across two frames would weigh 1.2 on the wrong residues.
+
+### Verified against the pinned source, not assumed
+
+Every key `mber_settings` writes is one `cli.py:_build_state_from_cfg` reads
+at the pinned commit: `output.dir`, `target.{pdb,name,chains,hotspots}`,
+`binder.masked_sequence`, `stopping.{num_accepted,max_trajectories}`,
+`filters.{min_iptm,min_plddt}`. JSON is accepted — the loader uses YAML only
+for a `.yml` or `.yaml` suffix. `accepted.csv` is written at
+`<output_dir>/accepted.csv`, which is where `rank_mber_output` looks, and its
+header is the eight columns the tests pin.
+
+### Still BindCraft's, and knowingly so
+
+The demonstration specification is PD-L1, because the registered input catalog
+holds one target: `target.pdb`, `settings.json`, `advanced.json`. A CD22 or
+TACI launch needs a prepared structure in that catalog, and that is a data
+step, not a code one. `_PROFILE_IDENTITY` is untouched: the demonstration path
+does not consult it, so nothing in the authorization chain was widened to make
+this run.
