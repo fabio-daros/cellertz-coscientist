@@ -87,6 +87,11 @@ PY
     # ESM2 model mBER builds per trajectory. One trajectory per process is
     # still required; see the batch stage in install.sh.
     export XLA_PYTHON_CLIENT_PREALLOCATE=false
+    # HOME is the bind mount point and the image is read-only, so these
+    # default to unwritable paths and matplotlib and fontconfig each warn
+    # and fall back on every single run.
+    export MPLCONFIGDIR=/tmp/matplotlib
+    export XDG_CACHE_HOME=/tmp/cache
 
 %runscript
     exec mber-vhh "$@"

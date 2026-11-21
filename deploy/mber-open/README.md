@@ -137,3 +137,35 @@ in its argv — never a free-text command, which is the rule in
   run has yet produced an accepted row.
 - Installing it does not make it runnable by the platform. The runner manifest
   and lifting `_BLOCKED_PROFILES` are separate, and neither is done.
+
+## The image
+
+Built 2026-11-21 from `mber.def`, **14 GB**, at
+`/home/fabio/containers/cellertz/mber/mber.sif`:
+
+```
+sha256 edadcf1a7cd26c56ff7e2cd2412746e003b27f2de3353431341e484fa5b98e93
+```
+
+That digest is what a runner manifest names, and it is the identity: the recipe
+is not bit-reproducible, so a rebuild is a different image and gets a different
+digest. Inside it: `mber 1.0.0`, `torch 2.11.0+cu128` (the cu128 index's
+newest, where the native install got 2.15.0 from PyPI), `jax 0.5.2`,
+`colabdesign 1.1.3`, `numpy 1.26.4`, `matplotlib 3.8.4`. Verified on the card
+through the image: `torch.cuda.is_available()` True and
+`jax.devices() [CudaDevice(id=0)]`.
+
+Run it through `mber-vhh-sif.sh`, which binds the weights and is what a
+registered profile should name in argv:
+
+```
+apptainer run --nv --bind <weights>:/mber/.mber mber.sif --settings s.json
+```
+
+`install.sh batch` takes `MBER_RUNNER` to choose between the native
+environment and the image, so the same orchestration drives both.
+
+**This image predates two lines now in `mber.def`**: `MPLCONFIGDIR` and
+`XDG_CACHE_HOME`, added because HOME is the bind mount point in a read-only
+image, so matplotlib and fontconfig each warn and fall back on every run. The
+wrapper sets both, so the built image behaves as though they were baked in.

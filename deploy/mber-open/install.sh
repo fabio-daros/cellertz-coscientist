@@ -236,11 +236,16 @@ stage_batch() {
   # launch -- one authorized, discrete, deadline-bounded trajectory.
   local trajectories="${2:-20}"
   local target="${3:-1}"
+  # Which runner: the native environment by default, or the image via
+  #   MBER_RUNNER=.../mber-vhh-sif.sh ./install.sh batch 3 1
+  local runner="${MBER_RUNNER:-${ROOT}/mber-vhh.sh}"
+  test -x "${runner}" || { echo "runner not executable: ${runner}" >&2; exit 1; }
   local pdb="${SRC}/protocols/src/mber_protocols/stable/VHH_binder_design/examples/PDL1.pdb"
   local out="${ROOT}/smoke/batch-$(date -u +%Y%m%dT%H%M%SZ)"
   test -f "${pdb}" || { echo "example PDB missing" >&2; exit 1; }
   mkdir -p "${out}"
   log "batch of ${trajectories} single-trajectory runs into ${out}"
+  echo "runner: ${runner}"
   local accepted=0 failed=0 index
   for index in $(seq 1 "${trajectories}"); do
     accepted=$(( $(wc -l < "${out}/accepted.csv" 2>/dev/null || echo 1) - 1 ))
@@ -249,7 +254,7 @@ stage_batch() {
       break
     fi
     printf '\n-- trajectory %s/%s (accepted so far: %s)\n' "${index}" "${trajectories}" "${accepted}"
-    if ! "${ROOT}/mber-vhh.sh" \
+    if ! "${runner}" \
         --input-pdb "${pdb}" --output-dir "${out}" --chains A --target-name PDL1 \
         --hotspots A56 --num-accepted "${target}" --max-trajectories 1 \
         --no-animations --no-pickle --no-png >> "${out}/trajectories.log" 2>&1; then
