@@ -120,10 +120,15 @@ in its argv — never a free-text command, which is the rule in
   matrix, so it stays uncomputable from mBER output without an independent
   refold. See the scoring section of
   `docs/architecture/mber_engager_pipeline.md`.
-- **Yield, as observed: 1 accepted design in 3 trajectories.** Two produced
-  nothing (best evaluated `i_ptm` 0.68), the third accepted on its first
-  binder at `i_ptm` 0.7833, `plddt` 0.9230. Three trajectories is far too few
-  to call a rate, but it is not the 1-in-50 the first two suggested.
+- **Yield, as observed: 1 accepted design in 8 trajectories**, counted across
+  every run of 2026-11-21 that wrote a trajectory directory. The one that
+  accepted did so on its first binder, at `i_ptm` 0.7833 and `plddt` 0.9230;
+  the other seven never cleared `i_ptm >= 0.75`, topping out at 0.68. Eight
+  trajectories is still few, and the figure is their bundled PDL1 example
+  against one hotspot, not a campaign.
+- A trajectory does not always produce the same number of binders: 10, 10, 9
+  and 2 were observed, which is also why one took 114 s and another 455 s.
+  Per-trajectory cost is a distribution, not a constant.
 - **`complex_pdb_path` and `relaxed_pdb_path` are absolute paths**, into
   `<output_dir>/Accepted/`. Settled by a run that accepted something.
 - **The accepted complex is chain A 1 to 115 and chain B 1 to 118** — so mBER
@@ -169,3 +174,13 @@ environment and the image, so the same orchestration drives both.
 `XDG_CACHE_HOME`, added because HOME is the bind mount point in a read-only
 image, so matplotlib and fontconfig each warn and fall back on every run. The
 wrapper sets both, so the built image behaves as though they were baked in.
+
+## The image, run
+
+Three single-trajectory runs through `mber-vhh-sif.sh`, 2026-11-21: three
+trajectory directories written, 21 binders evaluated, **zero failed
+trajectories**, and no accepted design — the best evaluated `i_ptm` was 0.66
+against the 0.75 filter. So the image designs, evaluates and writes its state,
+and the one-trajectory-per-process orchestration holds through the container
+exactly as it does natively. The absence of an accepted design there is the
+generator's own filter, not a fault of the image.
