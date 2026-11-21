@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from cellertz.domains.protein_design.scoring.partner_classification import heavy_atoms
+
 # Heavy atom <= 5 A, which is what the atlas's footer states its own contact
 # counts were measured at.
 CONTACT_ANGSTROM = 5.0
@@ -598,7 +600,7 @@ def _numbering_note(item: dict[str, Any]) -> dict[str, Any]:
             pdb = model["pdb_path"].read_text(encoding="utf-8")
         except OSError:
             return {"status": "structure_unreadable"}
-        numbers = sorted({resseq for chain, resseq, _, _, _ in _heavy_atoms(pdb) if chain == "A"})
+        numbers = sorted({resseq for chain, resseq, _, _, _ in heavy_atoms(pdb) if chain == "A"})
         if not numbers:
             return {"status": "no_target_chain"}
         frames.add((numbers[0], numbers[-1], len(numbers)))
@@ -868,7 +870,7 @@ def _glycosylation_sequons(residues: list[tuple[int, str]]) -> list[str]:
 def _contacts_for_pdb(path: Path) -> dict[str, Any]:
     target: list[tuple[int, float, float, float]] = []
     binder: list[tuple[int, float, float, float]] = []
-    for chain, resseq, x, y, z in _heavy_atoms(path.read_text(encoding="utf-8")):
+    for chain, resseq, x, y, z in heavy_atoms(path.read_text(encoding="utf-8")):
         if chain == "A":
             target.append((resseq, x, y, z))
         elif chain == "B":
@@ -897,32 +899,6 @@ def _contacts_for_pdb(path: Path) -> dict[str, Any]:
         "target_heavy_atoms": len(target),
         "binder_heavy_atoms": len(binder),
     }
-
-
-def _heavy_atoms(pdb: str) -> list[tuple[str, int, float, float, float]]:
-    atoms: list[tuple[str, int, float, float, float]] = []
-    seen: set[tuple[str, int, str, str]] = set()
-    for line in pdb.splitlines():
-        if not line.startswith(("ATOM", "HETATM")):
-            continue
-        name = line[12:16].strip()
-        element = line[76:78].strip() if len(line) >= 78 else ""
-        if (element or name).upper().startswith("H"):
-            continue
-        chain = line[21:22].strip()
-        try:
-            resseq = int(line[22:26])
-            x = float(line[30:38])
-            y = float(line[38:46])
-            z = float(line[46:54])
-        except ValueError:
-            continue
-        key = (chain, resseq, line[26:27], name)
-        if key in seen:
-            continue
-        seen.add(key)
-        atoms.append((chain, resseq, x, y, z))
-    return atoms
 
 
 def pdl1_numbering_offset(pdb: str) -> int | None:

@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node \"/home/fabio/projects/cellertz-coscientist/.tools/ponytail/hooks/ponytail-activate.js\"",
+        "timeout": 5
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "node \"/home/fabio/projects/cellertz-coscientist/.tools/ponytail/hooks/ponytail-mode-tracker.js\"",
+        "timeout": 5
+      }
+    ]
+  },
+  "version": 1
+}

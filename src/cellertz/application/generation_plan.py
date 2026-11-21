@@ -80,6 +80,10 @@ _ROLE_FILES = {
     "settings": "settings.json",
     "advanced_profile": "advanced.json",
 }
+# The source complex, target chain plus clinical partner, read only to measure
+# a declared hotspot block against that partner. Not a role: see
+# RegisteredInputCatalog.verified_complex_bytes.
+COMPLEX_FILENAME = "complex.pdb"
 _INPUT_QUESTIONS = {
     "input_root_unconfigured": (
         "Set CELLERTZ_PDL1_INPUT_ROOT to an absolute directory containing "
@@ -353,6 +357,37 @@ class RegisteredInputCatalog:
         if expected != digest:
             return None
         return digest, target
+
+    def verified_complex_bytes(self) -> tuple[str, bytes] | None:
+        """The source complex beside the prepared target, or None when there is none.
+
+        This is deliberately **not** a role of the input identity. The three
+        roles above are the bytes the generator opens, and the manifest digest
+        is what makes a run reproducible; the complex is never passed to mBER,
+        it is read to measure a declared block against the clinical partner.
+        Adding it to the identity would change the digest of every registered
+        root over a file no execution reads.
+
+        Read twice and compared, which is the one guarantee
+        ``verify_pdl1_inputs`` adds over hashing once: bytes that changed
+        between the measurement and the record are refused.
+        """
+
+        flags = _open_flags()
+        if flags is None or "target_structure" not in self._files:
+            return None
+        path = self._files["target_structure"].parent / COMPLEX_FILENAME
+        try:
+            first = _read_regular(path, flags)
+            second = _read_regular(path, flags)
+        except (OSError, ValueError, TypeError):
+            return None
+        if first is None or second is None:
+            return None
+        digest = hashlib.sha256(first).hexdigest()
+        if hashlib.sha256(second).hexdigest() != digest:
+            return None
+        return digest, first
 
 
 def open_registered_input_catalog(

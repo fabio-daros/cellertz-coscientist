@@ -167,6 +167,15 @@ export type HotspotBlock = {
   selectivity: string;
   rationale: string;
   risks: string;
+  // Measured on the source complex against the declared partner chains, at
+  // heavy atom <= 5 A, before any trajectory. The verdict is one of the
+  // atlas's four words and depends on the declared direction: the same
+  // percentage is the goal on a target where contact is wanted and the failure
+  // on one where it is not.
+  verdict: string;
+  contactN: number | null;
+  contactPct: number | null;
+  reading: string;
 };
 
 export type SuggestionChoice = {
@@ -180,6 +189,8 @@ export type SuggestionChoice = {
   applicable: boolean;
   justification?: string;
   note?: string;
+  // Why the blocks carry no contact measurement, when they do not.
+  partnerLimitation?: string;
 };
 
 export type LiteratureRecord = {
@@ -520,6 +531,7 @@ function parseChoice(value: unknown): SuggestionChoice[] {
     justification: typeof row.justification === "string" ? row.justification : undefined,
     note: typeof row.note === "string" ? row.note : undefined,
     blocks: Array.isArray(row.blocks) ? row.blocks.flatMap(parseBlock) : undefined,
+    partnerLimitation: partnerLimitation(row.partner_classification),
   }];
 }
 
@@ -546,7 +558,20 @@ function parseBlock(value: unknown): HotspotBlock[] {
     selectivity: typeof row.selectivity === "string" ? row.selectivity : "",
     rationale: typeof row.rationale === "string" ? row.rationale : "",
     risks: typeof row.risks === "string" ? row.risks : "",
+    verdict: typeof row.verdict === "string" ? row.verdict : "",
+    contactN: typeof row.contact_n === "number" ? row.contact_n : null,
+    contactPct: typeof row.contact_pct === "number" ? row.contact_pct : null,
+    reading: typeof row.reading === "string" ? row.reading : "",
   }];
+}
+
+// A measured classification has no limitation to show; anything else has one.
+function partnerLimitation(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+  const row = value as Record<string, unknown>;
+  return typeof row.limitation === "string" && row.limitation !== "" ? row.limitation : undefined;
 }
 
 export async function createDesignPlan(requestId: string, revision: number): Promise<DesignPlanCatalog | null> {

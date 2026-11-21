@@ -150,7 +150,7 @@ function SuggestionCard({
           {item.kind === "alternative" ? " Alternative." : ""}
           {item.justification ? ` ${item.justification}` : ""}
           {item.note ? ` ${item.note}` : ""}
-          <HotspotBlocks blocks={item.blocks} />
+          <HotspotBlocks blocks={item.blocks} partnerLimitation={item.partnerLimitation} />
         </label>
       ))}
       {suggestion.applicable && choices.length > 0 ? (
@@ -187,8 +187,11 @@ function SuggestionCard({
   );
 }
 
-// The range and the count come from the structure. Contact is not shown: nothing has measured it yet.
-function HotspotBlocks({ blocks }: { blocks?: HotspotBlock[] }) {
+// The range, the count and the contact all come from the structure. The
+// approval this list is read for is an approval of the verdicts, not of a
+// residue list: a block that competes with the approved clinical binder is the
+// one decision worth making before a campaign spends GPU.
+function HotspotBlocks({ blocks, partnerLimitation }: { blocks?: HotspotBlock[]; partnerLimitation?: string }) {
   if (!blocks || blocks.length === 0) {
     return null;
   }
@@ -209,7 +212,15 @@ function HotspotBlocks({ blocks }: { blocks?: HotspotBlock[] }) {
           {block.overBlockLimit ? (
             <span> Over the hotspot guard&rsquo;s limit of 6 residues for one block.</span>
           ) : null}
-          <span> Contact with this block is not measured yet.</span>
+          {block.verdict && block.contactN !== null && block.contactPct !== null ? (
+            <span>
+              {" "}
+              <b>{block.verdict}</b> — {block.contactN} of {block.n} residue
+              {block.n === 1 ? "" : "s"} touch the partner ({block.contactPct}%). {block.reading}
+            </span>
+          ) : (
+            <span> Contact with this block is not measured: {partnerLimitation || "no measurement was recorded."}</span>
+          )}
         </li>
       ))}
     </ul>

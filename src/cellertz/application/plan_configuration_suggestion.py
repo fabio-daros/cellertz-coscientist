@@ -651,6 +651,107 @@ def _structure_packet(
     }
 
 
+def _partner_measurement(
+    request: Mapping[str, Any],
+    prepared: set[tuple[str, int]],
+) -> dict[str, Any]:
+    """Which residues of the registered target touch the declared clinical partner.
+
+    Nothing here is inferred. The complex, the target chain, the partner chains
+    and the direction are all declarations the request carries, and each one
+    that is missing is reported as missing rather than filled in: the atlas's
+    direction reverses the meaning of every percentage below it.
+
+    The complex is tied to the prepared target by residue number. A preparation
+    only ever removes — solvent, heteroatoms, the partner chains — so the
+    prepared file's numbers must be a subset of the source's target chain, and
+    a complex that fails that is a different protein rather than this one's
+    source.
+
+    shortcut: the tie is the numbering, not the preparation's recorded
+    source_sha256, because preparation.json is not a registered input. Upgrade
+    when it is.
+    """
+
+    from cellertz.application.generation_plan import open_registered_input_catalog
+    from cellertz.domains.protein_design.scoring.interface_area import InterfaceAreaError
+    from cellertz.domains.protein_design.scoring.partner_classification import (
+        partner_contact_residues,
+    )
+
+    target_chain = request.get("target_chain")
+    partners = request.get("partner_chains")
+    direction = request.get("partner_direction")
+    declared = {
+        "target_chain": target_chain if isinstance(target_chain, str) else None,
+        "partner_chains": partners if isinstance(partners, str) else None,
+        "partner_direction": direction if isinstance(direction, str) else None,
+    }
+    if not declared["target_chain"] or not declared["partner_chains"]:
+        return {
+            "status": "partner_not_declared",
+            "declared": declared,
+            "limitation": (
+                "This request names no source complex chains. A block's contact with the "
+                "clinical partner is measured against declared chains, never guessed."
+            ),
+        }
+    loaded = open_registered_input_catalog().verified_complex_bytes()
+    if loaded is None:
+        return {
+            "status": "complex_not_registered",
+            "declared": declared,
+            "limitation": (
+                "The registered input root holds no complex.pdb. The prepared target alone "
+                "does not carry the partner, so contact against it cannot be measured."
+            ),
+        }
+    digest, body = loaded
+    try:
+        contact = partner_contact_residues(
+            body.decode("utf-8", errors="replace"),
+            declared["target_chain"],
+            tuple(declared["partner_chains"].split(",")),
+        )
+    except InterfaceAreaError as error:
+        return {
+            "status": "complex_refused",
+            "declared": declared,
+            "complex_sha256": digest,
+            "limitation": f"The registered complex could not be measured: {error}.",
+        }
+    numbers = {number for chain, number in prepared}
+    missing = sorted(numbers - set(contact["target_residues"]))
+    if missing:
+        return {
+            "status": "complex_does_not_contain_the_prepared_target",
+            "declared": declared,
+            "complex_sha256": digest,
+            "limitation": (
+                f"{len(missing)} residue numbers of the prepared target are absent from chain "
+                f"{declared['target_chain']} of the registered complex, starting at {missing[0]}. "
+                "A preparation only removes, so this complex is not this target's source."
+            ),
+        }
+    return {
+        "status": "measured",
+        "declared": declared,
+        "complex_sha256": digest,
+        **contact,
+    }
+
+
+def _recorded_partner(partner: Mapping[str, Any]) -> dict[str, Any]:
+    """The measurement as the suggestion stores it: the footprint, not every residue.
+
+    ``target_residues`` exists to check that the complex and the prepared file
+    are the same protein and has done its job by here; keeping it would store
+    the whole chain in every suggestion.
+    """
+
+    return {key: value for key, value in partner.items() if key != "target_residues"}
+
+
 def _residues_matching(sha: str) -> tuple[set[tuple[str, int]] | None, str | None]:
     from cellertz.application.generation_plan import open_registered_input_catalog
 
@@ -952,7 +1053,8 @@ def _validated_suggestions(
         if label not in kept:
             kept.append(label)
             evidence.append({"residue": label, "evidence": note, "references": cited})
-    blocks = _validated_blocks(payload.get("blocks"), kept, system)
+    partner = _partner_measurement(request, present)
+    blocks = _validated_blocks(payload.get("blocks"), kept, system, partner)
     suggestions: list[dict[str, Any]] = []
     if kept:
         current = fields.get("hotspot_assumption") if fields.get("hotspot_strategy") == "residues" else "none"
@@ -967,6 +1069,10 @@ def _validated_suggestions(
                 "evidence": evidence,
                 "blocks": blocks,
                 "hotspot_guard": hotspot_guard(blocks),
+                # Whether the blocks were measured against the clinical partner,
+                # or why they were not. A block set the researcher approves
+                # without this is approved against a residue list alone.
+                "partner_classification": _recorded_partner(partner),
                 "applicable": True,
             }
         )
@@ -1169,6 +1275,7 @@ def _validated_blocks(
     raw: Any,
     kept: list[str],
     system: list[str],
+    partner: Mapping[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Group accepted hotspots into binding regions the agent judged together.
 
@@ -1258,6 +1365,19 @@ def _validated_blocks(
             f"the hotspot guard's max_total of {MAX_TOTAL_RESIDUES}. Every block "
             "is recorded; the set is what exceeds the budget."
         )
+    if partner is not None and partner.get("status") == "measured":
+        from cellertz.domains.protein_design.scoring.partner_classification import classify_blocks
+
+        blocks = classify_blocks(blocks, dict(partner), partner["declared"]["partner_direction"])
+        for block in blocks:
+            if block.get("contact_status") != "measured":
+                continue
+            system.append(
+                f"Block {block['id']} is {block['verdict']}: {block['contact_n']} of "
+                f"{block['n']} residues touch chain "
+                f"{','.join(partner['partner_chains'])} at "
+                f"{partner['cutoff_angstrom']} A. {block['reading']}"
+            )
     return blocks
 
 
@@ -1563,6 +1683,13 @@ def handle_plan_suggestion(
             "message": message,
             "target": target if isinstance(target, str) else "",
             "n_candidates": count if type(count) is int else None,
+            # The source complex the analysis extracted. These three decide
+            # whether a block can be classified against the clinical partner at
+            # all, and an absent one is passed through absent.
+            **{
+                name: getattr(fields.get(name), "value", None)
+                for name in ("target_chain", "partner_chains", "partner_direction")
+            },
         },
         plan=current,
         expected_digest=digest,

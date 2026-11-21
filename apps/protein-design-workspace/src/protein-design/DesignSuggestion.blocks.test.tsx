@@ -19,6 +19,10 @@ const BLOCKS: HotspotBlock[] = [
     selectivity: "MEDIUM",
     rationale: "Secondary patch on the same face.",
     risks: "Partly buried in the full-length receptor.",
+    verdict: "",
+    contactN: null,
+    contactPct: null,
+    reading: "",
   },
   {
     id: "A",
@@ -34,10 +38,34 @@ const BLOCKS: HotspotBlock[] = [
     selectivity: "HIGH",
     rationale: "Core contact region of the retrieved note.",
     risks: "Competes with the native ligand.",
+    verdict: "",
+    contactN: null,
+    contactPct: null,
+    reading: "",
   },
 ];
 
-function suggestion(blocks: HotspotBlock[]): PlanSuggestion {
+// What the measurement looks like once the input root holds the complex: the
+// partner chains and the direction are declared, so each block carries one of
+// the atlas's four words.
+const CLASSIFIED: HotspotBlock[] = [
+  {
+    ...BLOCKS[1],
+    verdict: "OVERLAPPING",
+    contactN: 2,
+    contactPct: 100,
+    reading: "Competes with the partner: at least half this block sits on the partner's footprint, and contact with it is the declared failure.",
+  },
+  {
+    ...BLOCKS[0],
+    verdict: "ORTHOGONAL",
+    contactN: 0,
+    contactPct: 0,
+    reading: "Clear of the partner, which is what this campaign declared it wants.",
+  },
+];
+
+function suggestion(blocks: HotspotBlock[], partnerLimitation?: string): PlanSuggestion {
   return {
     suggestionId: "suggestion_1",
     status: "complete",
@@ -58,6 +86,7 @@ function suggestion(blocks: HotspotBlock[]): PlanSuggestion {
         kind: "agent_recommendation",
         applicable: true,
         blocks,
+        partnerLimitation,
       },
     ],
     uncertainties: [],
@@ -82,9 +111,9 @@ function suggestion(blocks: HotspotBlock[]): PlanSuggestion {
   };
 }
 
-function view(blocks: HotspotBlock[]) {
+function view(blocks: HotspotBlock[], partnerLimitation?: string) {
   return {
-    current: suggestion(blocks),
+    current: suggestion(blocks, partnerLimitation),
     stale: [],
     picked: {},
     setPicked: vi.fn(),
@@ -103,9 +132,25 @@ describe("hotspot blocks in the suggestion panel", () => {
     expect(items[1].textContent).toContain("3 residues spread between A66 and A125");
   });
 
-  it("says contact is not measured, so a block is not read as a result", () => {
-    render(<DesignSuggestion suggestion={view(BLOCKS)} onApply={vi.fn()} />);
-    expect(screen.getAllByText(/Contact with this block is not measured yet/)).toHaveLength(2);
+  it("says why contact is not measured, rather than only that it is not", () => {
+    render(
+      <DesignSuggestion
+        suggestion={view(BLOCKS, "The registered input root holds no complex.pdb.")}
+        onApply={vi.fn()}
+      />,
+    );
+    expect(screen.getAllByText(/holds no complex.pdb/)).toHaveLength(2);
+  });
+
+  it("shows the verdict against the partner, and what it means for this campaign", () => {
+    render(<DesignSuggestion suggestion={view(CLASSIFIED)} onApply={vi.fn()} />);
+    const items = screen.getByRole("list", { name: "Hotspot blocks" }).querySelectorAll("li");
+    expect(items[0].textContent).toContain("OVERLAPPING");
+    expect(items[0].textContent).toContain("2 of 2 residues touch the partner (100%)");
+    expect(items[0].textContent).toContain("contact with it is the declared failure");
+    expect(items[1].textContent).toContain("ORTHOGONAL");
+    expect(items[1].textContent).toContain("0 of 3 residues touch the partner (0%)");
+    expect(screen.queryByText(/not measured/)).toBeNull();
   });
 
   it("shows the plain residue list unchanged when a suggestion carries no blocks", () => {

@@ -34,9 +34,12 @@ from cellertz.application.vhh_campaign import (
     validate_preparation,
 )
 
-# Water, by the names the PDB uses for it. DOD is heavy water and WAT appears
-# in files that came through other tooling.
-SOLVENT_RESIDUES = frozenset({"HOH", "DOD", "WAT", "H2O"})
+# Water, by the names the PDB uses for it. One list, shared with the contact
+# measurement: a water this strips has to be the same water that cannot make a
+# contact, or the prepared file and the classification would disagree about
+# what is in the structure.
+from cellertz.domains.protein_design.scoring.partner_classification import SOLVENT_RESIDUES
+
 _COORDINATE_RECORDS = ("ATOM  ", "HETATM")
 
 

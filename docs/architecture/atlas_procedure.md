@@ -142,6 +142,57 @@ takes — occlusion is measured always and gated only against a declared limit �
 but here it is declared per target, up front, and it reverses the meaning of
 every number in step 3.
 
+### Built 21 Nov 2026 — and recomputing it corrected two things
+
+`partner_classification.partner_contact_residues` measures the contact and
+`classify_blocks` attaches it to each declared block. Recomputed from the nine
+complexes the artifact embeds, **72 of its 76 blocks reproduce exactly** at
+heavy atom ≤ 5 Å. The four that do not are inconsistent in the artifact itself:
+their own `contact_pct` does not equal `contact_n`/`n` either — cd16a block C
+states 7 of 10 is 50%, gpc3 block B states 5 of 12 is 100% — so that is its
+arithmetic rather than another cutoff. 4.5 Å misses nine blocks, 5.5 Å ten.
+Water is excluded on both sides: two bridging `HOH` residues put the m971
+footprint on 7O52 at 28 residues, and dropping them gives the 26 the artifact
+states.
+
+**The `overlap` verdict is not a function of its own contact measurement.** Its
+ORTHOGONAL blocks run from 0% to 100% contact, 13 of its OVERLAPPING blocks sit
+at 100% but 2 sit at 0%, and its ADJACENT blocks span the whole range:
+
+| claim | at 0% | in between | at 100% |
+| --- | --- | --- | --- |
+| `ORTHOGONAL` | 16 | 2 | 1 |
+| `ADJACENT` | 8 | 5 | 1 |
+| `OVERLAPPING` | 2 | 26 | 13 |
+| `ON-TARGET` | 0 | 1 | 1 |
+
+So the four words are an agent's claim, and three of its blocks claim to be
+orthogonal to a partner they touch. This platform therefore **derives** the
+verdict from the measurement instead of asking the agent for it — which is also
+what the Hotspot agent's existing governance already requires, since it is
+forbidden from stating "how much of a partner epitope a block covers". The cut
+between ADJACENT and OVERLAPPING is `EDGE_CONTACT_PCT = 50` and is **ours**: the
+artifact's own words track no percentage, so there is nothing to inherit.
+`ON-TARGET` is the direction's word, not a geometry — it appears on both of its
+`contact_good` targets and on none of the other seven.
+
+**And this resolves the reconciliation left open on 21 Nov.** `n == hi - lo + 1`
+for all 76 blocks: the displayed blocks are **contiguous ranges**, not the
+guarded residue picks. That is why CD19's blocks sum to 106 residues against
+`proposed: 100` and why one block reaches 50. Our blocks are explicit residue
+sets that survived hotspot validation, so `classify_blocks` counts the block's
+own residues and never its span — counting the span would count residues the
+plan never declared.
+
+**Where the complex comes from.** Both input roots on this server hold a single
+prepared chain, so the partner is not in the file the campaign runs on. It is
+read from `complex.pdb` beside `target.pdb` and is deliberately **not** a role
+of the input identity: mBER never opens it, and adding it would move the
+manifest digest of every registered root over a file no execution reads. The
+complex is tied to the prepared target by residue number — a preparation only
+ever removes, so the prepared numbers must all be present in the source's
+target chain, and a complex that fails that is refused as a different protein.
+
 ---
 
 ## Step 4 — Campaigns as a series, one change each
@@ -287,19 +338,20 @@ graded risk heuristic, not a threshold."*
 
 | step | state |
 | --- | --- |
-| 0 · source complex, target + partner + context | **nothing** — the input catalog is one `target.pdb`, one chain, no partner |
+| 0 · source complex, target + partner + context | extracted into the draft ✅ (21 Nov); the complex itself is read from `complex.pdb`, which neither root holds yet |
 | 1 · agent proposes blocks | `hotspot_identification_agent.suggestion` ✅ |
 | 2 · guard verdict | limits ✅; `forbidden`, `exclusions`, oversized triples, guarded output ❌ |
-| 3 · classify blocks against the partner, with a declared direction | **nothing** — `occluded_by_partners` measures it, nothing classifies or declares the direction |
+| 3 · classify blocks against the partner, with a declared direction | built ✅ (21 Nov) — `partner_classification`, reproducing 72 of the atlas's 76 blocks |
 | 4 · campaign series, one change each | rounds with parent/child lineage ✅; **seeding on a parent design** ❌ |
 | 5 · audit with reachability and a null model | built ✅, and inside `audit_hotspot_blocks` |
 | 6 · pre-filters, then two-axis rank | built ✅; **not injected** — `specialist_scorer` is empty and the journey still falls back to ipSAE |
 | 7 · clinical anchor | **nothing** — no `drugs` record, and J_clin has to be supplied by hand |
 
-The cheapest gap with the largest effect is **step 3**. It needs no GPU, no
-agent call and no new measurement — `occluded_by_partners` already returns the
-contact set. What is missing is the partner in the catalog, the four-way
-verdict, and a declared direction per campaign.
+Steps 0 and 3 were built on 21 Nov 2026. What is left on them is operational
+rather than code: **neither input root holds a `complex.pdb`**, so every block
+still reports why it was not measured rather than a verdict, and the front end
+does not yet collect the direction — so a measured block reads as geometry with
+its meaning withheld.
 
 The gap that silently corrupts a record is **step 6**: until `specialist_scorer`
 is injected, a journey that completes on the server writes an ipSAE score with
@@ -387,11 +439,12 @@ are missing from it:
 
 ### Build order
 
-1. **Partner classification.** No GPU, no new agent call, no new measurement:
-   `occluded_by_partners` already returns the contact set. Missing are the
-   partner chain in the input catalog, the four-way verdict, and a direction
-   declared per campaign.
-2. **The analysis extraction** — an agent prompt plus a reply validator.
+1. ~~**Partner classification.**~~ Built 21 Nov 2026. The verdict is derived
+   from the measurement rather than claimed by the agent, because the atlas's
+   own four words do not track its own contact numbers. Outstanding: place
+   `complex.pdb` in each input root, and collect `partner_direction` in the
+   front end.
+2. ~~**The analysis extraction**~~ — built 21 Nov 2026.
 3. **Inject `specialist_scorer`**, which closes the step-6 gap where a journey
    completing on the server still writes an ipSAE score.
 4. **Seed and lesson on rounds.**
