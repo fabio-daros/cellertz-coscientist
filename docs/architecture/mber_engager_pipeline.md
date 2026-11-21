@@ -192,7 +192,22 @@ the installation registers the profiles, a person picks one.
    as having passed the *measured* filters, never as having passed. Step 5
    declares the footprint and turns it on.
 4. **Two-axis ranking** with Pareto front and greedy diversity, as its own
-   protocol.
+   protocol. Built: `scoring/engager_two_axis.py`, protocol id
+   `ENGAGER_TWO_AXIS_2026`, which every row carries beside its score and which
+   is declared not comparable with `CARPNN_2026_REFERENCE` or
+   `ipsae_primary_ranking`. Buried area comes from
+   `scoring/interface_area.py` (Shrake-Rupley via Biopython, already a
+   dependency).
+   **Two things are not settled.** The atlas states the weights but not how
+   terms of different units are combined, so per-term percentile
+   normalisation before weighting is this platform's reading and is declared
+   as such in the result; it needs checking against one of his own runs before
+   a number is quoted as his. And `J_clin` weighs 1.2, so a cohort is
+   *refused* without a declared clinical epitope rather than ranked on a
+   formula with a term silently zeroed. For CD22 that epitope is derivable —
+   the fixture's own rationale names the m971 Fab in 7O52, whose chains H and
+   L it already records as the partners — but no prepared file with those
+   chains is in hand.
 5. **Target preparation and seeding** exposed as plan fields, since they are the
    two levers that work.
 6. **Visualization** in the workspace: 3Dmol (the atlas uses `3dmol@2.0.4`)
