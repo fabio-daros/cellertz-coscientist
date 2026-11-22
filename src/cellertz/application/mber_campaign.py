@@ -27,6 +27,7 @@ angstrom.
 from __future__ import annotations
 
 import csv
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +60,9 @@ BINDER_CHAIN = "B"
 # the delta that belongs to the target. The composite takes it as a percentile,
 # so the halving cannot change an order.
 BURIED_AREA_SOURCE = "target-side buried area from the occlusion pass"
+# Which design of a ranked cohort a launch declares. The panel keeps a
+# diverse set; a round carries one candidate.
+ACCEPTED_RULE = "rank 1 among the designs the two-axis panel selected"
 
 
 def launch_request(
@@ -136,6 +140,9 @@ def rank_mber_output(
     rejected: list[dict[str, Any]] = []
     unmeasurable: list[dict[str, Any]] = []
     designs: list[EngagerDesign] = []
+    # Keyed by the id the panel ranks under, because the panel carries neither
+    # the sequence nor the design name and an acceptance needs both.
+    identities: dict[str, dict[str, str]] = {}
     for candidate in candidates:
         metadata = candidate.generator_metadata
         structure = _structure_path(metadata, directory)
@@ -185,6 +192,11 @@ def rank_mber_output(
             )
             screened.pop()
             continue
+        identities[candidate.candidate_id] = {
+            "design": str(metadata.get("design") or candidate.candidate_id),
+            "sequence": candidate.sequence,
+            "target_id": candidate.target_id,
+        }
         designs.append(
             EngagerDesign(
                 design_id=candidate.candidate_id,
@@ -216,6 +228,84 @@ def rank_mber_output(
         "rejected_by_screen": rejected,
         "not_measurable": unmeasurable,
         "ranking": ranking,
+        "accepted_design": _accepted_design(ranking, identities),
+    }
+
+
+def _accepted_design(
+    ranking: Mapping[str, Any],
+    identities: Mapping[str, Mapping[str, str]],
+) -> dict[str, Any]:
+    """Which one design of the cohort a launch may declare as its candidate.
+
+    The panel is a set, not a winner: with no ``select`` the diverse selection
+    keeps every design that is neither a trajectory repeat nor a near
+    duplicate. A journey round carries one candidate, so the declaration is
+    **rank 1 among the selected** — the panel's own ordering, not a new one.
+
+    Being in the panel is itself the acceptance evidence. A design only reaches
+    it after its structure was found, its sequence was read off that structure
+    and matched ``accepted.csv``, the atlas's pre-filters passed, and i_pTM was
+    recorded and cleared the gate. Nothing here re-decides any of that; it
+    reports which checks the design is standing on.
+    """
+
+    rows = ranking.get("designs")
+    selected = [
+        row
+        for row in (rows if isinstance(rows, list) else ())
+        if isinstance(row, dict) and row.get("selected") is True
+    ]
+    if not selected:
+        return _acceptance_refused(["ranking_selected_no_design"])
+    best = min(selected, key=lambda row: row.get("rank") or 0)
+    design_id = best.get("design_id")
+    identity = identities.get(design_id) if isinstance(design_id, str) else None
+    if identity is None:
+        # The panel ranked an id the cohort never produced, so the sequence
+        # behind it is unknown and no candidate can be declared from it.
+        return _acceptance_refused([f"panel_row_has_no_cohort_identity:{design_id}"])
+    return {
+        "accepted": True,
+        "reasons": [],
+        "candidate_id": design_id,
+        # execution_id is the launch's to fill: this function does not know
+        # which attempt is reading the output directory.
+        "candidate_identity": {
+            "candidate_id": design_id,
+            "sequence": identity["sequence"],
+            "target_id": identity["target_id"],
+            "design": identity["design"],
+        },
+        "summary": {
+            "accepted": True,
+            "design": identity["design"],
+            "candidate_id": design_id,
+            "rule": ACCEPTED_RULE,
+            "protocol_id": ranking.get("protocol_id"),
+            "ordering": ranking.get("ordering"),
+            "rank": best.get("rank"),
+            "score": best.get("score"),
+            "i_ptm": best.get("i_ptm"),
+            "on_pareto_front": best.get("on_pareto_front"),
+            "trajectory": best.get("trajectory"),
+            "ranked_cohort": len(rows) if isinstance(rows, list) else 0,
+            "selected_in_panel": len(selected),
+            "scientific_validation_established": False,
+        },
+    }
+
+
+def _acceptance_refused(reasons: list[str]) -> dict[str, Any]:
+    return {
+        "accepted": False,
+        "reasons": reasons,
+        "summary": {
+            "accepted": False,
+            "reasons": reasons,
+            "rule": ACCEPTED_RULE,
+            "scientific_validation_established": False,
+        },
     }
 
 

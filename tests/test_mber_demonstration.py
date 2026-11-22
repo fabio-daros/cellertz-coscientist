@@ -18,6 +18,7 @@ import pytest
 
 from cellertz.application.apptainer_demonstration import DemonstrationLaunch
 from cellertz.application.attempt_evidence import PDL1_PD1_FOOTPRINT
+from cellertz.application.mber_campaign import ACCEPTED_RULE
 from cellertz.application.mber_demonstration import (
     MAX_DEMONSTRATION_TRAJECTORIES,
     PROFILE_ID,
@@ -315,3 +316,45 @@ def test_the_target_reaches_the_settings_mber_reads(attempts: Path) -> None:
     settings = json.loads(Path(runtime.calls[0][-1]).read_text(encoding="utf-8"))
     assert settings["stopping"]["num_accepted"] == 5
     assert settings["stopping"]["max_trajectories"] == 1, "one trajectory per process"
+
+
+def test_a_ranked_launch_declares_its_accepted_candidate(attempts: Path) -> None:
+    """A round reads accepted_candidate to decide whether specialists may run.
+
+    This launcher declared none, so a run that screened and ranked a real
+    cohort still arrived at the journey as "no accepted candidate".
+    """
+
+    runtime = _Runtime(accepted_per_trajectory=2)
+    reply = _launcher(attempts, runtime).launch(_launch(attempts, trajectories=2))
+
+    assert reply["status"] == "ranked", reply
+    assert reply["accepted_candidate"] is True
+    assert reply["successful_candidate_generation"] is True
+    identity = reply["candidate_identity"]
+    assert identity["candidate_id"] == reply["candidate_id"]
+    assert identity["execution_id"] == ATTEMPT_ID
+    # The target is the one the launcher's own specification declares, which
+    # is still the PD-L1 demonstration's whatever the plan asked for.
+    assert identity["target_id"] == demonstration_specification(1).target_id
+    assert identity["sequence"] and identity["design"]
+    panel = reply["ranking"]["ranking"]["designs"]
+    chosen = next(row for row in panel if row["design_id"] == reply["candidate_id"])
+    assert chosen["selected"] is True
+    assert chosen["rank"] == min(row["rank"] for row in panel if row["selected"])
+    evidence = reply["acceptance_evidence"]
+    assert evidence["rule"] == ACCEPTED_RULE
+    assert evidence["protocol_id"] == "ENGAGER_TWO_AXIS_2026"
+    assert evidence["rank"] == chosen["rank"]
+    assert evidence["score"] == chosen["score"]
+    assert evidence["scientific_validation_established"] is False
+
+
+def test_a_cohort_mber_accepted_nothing_from_declares_no_candidate(attempts: Path) -> None:
+    """mBER's own filter rejecting every binder is a legitimate outcome."""
+
+    reply = _launcher(attempts, _Runtime(accepted_per_trajectory=0)).launch(_launch(attempts))
+
+    assert reply["status"] == "no_accepted_design"
+    assert reply.get("accepted_candidate") is not True
+    assert "candidate_identity" not in reply

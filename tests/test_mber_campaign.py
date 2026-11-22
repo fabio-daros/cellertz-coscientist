@@ -16,6 +16,7 @@ import pytest
 
 from cellertz.application.contracts import ApplicationContractError
 from cellertz.application.mber_campaign import (
+    ACCEPTED_RULE,
     SETTINGS_FILENAME,
     launch_request,
     rank_mber_output,
@@ -199,3 +200,61 @@ def test_an_unversioned_campaign_cannot_even_be_launched(tmp_path) -> None:
     with pytest.raises(ApplicationContractError) as error:
         launch_request(cd22_operational_reference(), "/inputs/t.pdb", tmp_path)
     assert str(error.value) == "missing_generator_version"
+
+
+def test_the_ranked_cohort_declares_one_accepted_design(tmp_path) -> None:
+    """The panel is a set; a journey round carries one candidate."""
+
+    directory = cohort(
+        tmp_path,
+        [
+            {"trajectory": "traj_a", "i_ptm": 0.95},
+            {"trajectory": "traj_b", "i_ptm": 0.88},
+            {"trajectory": "traj_c", "i_ptm": 0.83},
+        ],
+    )
+
+    report = rank_mber_output(versioned(), directory, CLINICAL)
+
+    accepted = report["accepted_design"]
+    panel = report["ranking"]["designs"]
+    chosen = next(row for row in panel if row["design_id"] == accepted["candidate_id"])
+    assert accepted["accepted"] is True
+    assert chosen["selected"] is True
+    assert chosen["rank"] == min(row["rank"] for row in panel if row["selected"])
+    identity = accepted["candidate_identity"]
+    assert identity["candidate_id"] == accepted["candidate_id"]
+    assert identity["sequence"] == BINDER
+    assert identity["target_id"] == "CD22"
+    assert identity["design"] in accepted["candidate_id"]
+    # The attempt is the launch's to name, not this function's.
+    assert "execution_id" not in identity
+    assert accepted["summary"]["rule"] == ACCEPTED_RULE
+    assert accepted["summary"]["selected_in_panel"] == sum(
+        1 for row in panel if row["selected"]
+    )
+
+
+def test_a_cohort_that_survives_nothing_declares_no_candidate(tmp_path) -> None:
+    directory = cohort(tmp_path, [{"trajectory": "traj_a", "i_ptm": 0.95}])
+
+    report = rank_mber_output(
+        versioned(), directory, CLINICAL, ligand_residues=(37, 39), occlusion_limit=1
+    )
+
+    assert report["accepted_design"]["accepted"] is False
+    assert report["accepted_design"]["reasons"] == ["ranking_selected_no_design"]
+
+
+def test_a_design_the_gate_dropped_cannot_be_the_accepted_candidate(tmp_path) -> None:
+    """Only a design the panel selected may be declared, and the gate is upstream."""
+
+    directory = cohort(
+        tmp_path,
+        [{"trajectory": "traj_a", "i_ptm": 0.95}, {"trajectory": "traj_low", "i_ptm": 0.42}],
+    )
+
+    report = rank_mber_output(versioned(), directory, CLINICAL)
+
+    assert report["ranking"]["rejected_by_gate"] == ["mber_traj_low_binder_1"]
+    assert report["accepted_design"]["candidate_id"] != "mber_traj_low_binder_1"

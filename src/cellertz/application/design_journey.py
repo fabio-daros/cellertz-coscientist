@@ -3153,7 +3153,15 @@ def _execution_from_reply(
     if not isinstance(progress, list):
         progress = [{"status": status}]
     accepted = reply.get("accepted_candidate") is True
-    successful = accepted and reply.get("successful_candidate_generation") is True and status == "verified"
+    # "verified" is BindCraft's terminal status, reached through the review
+    # validation; "ranked" is mBER's, reached through the screen and the
+    # two-axis panel. Both carry an acceptance a launcher had to earn, so a
+    # claim of success on any other status is still refused.
+    successful = (
+        accepted
+        and reply.get("successful_candidate_generation") is True
+        and status in {"verified", "ranked"}
+    )
     candidate = reply.get("candidate_id")
     candidate_id = candidate if isinstance(candidate, str) and candidate else None
     reported_attempt = reply.get("attempt_id")

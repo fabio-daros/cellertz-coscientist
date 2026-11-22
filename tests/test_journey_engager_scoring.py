@@ -260,3 +260,54 @@ def test_a_refused_score_fails_the_stage_with_the_reason_it_gave(monkeypatch: An
     assert stages["scoring"]["status"] == "failed"
     assert "ranking_has_no_row_for:design_absent" in stages["scoring"]["failure_reason"]
     assert stages["ranking"]["status"] != "completed"
+
+
+def test_a_ranked_launch_reaches_the_journey_as_an_accepted_execution() -> None:
+    """The round reads these three fields to let specialists run at all."""
+
+    from cellertz.application.design_journey import _execution_from_reply
+
+    finished = _execution_from_reply(
+        {"journey_id": "journey_mber"},
+        {"attempt_id": "attempt.mber1"},
+        {
+            "status": "ranked",
+            "launched": True,
+            "accepted_candidate": True,
+            "successful_candidate_generation": True,
+            "candidate_id": "mber_design_a",
+            "candidate_identity": {
+                "candidate_id": "mber_design_a",
+                "design": "design_a",
+                "execution_id": "attempt.mber1",
+                "sequence": _SEQUENCE,
+                "target_id": "CD22",
+            },
+            "ranking": _ranking_document(),
+        },
+    )
+
+    assert finished["accepted_candidate"] is True
+    assert finished["successful_candidate_generation"] is True
+    assert finished["terminal"] is True
+    assert finished["candidate_identity"]["design"] == "design_a"
+    assert finished["ranking"]["ranking"]["protocol_id"] == PROTOCOL_ID
+
+
+def test_a_launcher_cannot_claim_success_on_a_status_that_earned_none() -> None:
+    """verified is BindCraft's terminal status and ranked is mBER's. No others."""
+
+    from cellertz.application.design_journey import _execution_from_reply
+
+    for status in ("launch_failed", "no_accepted_design", "outputs_rejected", "failed"):
+        finished = _execution_from_reply(
+            {"journey_id": "journey_mber"},
+            {"attempt_id": "attempt.mber1"},
+            {
+                "status": status,
+                "launched": True,
+                "accepted_candidate": True,
+                "successful_candidate_generation": True,
+            },
+        )
+        assert finished["successful_candidate_generation"] is False, status

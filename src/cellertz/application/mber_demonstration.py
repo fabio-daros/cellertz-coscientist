@@ -335,6 +335,46 @@ def clinical_epitope_in_output_frame(cohort: Path) -> tuple[frozenset[int], ...]
     return None
 
 
+def _declared_candidate(accepted: Any, attempt_id: str) -> dict[str, Any]:
+    """The acceptance fields a ranked launch adds to its reply.
+
+    A journey round reads ``accepted_candidate`` to decide whether specialists
+    may run, and this launcher declared none: a run that screened and ranked a
+    real cohort still arrived as "no accepted candidate" and the specialists
+    were never invoked.
+
+    The declaration is the panel's, not this function's — ``rank_mber_output``
+    decides which design, and only a design the panel selected can be it. The
+    attempt id is added here because the panel does not know which attempt
+    read the output directory.
+    """
+
+    if not isinstance(accepted, dict) or accepted.get("accepted") is not True:
+        reasons = accepted.get("reasons") if isinstance(accepted, dict) else None
+        return {
+            "accepted_candidate": False,
+            "successful_candidate_generation": False,
+            "acceptance_evidence": (
+                accepted.get("summary")
+                if isinstance(accepted, dict)
+                else {"accepted": False, "reasons": ["ranking_declared_no_candidate"]}
+            ),
+            "termination_reason": f"ranked_without_an_accepted_candidate:{','.join(reasons or ())}"
+            if reasons
+            else "ranked_without_an_accepted_candidate",
+        }
+    identity = accepted.get("candidate_identity")
+    identity = dict(identity) if isinstance(identity, dict) else {}
+    identity["execution_id"] = attempt_id
+    return {
+        "accepted_candidate": True,
+        "successful_candidate_generation": True,
+        "candidate_id": accepted.get("candidate_id"),
+        "candidate_identity": identity,
+        "acceptance_evidence": accepted.get("summary"),
+    }
+
+
 class MberDemonstrationLauncher:
     """Explicit launch of mBER. Construction does not start Apptainer.
 
@@ -529,4 +569,10 @@ class MberDemonstrationLauncher:
             }
         ranked = rank_mber_output(specification, cohort, clinical)
         _mber_progress(request.attempt_directory, "ranked", accepted_designs=accepted_rows)
-        return {**delivered, "status": "ranked", "ranking": ranked, "completed_at": _now()}
+        return {
+            **delivered,
+            "status": "ranked",
+            "ranking": ranked,
+            "completed_at": _now(),
+            **_declared_candidate(ranked.get("accepted_design"), request.attempt_id),
+        }

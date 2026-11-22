@@ -374,16 +374,41 @@ a fixed list of keys from the launcher's reply and `ranking` was not among
 them. The launch did the atlas's step 6 on the GPU and the journey kept none
 of it, which is why ipSAE was the only thing left to fall back on.
 
-**What still blocks a real run, and it is upstream of the scorer.** An mBER
-launch returns `status: "ranked"` and never sets `accepted_candidate` or
-`candidate_identity` — only the BindCraft path does, through
-`read_accepted_launch_evidence` on `status: "verified"`. So the round stops at
-"no accepted candidate" before generation, and the three stages before scoring
-are BindCraft-shaped anyway: generation reads BindCraft's design stats and the
-evidence gate requires a relaxed PDB and a PAE file per model, neither of which
-mBER produces. Reaching the scorer needs the launcher to declare its selected
-design as the accepted candidate and those two stages to be recorded from the
-launch's own output rather than re-derived from BindCraft artifacts.
+### The accepted candidate, declared 22 Nov 2026
+
+An mBER launch returned `status: "ranked"` and never set `accepted_candidate`
+or `candidate_identity` — only the BindCraft path did, through
+`read_accepted_launch_evidence` on `status: "verified"` — so a run that
+screened and ranked a real cohort arrived as "no accepted candidate" and no
+specialist ran.
+
+The panel now declares one. It is a **set**, not a winner: with no `select` the
+diverse selection keeps every design that is neither a trajectory repeat nor a
+near duplicate, while a round carries one candidate. The declaration is
+therefore **rank 1 among the selected**, the panel's own ordering and not a new
+one, and only a design the panel selected can be it.
+
+Being in the panel is the acceptance evidence. A design reaches it only after
+its structure was found, its sequence was read off that structure and matched
+`accepted.csv`, the atlas's pre-filters passed, and i_pTM was recorded and
+cleared the gate. `rank_mber_output` emits the identity and the rule; the
+launch adds the attempt id, because the panel does not know which attempt read
+the output directory. `successful_candidate_generation` now accepts `ranked`
+beside `verified` — both are terminal statuses a launcher had to earn, and a
+claim on any other status is still refused.
+
+**Where a round stops now:** the **generation** stage, on `_saved_generation`,
+which reads BindCraft's final design stats; behind it the evidence gate wants a
+relaxed PDB and a PAE file per model. mBER produces neither. Those two stages
+have to be recorded from the launch's own output instead of re-derived from
+BindCraft artifacts, and that is the last thing between a journey round and the
+step-6 score.
+
+One more thing that measurement surfaced: `demonstration_specification` is the
+PD-L1 demonstration's — target `PDL1`, structure 4ZQK, the PD-1 footprint as
+the epitope — whatever the plan asked for. So the declared candidate's
+`target_id` is PDL1 even on a CD22 campaign. The launcher does not yet take the
+plan's target.
 
 ---
 
