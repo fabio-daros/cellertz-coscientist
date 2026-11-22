@@ -69,6 +69,14 @@ _SCORE_FAILED = (
     "Ranking, critique, and prioritization were not invoked. The scoring tool was not replayed."
 )
 _NOT_INVOKED = "This specialist was not invoked."
+_NO_ACCEPTED_CSV = (
+    "The saved launch left no accepted cohort to read. The ranking was not taken as "
+    "evidence of designs that are not on disk. Scoring was not invoked."
+)
+_NO_MBER_STRUCTURE = (
+    "The accepted design's complex structure is not in the cohort. Scoring was not "
+    "invoked: the screen and the occlusion pass measured a file that is no longer there."
+)
 _NO_STATS = (
     "The saved launch has no final design stats. ProteinGenerationAgent was not run. "
     "The launcher was not called again. Scoring was not invoked."
@@ -657,6 +665,80 @@ def ipsae_score(execution: Mapping[str, Any]) -> ProteinScoreResultV2:
     return replace(result, provenance=provenance)
 
 
+def _ranked_by_its_launch(execution: Mapping[str, Any]) -> bool:
+    """Whether this execution's generator finished its own pipeline at launch.
+
+    The same signal the scorer routes on: an execution carrying a ranking was
+    screened and ranked by its launch, which is mBER. One without is a
+    BindCraft replay. The two keep different artifacts — mBER writes
+    ``accepted.csv`` and one complex structure per design, BindCraft writes
+    design stats and two predicted models with their PAE — so every stage that
+    re-reads artifacts has to know which it is looking at.
+    """
+
+    return isinstance(execution.get("ranking"), dict)
+
+
+def _mber_cohort(execution: Mapping[str, Any]) -> Path | None:
+    from cellertz.application.mber_demonstration import COHORT_DIRNAME
+
+    directory = execution.get("attempt_directory")
+    attempt_id = execution.get("attempt_id")
+    if not isinstance(directory, str) or not isinstance(attempt_id, str):
+        return None
+    cohort = Path(directory) / COHORT_DIRNAME
+    return cohort if cohort.is_dir() else None
+
+
+def _mber_candidates(execution: Mapping[str, Any]) -> list[Any] | None:
+    """Every accepted design, re-read from the cohort the launch merged.
+
+    The saved identity is not trusted here any more than BindCraft's is: the
+    candidate the later stages carry is parsed back out of the bytes on disk,
+    by the adapter that defines how a row becomes a candidate.
+    """
+
+    from cellertz.domains.protein_design.adapters.mber import (
+        STATS_FILENAME as MBER_STATS,
+    )
+    from cellertz.domains.protein_design.adapters.mber import (
+        MBERArtifacts,
+        MBERError,
+        MBERParser,
+    )
+    from cellertz.domains.protein_design.agents.generation import GenerationRequest
+
+    cohort = _mber_cohort(execution)
+    if cohort is None or not (cohort / MBER_STATS).is_file():
+        return None
+    accepted = cohort / MBER_STATS
+    with accepted.open(encoding="utf-8", newline="") as handle:
+        rows = sum(1 for _ in csv.DictReader(handle))
+    if rows == 0:
+        return None
+    identity = execution.get("candidate_identity")
+    target = identity.get("target_id") if isinstance(identity, dict) else None
+    try:
+        # The parser caps its result at the requested count, so the row count
+        # is read first: a cohort silently cut short is a different cohort.
+        return MBERParser().parse(
+            GenerationRequest(
+                target_id=str(target or ""),
+                objective="saved-launch-normalization",
+                generator="mber",
+                n_candidates=rows,
+            ),
+            MBERArtifacts(
+                output_dir=cohort,
+                accepted_csv=accepted,
+                command=(_LAUNCH_TOOL,),
+                mber_version=str(execution.get("adapter_version") or "saved_launch"),
+            ),
+        )
+    except MBERError:
+        return None
+
+
 def _saved_generation(execution: Mapping[str, Any]) -> dict[str, Any]:
     """Normalize the launcher's saved stats. Does not launch or use fixtures."""
 
@@ -671,6 +753,8 @@ def _saved_generation(execution: Mapping[str, Any]) -> dict[str, Any]:
         ProteinGenerationAgent,
     )
 
+    if _ranked_by_its_launch(execution):
+        return _mber_generation(execution)
     identity = execution.get("candidate_identity")
     if not isinstance(identity, dict):
         return {"candidate": None, "error": _MISSING_IDENTITY, "invoked": False}
@@ -743,6 +827,53 @@ def _saved_generation(execution: Mapping[str, Any]) -> dict[str, Any]:
     return {"candidate": match, "error": None, "invoked": True}
 
 
+def _mber_generation(execution: Mapping[str, Any]) -> dict[str, Any]:
+    """The accepted design, re-read from the cohort the launch wrote.
+
+    mBER keeps no BindCraft design stats and no predicted models, so the
+    BindCraft path reported ``_NO_STATS`` and the round stopped here with a
+    ranked cohort sitting on disk. What stands in for those stats is
+    ``accepted.csv``, which is what the launch itself screened and ranked.
+
+    The declared sequence is checked against the parsed one. If they disagree
+    the identity and the artifacts describe different molecules, which is the
+    same refusal BindCraft makes on a stats mismatch.
+    """
+
+    identity = execution.get("candidate_identity")
+    if not isinstance(identity, dict):
+        return {"candidate": None, "error": _MISSING_IDENTITY, "invoked": False}
+    candidate_id = identity.get("candidate_id")
+    if not isinstance(candidate_id, str) or not candidate_id:
+        return {"candidate": None, "error": _MISSING_IDENTITY, "invoked": False}
+    if identity.get("execution_id") != execution.get("attempt_id"):
+        return {"candidate": None, "error": _ATTEMPT_MISMATCH, "invoked": False}
+    parsed = _mber_candidates(execution)
+    if parsed is None:
+        return {"candidate": None, "error": _NO_ACCEPTED_CSV, "invoked": False}
+    match = next((item for item in parsed if item.candidate_id == candidate_id), None)
+    if match is None:
+        return {
+            "candidate": None,
+            "error": (
+                "The declared design is not in the accepted cohort. "
+                "Another attempt was not attached."
+            ),
+            "invoked": True,
+        }
+    declared = identity.get("sequence")
+    if isinstance(declared, str) and declared and declared.upper() != match.sequence.upper():
+        return {
+            "candidate": None,
+            "error": (
+                "The declared sequence is not the one accepted.csv records for this "
+                "design. The ranking describes a different molecule and was not read."
+            ),
+            "invoked": True,
+        }
+    return {"candidate": match, "error": None, "invoked": True}
+
+
 class _RefusingFixture:
     name = "fixture"
     version = "not_used"
@@ -803,6 +934,8 @@ def _evidence_provider(execution: Mapping[str, Any], calculator: Any) -> Any:
 
 
 def _evidence_block(execution: Mapping[str, Any]) -> tuple[str | None, list[dict[str, Any]]]:
+    if _ranked_by_its_launch(execution):
+        return _mber_evidence(execution)
     identity = execution.get("candidate_identity")
     if not isinstance(identity, dict):
         return _MISSING_IDENTITY, []
@@ -831,6 +964,53 @@ def _evidence_block(execution: Mapping[str, Any]) -> tuple[str | None, list[dict
             return reason, []
         models.append(summary)
     return None, models
+
+
+def _mber_evidence(execution: Mapping[str, Any]) -> tuple[str | None, list[dict[str, Any]]]:
+    """The structure behind the ranked design, which is mBER's whole evidence.
+
+    BindCraft's gate wants a relaxed PDB and a PAE matrix per predicted model,
+    matched to the capture-time residue order. mBER writes neither: one complex
+    structure per accepted design, and no PAE at all — so that gate refused
+    every mBER round before scoring could be reached.
+
+    What it keeps is the stronger half of the same check: the structure the
+    screen and the occlusion pass actually measured has to be on disk, and it
+    is recorded with its digest. There is no residue-order sidecar to verify
+    because there is no PAE whose index order could disagree with it.
+    """
+
+    from cellertz.application.mber_campaign import _structure_path
+
+    identity = execution.get("candidate_identity")
+    if not isinstance(identity, dict) or not isinstance(identity.get("candidate_id"), str):
+        return _MISSING_IDENTITY, []
+    if identity.get("execution_id") != execution.get("attempt_id"):
+        return _ATTEMPT_MISMATCH, []
+    parsed = _mber_candidates(execution)
+    cohort = _mber_cohort(execution)
+    if parsed is None or cohort is None:
+        return _NO_ACCEPTED_CSV, []
+    match = next(
+        (item for item in parsed if item.candidate_id == identity["candidate_id"]), None
+    )
+    if match is None:
+        return _NO_MBER_STRUCTURE, []
+    structure = _structure_path(dict(match.generator_metadata), cohort)
+    if structure is None:
+        return _NO_MBER_STRUCTURE, []
+    return None, [
+        {
+            # Not "model1": mBER accepts one refolded complex per design, so
+            # calling it a model number would imply an ensemble it never made.
+            "model_id": "complex",
+            "design": match.generator_metadata.get("design"),
+            "pdb_path": str(structure),
+            "pdb_sha256": _sha256_file(structure),
+            "pae_path": None,
+            "residue_order_path": None,
+        }
+    ]
 
 
 def retained_capture_evidence(
@@ -1092,22 +1272,27 @@ def _generation_stage(
         return stage
     design = candidate.generator_metadata.get("design")
     sequence = candidate.sequence
+    # Which adapter read the artifacts back, from the candidate rather than
+    # from a constant: naming BindCraft's on an mBER design would misreport
+    # both the generator and the files the stage is standing on.
+    adapter = f"{candidate.generator}_adapter_v1"
+    normalizer = "ProteinGenerationAgent" if candidate.generator == "bindcraft" else "MBERParser"
     stage = _stage(
         "generation",
         "completed",
         "adapter",
-        "ProteinGenerationAgent",
+        normalizer,
         True,
         execution,
         target,
         document,
         started,
         contribution=(
-            f"ProteinGenerationAgent normalized saved design {design}. "
+            f"{normalizer} normalized saved design {design}. "
             f"Sequence {sequence}. Fixture generation was not used. "
             "The demonstration launcher was not called again."
         ),
-        tools=["bindcraft_adapter_v1", _LAUNCH_TOOL],
+        tools=[adapter, _LAUNCH_TOOL],
     )
     if completed is not None:
         stage["completed_at"] = completed
@@ -1120,9 +1305,9 @@ def _generation_stage(
         "sequence": sequence,
         "termination_reason": execution.get("termination_reason"),
         "producer": _LAUNCHER,
-        "protein_generation_agent_executed": True,
+        "protein_generation_agent_executed": normalizer == "ProteinGenerationAgent",
         "fixture_generation_used": False,
-        "adapter": "bindcraft_adapter_v1",
+        "adapter": adapter,
     }
     _remember(document, target, stage, execution, completed or started)
     return stage

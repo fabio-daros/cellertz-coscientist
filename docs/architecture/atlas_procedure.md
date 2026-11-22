@@ -344,7 +344,7 @@ graded risk heuristic, not a threshold."*
 | 3 · classify blocks against the partner, with a declared direction | built ✅ (21 Nov) — `partner_classification`, reproducing 72 of the atlas's 76 blocks |
 | 4 · campaign series, one change each | rounds with parent/child lineage ✅; **seeding on a parent design** ❌ |
 | 5 · audit with reachability and a null model | built ✅, and inside `audit_hotspot_blocks` |
-| 6 · pre-filters, then two-axis rank | built ✅; injected ✅ (22 Nov) — the server scores from the launch's own panel; the journey still cannot reach it (below) |
+| 6 · pre-filters, then two-axis rank | built ✅; injected ✅ (22 Nov); a journey round reaches it end to end ✅ (22 Nov) |
 | 7 · clinical anchor | **nothing** — no `drugs` record, and J_clin has to be supplied by hand |
 
 Steps 0 and 3 were built on 21 Nov 2026. What is left on them is operational
@@ -397,12 +397,44 @@ the output directory. `successful_candidate_generation` now accepts `ranked`
 beside `verified` — both are terminal statuses a launcher had to earn, and a
 claim on any other status is still refused.
 
-**Where a round stops now:** the **generation** stage, on `_saved_generation`,
-which reads BindCraft's final design stats; behind it the evidence gate wants a
-relaxed PDB and a PAE file per model. mBER produces neither. Those two stages
-have to be recorded from the launch's own output instead of re-derived from
-BindCraft artifacts, and that is the last thing between a journey round and the
-step-6 score.
+### Generation and evidence, routed 22 Nov 2026 — the round completes
+
+The two stages before scoring were BindCraft-shaped: generation read
+BindCraft's design stats, and the evidence gate wanted a relaxed PDB and a PAE
+matrix per predicted model, matched to the capture-time residue order. mBER
+writes none of that, so every round stopped at generation with a ranked cohort
+sitting on disk.
+
+Both now route on the same signal the scorer uses — an execution carrying a
+`ranking` was screened and ranked by its launch:
+
+| stage | BindCraft | mBER |
+| --- | --- | --- |
+| generation | design stats → `ProteinGenerationAgent` | `accepted.csv` → `MBERParser` |
+| evidence | relaxed PDB + PAE + residue order, per model | the one complex structure, with its digest |
+
+The saved identity is trusted no more than BindCraft's: the candidate is parsed
+back out of the cohort's own bytes, and a declared sequence that disagrees with
+`accepted.csv` is refused — the identity and the artifacts would be describing
+different molecules. The evidence row is `model_id: "complex"`, not `model1`:
+mBER accepts one refolded complex per design, and a model number would imply
+an ensemble it never made. There is no residue-order sidecar to check because
+there is no PAE whose index order could disagree with one.
+
+Driven end to end on a real cohort, no stubbing:
+
+```
+generation       completed   adapter=mber_adapter_v1 design=t1_binder_1
+scoring          completed   signal=ENGAGER_TWO_AXIS_2026 score=0.5 source=rank_engager_designs
+ranking          completed
+critique         completed
+prioritization   completed
+progress        : recorded
+```
+
+The stage names what read the artifacts rather than a constant, so an mBER
+design is not recorded as BindCraft's adapter with
+`protein_generation_agent_executed: true`.
 
 ### The target comes from the plan, 22 Nov 2026
 

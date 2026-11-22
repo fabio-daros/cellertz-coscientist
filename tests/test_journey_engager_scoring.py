@@ -9,6 +9,7 @@ own protocol, and refused rather than approximated when there is no row.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -311,3 +312,138 @@ def test_a_launcher_cannot_claim_success_on_a_status_that_earned_none() -> None:
             },
         )
         assert finished["successful_candidate_generation"] is False, status
+
+
+def _ranked_attempt(tmp_path, designs=None):
+    """A real mBER attempt: accepted.csv, the structures, and the launch's panel."""
+
+    import dataclasses
+
+    from cellertz.application.mber_campaign import rank_mber_output
+    from cellertz.application.mber_settings import GENERATOR_VERSION
+    from tests.test_mber_campaign import CLINICAL, cohort, versioned
+
+    attempt = tmp_path / "attempt.mberlive"
+    directory = cohort(
+        attempt / "cohort",
+        designs
+        or [
+            {"trajectory": "traj_a", "i_ptm": 0.93},
+            {"trajectory": "traj_b", "i_ptm": 0.86},
+            {"trajectory": "traj_c", "i_ptm": 0.82},
+        ],
+    )
+    specification = dataclasses.replace(
+        versioned(),
+        generator_protocol=dataclasses.replace(
+            versioned().generator_protocol, generator_version=GENERATOR_VERSION
+        ),
+    )
+    ranked = rank_mber_output(specification, directory, CLINICAL)
+    accepted = ranked["accepted_design"]
+    assert accepted["accepted"] is True, ranked
+    execution = {
+        "attempt_id": "attempt.mberlive",
+        "attempt_directory": str(attempt),
+        "terminal": True,
+        "status": "ranked",
+        "accepted_candidate": True,
+        "candidate_id": accepted["candidate_id"],
+        "candidate_identity": {
+            **accepted["candidate_identity"],
+            "execution_id": "attempt.mberlive",
+        },
+        "plan_id": "plan_cd22",
+        "revision": 1,
+        "digest": "ab" * 32,
+        "ranking": ranked,
+    }
+    return attempt, execution
+
+
+def _drive(execution: dict[str, Any]) -> dict[str, Any]:
+    document = {
+        "journey_id": "journey_mber",
+        "active_round_id": "round_mber",
+        "stages": [],
+        "events": [],
+        "execution": execution,
+        "rounds": [
+            {
+                "round_id": "round_mber",
+                "plan_id": execution["plan_id"],
+                "plan_revision": execution["revision"],
+                "digest": execution["digest"],
+                "specialist_stages": [],
+                "specialist_events": [],
+            }
+        ],
+    }
+    assert apply_specialist_progress(
+        document, "round_mber", scorer=specialist_scorer, catalog_root=None
+    ) is True
+    return {item["stage_id"]: item for item in document["rounds"][0]["specialist_stages"]}
+
+
+def test_a_ranked_cohort_reaches_every_stage_from_its_own_artifacts(tmp_path) -> None:
+    """No monkeypatching: the stages read accepted.csv and the structures.
+
+    The generation stage read BindCraft's design stats and the evidence gate
+    wanted a PAE file per model, so every mBER round stopped at generation
+    with a ranked cohort sitting on disk.
+    """
+
+    _attempt, execution = _ranked_attempt(tmp_path)
+
+    stages = _drive(execution)
+
+    assert [stages[name]["status"] for name in ("generation", "scoring", "ranking", "critique", "prioritization")] == [
+        "completed"
+    ] * 5
+    generation = stages["generation"]["output"]
+    assert generation["adapter"] == "mber_adapter_v1"
+    assert generation["protein_generation_agent_executed"] is False
+    assert generation["candidate_id"] == execution["candidate_id"]
+    assert stages["scoring"]["output"]["ranking_signal"] == PROTOCOL_ID
+    assert stages["scoring"]["output"]["score_source"] == "rank_engager_designs"
+    # The evidence is the complex the screen measured, with its digest, and no
+    # PAE because mBER writes none.
+    model = stages["scoring"]["output"]["models"][0]
+    assert model["model_id"] == "complex"
+    assert model["pae_path"] is None
+    assert len(model["pdb_sha256"]) == 64
+    assert Path(model["pdb_path"]).is_file()
+
+
+def test_a_cohort_whose_accepted_csv_is_gone_blocks_instead_of_scoring(tmp_path) -> None:
+    attempt, execution = _ranked_attempt(tmp_path)
+    (attempt / "cohort" / "accepted.csv").unlink()
+
+    stages = _drive(execution)
+
+    assert stages["generation"]["status"] == "blocked"
+    assert "no accepted cohort" in stages["generation"]["blocking_reason"]
+    assert stages["scoring"]["status"] != "completed"
+
+
+def test_a_design_whose_structure_is_gone_blocks_before_scoring(tmp_path) -> None:
+    """The screen measured that file; the ranking is not evidence it exists."""
+
+    attempt, execution = _ranked_attempt(tmp_path)
+    for pdb in (attempt / "cohort").rglob("*_complex.pdb"):
+        pdb.unlink()
+
+    stages = _drive(execution)
+
+    assert stages["scoring"]["status"] == "blocked"
+    assert "not in the cohort" in stages["scoring"]["blocking_reason"]
+
+
+def test_a_declared_sequence_that_disagrees_with_the_cohort_is_refused(tmp_path) -> None:
+    _attempt, execution = _ranked_attempt(tmp_path)
+    execution["candidate_identity"]["sequence"] = "QQQQQQQQQQ"
+
+    stages = _drive(execution)
+
+    assert stages["generation"]["status"] == "blocked"
+    assert "different molecule" in stages["generation"]["blocking_reason"]
