@@ -11,6 +11,7 @@ import json
 import math
 import os
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -915,6 +916,21 @@ def pdl1_numbering_offset(pdb: str) -> int | None:
     offset names a different residue.
     """
 
+    return numbering_offset(pdb, PDL1_PD1_FOOTPRINT_IDENTITIES)
+
+
+def numbering_offset(pdb: str, declared: Mapping[int, str]) -> int | None:
+    """The same identity check, against any declared frame rather than PD-L1's.
+
+    ``declared`` maps a residue number in the frame the campaign declared its
+    epitope in to that residue's three-letter code. Every one of them has to
+    match for an offset to be accepted, so this still tells a renumbered copy
+    of the same protein from a different protein; what is no longer fixed is
+    which protein.
+    """
+
+    if not declared:
+        return None
     identities: dict[int, str] = {}
     for line in pdb.splitlines():
         if line.startswith("ATOM") and line[21:22].strip() == "A":
@@ -925,10 +941,9 @@ def pdl1_numbering_offset(pdb: str) -> int | None:
     if not identities:
         return None
     lowest = min(identities)
-    for offset in {verified - lowest for verified in PDL1_PD1_FOOTPRINT}:
+    for offset in {verified - lowest for verified in declared}:
         if all(
-            identities.get(verified - offset) == PDL1_PD1_FOOTPRINT_IDENTITIES[verified]
-            for verified in PDL1_PD1_FOOTPRINT
+            identities.get(verified - offset) == code for verified, code in declared.items()
         ):
             return offset
     return None

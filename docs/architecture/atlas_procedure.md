@@ -404,11 +404,44 @@ have to be recorded from the launch's own output instead of re-derived from
 BindCraft artifacts, and that is the last thing between a journey round and the
 step-6 score.
 
-One more thing that measurement surfaced: `demonstration_specification` is the
-PD-L1 demonstration's — target `PDL1`, structure 4ZQK, the PD-1 footprint as
-the epitope — whatever the plan asked for. So the declared candidate's
-`target_id` is PDL1 even on a CD22 campaign. The launcher does not yet take the
-plan's target.
+### The target comes from the plan, 22 Nov 2026
+
+`demonstration_specification` was the PD-L1 demonstration's whatever the plan
+asked for — target `PDL1`, structure 4ZQK, the PD-1 footprint as the epitope —
+so a CD22 campaign recorded PDL1 on its accepted candidate and measured J_clin
+against the wrong surface. Not incomplete: false.
+
+`declared_target` now reads the campaign off the approved plan, and **the
+epitope is measured**: the partner's footprint on the target, from the
+`complex.pdb` beside the registered file, through the same
+`partner_contact_residues` the block classification uses. So the surface the
+ranking scores against is the one the plan was approved against. On the real
+CD22 root that is **26 residues** — the professor's own number — against chains
+H,L of 7O52 at 5 Å, and the specification says `structure_contact` with the
+cutoff recorded rather than claiming a curation.
+
+A footprint residue the prepared file no longer holds cannot be in the epitope,
+so the declaration intersects the two and the note carries how many the
+preparation removed.
+
+PD-L1 is the one exception and **not** a fallback: that campaign's epitope is a
+recorded operational reference (curated, 22 residues) and its root holds no
+complex. It is accepted only when the registered file's own residues still
+match that record by identity, so a plan cannot borrow it by writing the name.
+Measured against both real roots:
+
+| root | declares | result |
+| --- | --- | --- |
+| cd22-professor | CD22 + chains H,L | 26 residues, measured |
+| cd22-professor | PDL1 | refused — not the recorded reference |
+| pdl1-professor | PDL1 | 22 residues, recorded reference |
+| pdl1-professor | CD22 + chains | refused — no complex to measure |
+
+The frame check generalised with it: `numbering_offset(pdb, identities)` takes
+the declared epitope's identities, so an offset into mBER's renumbered output
+is still accepted only when every declared residue matches — it is just no
+longer only PD-L1's that it will accept. A launch that cannot declare its
+target is refused as `target_not_declared` **before** the GPU is touched.
 
 ---
 

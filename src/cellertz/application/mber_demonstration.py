@@ -33,6 +33,8 @@ from __future__ import annotations
 
 import csv
 import os
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -53,8 +55,10 @@ from cellertz.application.apptainer_demonstration import (
 )
 from cellertz.application.attempt_evidence import (
     PDL1_PD1_FOOTPRINT,
-    pdl1_numbering_offset,
+    PDL1_PD1_FOOTPRINT_IDENTITIES,
+    numbering_offset,
 )
+from cellertz.application.generation_plan import COMPLEX_FILENAME
 from cellertz.application.mber_campaign import SETTINGS_FILENAME, rank_mber_output
 from cellertz.application.mber_settings import GENERATOR_VERSION, write_mber_vhh_settings
 from cellertz.application.vhh_campaign import (
@@ -62,6 +66,7 @@ from cellertz.application.vhh_campaign import (
     AcceptancePolicy,
     ArtifactReference,
     ChainMapping,
+    ChainRef,
     EpitopeDefinition,
     GeneratorProtocol,
     ResidueReference,
@@ -76,6 +81,11 @@ from cellertz.application.vhh_campaign import (
 # copied: two masked sequences that drift apart are two different scaffolds.
 from cellertz.application.vhh_campaign_fixtures import _scaffold
 from cellertz.domains.protein_design.adapters.mber import STATS_FILENAME
+from cellertz.domains.protein_design.scoring.hotspot_null_model import CONTACT_ANGSTROM
+from cellertz.domains.protein_design.scoring.interface_area import InterfaceAreaError
+from cellertz.domains.protein_design.scoring.partner_classification import (
+    partner_contact_residues,
+)
 from cellertz.runtime.base import ExecutionRequest
 
 PROFILE_ID = "pdl1-mber-apptainer-demonstration-v1"
@@ -116,8 +126,187 @@ def _provenance() -> ScientificProvenance:
     return ScientificProvenance("operational_reference", _NOTE, (CLINICAL_REFERENCE,))
 
 
+class TargetNotDeclared(ValueError):
+    """The plan does not say enough about its target to run a campaign on it."""
+
+
+@dataclass(frozen=True)
+class DeclaredTarget:
+    """What a plan says this campaign is aimed at, and how its epitope was got.
+
+    The specification used to be PD-L1's whatever the plan asked for: target
+    ``PDL1``, structure 4ZQK, the PD-1 footprint as the epitope. A campaign on
+    another target recorded the wrong target id on its accepted candidate and
+    measured J_clin against the wrong surface — a record that is not merely
+    incomplete but false.
+
+    ``epitope`` is in the **registered target file's** frame. The ranking's
+    output structures are renumbered, so ``identities`` travels with it: every
+    one of these residues has to match by identity before an offset between
+    the two frames is accepted.
+    """
+
+    target_id: str
+    source_structure: str | None
+    target_chain: str | None
+    partner_chains: tuple[str, ...]
+    epitope: frozenset[int]
+    identities: Mapping[int, str]
+    epitope_provenance: str
+    epitope_note: str
+
+
+_RECORDED_PDL1_NOTE = (
+    "PD-1 interface on PD-L1. All 22 residues match the registered "
+    "target file by identity, which is what establishes the frame. "
+    "A hotspot list does not steer mBER; this is declared so the "
+    "ranking can measure against it afterwards."
+)
+# The demonstration this module was written for, so its own bounds can still
+# be tested without a registered root. A launch never uses it implicitly: it
+# passes what the plan declared.
+_RECORDED_PDL1 = DeclaredTarget(
+    target_id="PDL1",
+    source_structure="4ZQK",
+    target_chain="A",
+    partner_chains=(),
+    epitope=frozenset(PDL1_PD1_FOOTPRINT),
+    identities=PDL1_PD1_FOOTPRINT_IDENTITIES,
+    epitope_provenance="recorded_operational_reference",
+    epitope_note=_RECORDED_PDL1_NOTE,
+)
+
+
+def declared_target(fields: object, target_path: Path) -> DeclaredTarget:
+    """Read the campaign's target off the approved plan, measuring its epitope.
+
+    The epitope is the partner's footprint on the target, measured on the
+    source complex beside the registered file with the same function the
+    block classification uses — so the surface the ranking scores against is
+    the one the plan was approved against, not a constant.
+
+    PD-L1 is the one exception, and it is not a fallback: that campaign's
+    epitope is a **recorded** operational reference (the PD-1 interface on
+    4ZQK, curated, 22 residues) and its root holds no complex. It is accepted
+    only when the registered file's own residues still match that record by
+    identity, so the name alone cannot borrow it.
+    """
+
+    if not isinstance(fields, dict):
+        raise TargetNotDeclared("plan_declares_no_fields")
+    target_id = fields.get("target_id")
+    if not isinstance(target_id, str) or not target_id.strip():
+        raise TargetNotDeclared("plan_declares_no_target_id")
+    target_id = target_id.strip()
+    present = _prepared_identities(target_path)
+    if not present:
+        raise TargetNotDeclared("registered_target_has_no_chain_a_residues")
+    chain = _text(fields.get("target_chain"))
+    partners = tuple(
+        item for item in (_text(fields.get("partner_chains")) or "").split(",") if item
+    )
+    measured = _measured_epitope(target_path, chain, partners)
+    if measured is None:
+        if target_id.upper() != "PDL1":
+            raise TargetNotDeclared(
+                f"no_measured_partner_footprint_for:{target_id}. The plan has to declare "
+                "target_chain and partner_chains, and the input root a complex.pdb, "
+                "because this campaign's epitope is measured and not assumed."
+            )
+        if any(
+            present.get(residue) != code
+            for residue, code in PDL1_PD1_FOOTPRINT_IDENTITIES.items()
+        ):
+            raise TargetNotDeclared(
+                "registered_target_is_not_the_recorded_pdl1_reference"
+            )
+        epitope = frozenset(PDL1_PD1_FOOTPRINT)
+        provenance_label = "recorded_operational_reference"
+        note = _RECORDED_PDL1_NOTE
+    else:
+        # A preparation only removes, so a footprint residue the prepared file
+        # no longer holds cannot be part of this campaign's epitope. Dropping
+        # one silently would overstate the surface, so the count is recorded.
+        epitope = frozenset(measured) & set(present)
+        dropped = len(measured) - len(epitope)
+        if not epitope:
+            raise TargetNotDeclared("measured_footprint_is_absent_from_the_prepared_target")
+        provenance_label = "measured_partner_footprint"
+        note = (
+            f"The footprint of chain(s) {','.join(partners)} on chain {chain} of "
+            f"{_text(fields.get('source_structure')) or 'the registered complex'}, "
+            f"measured at {CONTACT_ANGSTROM} A heavy atom contact: {len(epitope)} "
+            "residues present in the registered target file"
+            + (f", {dropped} removed by the preparation. " if dropped else ". ")
+            + "A hotspot list does not steer mBER; this is declared so the "
+            "ranking can measure against it afterwards."
+        )
+    return DeclaredTarget(
+        target_id=target_id,
+        source_structure=_text(fields.get("source_structure")),
+        target_chain=chain,
+        partner_chains=partners,
+        epitope=epitope,
+        identities={residue: present[residue] for residue in sorted(epitope)},
+        epitope_provenance=provenance_label,
+        epitope_note=note,
+    )
+
+
+def _text(value: object) -> str | None:
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
+def _prepared_identities(target_path: Path) -> dict[int, str]:
+    """Chain A residue identities of the registered target file.
+
+    Chain A because that is the frame mBER writes its target in and the one
+    ``rank_mber_output`` measures occlusion on; a prepared file that is not
+    chain A would not be measurable later either.
+    """
+
+    try:
+        body = target_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return {}
+    found: dict[int, str] = {}
+    for line in body.splitlines():
+        if line.startswith(("ATOM", "HETATM")) and line[21:22].strip() == "A":
+            try:
+                found[int(line[22:26])] = line[17:20].strip().upper()
+            except ValueError:
+                continue
+    return found
+
+
+def _measured_epitope(
+    target_path: Path, chain: str | None, partners: tuple[str, ...]
+) -> frozenset[int] | None:
+    """The partner's footprint on the target, from the complex beside the file.
+
+    ``None`` when this campaign has nothing to measure it from: no declared
+    chains, or no registered complex. A refusal to measure is not a licence to
+    assume, so the caller decides what that means.
+    """
+
+    if chain is None or not partners:
+        return None
+    complex_pdb = target_path.parent / COMPLEX_FILENAME
+    try:
+        body = complex_pdb.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    try:
+        found = partner_contact_residues(body, chain, partners)
+    except InterfaceAreaError:
+        return None
+    return frozenset(found["contact_residues"])
+
+
 def demonstration_specification(
-    trajectories: int, accepted_target: int | None = None
+    trajectories: int,
+    accepted_target: int | None = None,
+    target: DeclaredTarget | None = None,
 ) -> VHHCampaignSpecification:
     """The campaign specification one bounded demonstration run records.
 
@@ -126,6 +315,12 @@ def demonstration_specification(
     allowed to supply. The target is recorded as it arrives: the registered
     file is already chain A in the interface frame, and no preparation step is
     claimed here because this module performs none.
+
+    ``target`` is what the approved plan declared, from ``declared_target``.
+    Leaving it out keeps the recorded PD-L1 demonstration, which is what the
+    tests of this module's own bounds are about; a launch always passes one,
+    because a specification that names a target the plan did not ask for
+    misreports the run.
     """
 
     if (
@@ -139,42 +334,47 @@ def demonstration_specification(
     ):
         raise ValueError("invalid_demonstration_accepted_target")
     provenance = _provenance()
+    declared = _RECORDED_PDL1 if target is None else target
+    measured = declared.epitope_provenance == "measured_partner_footprint"
+    source = declared.source_structure or "4ZQK"
     structure = TargetStructureReference(
         source_type="pdb",
-        source_identifier="4ZQK",
-        target_name="PDL1",
-        source_target_chain_ids=("A",),
-        source_partner_chain_ids=(),
+        source_identifier=source,
+        target_name=declared.target_id,
+        source_target_chain_ids=(declared.target_chain or "A",),
+        source_partner_chain_ids=declared.partner_chains,
         prepared_target_chain_ids=("A",),
-        chain_mapping=(ChainMapping("A", "A"),),
+        chain_mapping=(ChainMapping(declared.target_chain or "A", "A"),),
         preparation_provenance=provenance,
         preparation_status="recorded",
-        original_structure=ArtifactReference("pdb:4ZQK", "original_structure", provenance),
+        original_structure=ArtifactReference(f"pdb:{source}", "original_structure", provenance),
         prepared_structure=ArtifactReference(
-            "registered-pdl1-target", "prepared_structure", provenance
+            f"registered-{declared.target_id.lower()}-target", "prepared_structure", provenance
         ),
     )
     epitope = EpitopeDefinition(
         residues=tuple(
             ResidueReference("A", number, chain_namespace="prepared")
-            for number in PDL1_PD1_FOOTPRINT
+            for number in sorted(declared.epitope)
         ),
-        # Curated, not measured here: the 22 residues come from the recorded
-        # interface note and are verified against the registered file by
-        # residue identity. Calling it a contact derivation would claim a
-        # contact calculation and a partner chain this module never ran.
-        derivation_method="manually_curated",
+        # Either measured here, by the same contact function the block
+        # classification uses, or the recorded curated reference. The two are
+        # not interchangeable, so the derivation says which one this is rather
+        # than claiming a calculation that did not run.
+        derivation_method="structure_contact" if measured else "manually_curated",
         provenance=provenance,
         verification_status="operational_reference",
-        source_structure_identifier="4ZQK",
-        contact_cutoff_angstrom=None,
-        partner_chains=(),
-        biological_rationale=(
-            "PD-1 interface on PD-L1. All 22 residues match the registered "
-            "target file by identity, which is what establishes the frame. "
-            "A hotspot list does not steer mBER; this is declared so the "
-            "ranking can measure against it afterwards."
-        ),
+        source_structure_identifier=source,
+        contact_cutoff_angstrom=CONTACT_ANGSTROM if measured else None,
+        # The partner is named in the *source* namespace: those chains exist
+        # in the complex the footprint was measured on, not in the prepared
+        # single-chain file the generator opens.
+        partner_chains=tuple(
+            ChainRef("source", chain) for chain in declared.partner_chains
+        )
+        if measured
+        else (),
+        biological_rationale=declared.epitope_note,
     )
     protocol = GeneratorProtocol(
         protocol_id="mber-vhh-operational",
@@ -204,7 +404,7 @@ def demonstration_specification(
         campaign_id=CAMPAIGN_ID,
         request_id=f"request_{CAMPAIGN_ID}",
         session_id="session_mber_demonstration",
-        target_id="PDL1",
+        target_id=declared.target_id,
         provenance=provenance,
         completeness="incomplete",
         target_structure=structure,
@@ -318,20 +518,27 @@ def merge_accepted(trajectory_dirs: list[Path], cohort: Path) -> int:
     return len(rows)
 
 
-def clinical_epitope_in_output_frame(cohort: Path) -> tuple[frozenset[int], ...] | None:
-    """The PD-1 interface, renumbered into the frame the output structures use.
+def clinical_epitope_in_output_frame(
+    cohort: Path, target: DeclaredTarget | None = None
+) -> tuple[frozenset[int], ...] | None:
+    """The declared epitope, renumbered into the frame the output uses.
 
     mBER renumbers the target on output exactly as the BindCraft attempts do,
     so a residue number carried across the two frames without this names a
     different residue. The offset is established by residue identity on a real
     output structure, never assumed; without one, there is no clinical epitope
     to rank against and this returns ``None``.
+
+    The identities are the declared target's, so the check still refuses a
+    structure that is a different protein — it just is no longer only PD-L1's
+    that it will accept.
     """
 
+    declared = _RECORDED_PDL1 if target is None else target
     for pdb in sorted(cohort.parent.rglob("*_complex.pdb")):
-        offset = pdl1_numbering_offset(pdb.read_text(encoding="utf-8"))
+        offset = numbering_offset(pdb.read_text(encoding="utf-8"), declared.identities)
         if offset is not None:
-            return (frozenset(residue - offset for residue in PDL1_PD1_FOOTPRINT),)
+            return (frozenset(residue - offset for residue in declared.epitope),)
     return None
 
 
@@ -434,6 +641,13 @@ class MberDemonstrationLauncher:
                 "status": "gpu_index_mismatch",
                 "gpu_index": request.gpu_index if type(request.gpu_index) is int else None,
             }
+        try:
+            # Before the card, not after: a campaign whose target the plan did
+            # not declare would record the wrong target on its candidate and
+            # rank against the wrong surface.
+            target = declared_target(request.fields, request.target_path)
+        except TargetNotDeclared as error:
+            return {**refused, "status": "target_not_declared", "diagnosis": str(error)}
         if not request.sif_path.is_file() or _sha256(request.sif_path) != request.expected_sif_sha256:
             return {**refused, "status": "sif_hash_mismatch"}
         if not request.apptainer_bin.is_file():
@@ -462,7 +676,7 @@ class MberDemonstrationLauncher:
         # accepted target rather than a number the run quietly ignores. The
         # trajectory bound still caps the card.
         accepted_target = request.n_designs if type(request.n_designs) is int else None
-        specification = demonstration_specification(trajectories, accepted_target)
+        specification = demonstration_specification(trajectories, accepted_target, target)
         cohort = request.attempt_directory / COHORT_DIRNAME
         runtime = self.runtime or GroupSupervisedRuntime()
         completed: list[Path] = []
@@ -557,7 +771,7 @@ class MberDemonstrationLauncher:
             # and not a failure: 7 of 8 trajectories did exactly this.
             _mber_progress(request.attempt_directory, "no_accepted_design")
             return {**delivered, "status": "no_accepted_design"}
-        clinical = clinical_epitope_in_output_frame(cohort)
+        clinical = clinical_epitope_in_output_frame(cohort, target)
         if clinical is None:
             _mber_progress(
                 request.attempt_directory, "rejected", reasons=["clinical_epitope_frame_unverified"]

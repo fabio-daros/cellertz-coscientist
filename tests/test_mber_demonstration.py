@@ -9,6 +9,7 @@ image, and a cohort ranked together rather than per trajectory.
 from __future__ import annotations
 
 import csv
+import dataclasses
 import hashlib
 import json
 import shutil
@@ -17,14 +18,20 @@ from pathlib import Path
 import pytest
 
 from cellertz.application.apptainer_demonstration import DemonstrationLaunch
-from cellertz.application.attempt_evidence import PDL1_PD1_FOOTPRINT
+from cellertz.application.attempt_evidence import (
+    PDL1_PD1_FOOTPRINT,
+    PDL1_PD1_FOOTPRINT_IDENTITIES,
+)
 from cellertz.application.mber_campaign import ACCEPTED_RULE
 from cellertz.application.mber_demonstration import (
+    _RECORDED_PDL1,
     MAX_DEMONSTRATION_TRAJECTORIES,
     PROFILE_ID,
     WEIGHTS_BIND,
     MberDemonstrationLauncher,
+    TargetNotDeclared,
     clinical_epitope_in_output_frame,
+    declared_target,
     demonstration_specification,
     merge_accepted,
     requested_trajectories,
@@ -50,6 +57,22 @@ HEADER = [
 # and the frame check on bytes that came off a card.
 MODEL = Path("apps/protein-design-workspace/public/manual-review/attempt.2LUTUOX4/model1.pdb")
 BINDER = "MTKYMLFRRLRDREHVGPWQEEMLSEEEAPKREAELKAEAEAMRAESEARGGTGRELEYYVWKAP"
+
+
+def registered_pdl1_target() -> str:
+    """The 22 recorded interface residues in the registered file's own frame.
+
+    The launch reads the epitope's identities off this file, so a one-residue
+    stub is not a registered PD-L1 target and is refused as one.
+    """
+
+    lines = [
+        f"ATOM  {serial:>5d}  CA  {code} A{residue:>4d}       0.000   0.000   0.000  1.00  0.00           C"
+        for serial, (residue, code) in enumerate(
+            sorted(PDL1_PD1_FOOTPRINT_IDENTITIES.items()), start=1
+        )
+    ]
+    return "\n".join(lines) + "\nEND\n"
 
 
 class _Runtime:
@@ -108,8 +131,10 @@ def _launch(
     apptainer = tmp_path / "apptainer"
     apptainer.write_text("#!/bin/sh\n", encoding="utf-8")
     target = tmp_path / "target.pdb"
-    target.write_text("ATOM      1  N   ALA A  18       0.000   0.000   0.000\n", encoding="utf-8")
-    fields = {"gpu": gpu}
+    target.write_text(registered_pdl1_target(), encoding="utf-8")
+    # A launch carries the approved plan's fields, and the target is one of
+    # them: the specification is no longer PD-L1's whatever was asked for.
+    fields = {"gpu": gpu, "target_id": "PDL1"}
     if trajectories is not None:
         fields["mber_trajectories"] = trajectories
     return DemonstrationLaunch(
@@ -358,3 +383,107 @@ def test_a_cohort_mber_accepted_nothing_from_declares_no_candidate(attempts: Pat
     assert reply["status"] == "no_accepted_design"
     assert reply.get("accepted_candidate") is not True
     assert "candidate_identity" not in reply
+
+
+# A synthetic complex and the prepared target taken from it: chain U is the
+# target, chain H the partner, and residues 11 and 12 are the only ones within
+# 5 A of it. Residue 40 is in the complex but was removed by the preparation.
+def _complex_pair(tmp_path: Path) -> Path:
+    def atom(serial: int, code: str, chain: str, residue: int, x: float) -> str:
+        return (
+            f"ATOM  {serial:>5d}  CA  {code} {chain}{residue:>4d}    "
+            f"{x:>8.3f}   0.000   0.000  1.00  0.00           C"
+        )
+
+    root = tmp_path / "inputs"
+    root.mkdir(parents=True, exist_ok=True)
+    prepared = [atom(index, "GLY", "A", residue, 0.0) for index, residue in enumerate((11, 12, 13), start=1)]
+    (root / "target.pdb").write_text("\n".join(prepared) + "\nEND\n", encoding="utf-8")
+    source = [
+        atom(1, "GLY", "U", 11, 0.0),
+        atom(2, "GLY", "U", 12, 0.0),
+        atom(3, "GLY", "U", 13, 30.0),
+        atom(4, "GLY", "U", 40, 0.0),
+        atom(5, "ALA", "H", 90, 3.0),
+        atom(6, "ALA", "H", 91, 4.0),
+    ]
+    (root / "complex.pdb").write_text("\n".join(source) + "\nEND\n", encoding="utf-8")
+    return root / "target.pdb"
+
+
+def test_the_epitope_is_the_measured_partner_footprint(tmp_path: Path) -> None:
+    """The surface the ranking scores against is the plan's, not a constant."""
+
+    target_path = _complex_pair(tmp_path)
+
+    declared = declared_target(
+        {"target_id": "CD22", "source_structure": "7O52", "target_chain": "U", "partner_chains": "H"},
+        target_path,
+    )
+
+    assert declared.target_id == "CD22"
+    assert declared.epitope == frozenset({11, 12})
+    assert declared.identities == {11: "GLY", 12: "GLY"}
+    assert declared.epitope_provenance == "measured_partner_footprint"
+    # Residue 40 touches the partner in the source and is not in the prepared
+    # file, so it is not part of this campaign's epitope.
+    assert "1 removed by the preparation" in declared.epitope_note
+
+    specification = demonstration_specification(1, None, declared)
+    assert specification.target_id == "CD22"
+    assert specification.target_structure.source_identifier == "7O52"
+    assert specification.target_structure.source_partner_chain_ids == ("H",)
+    assert specification.epitope.derivation_method == "structure_contact"
+    assert specification.epitope.contact_cutoff_angstrom == 5.0
+    assert [item.residue_number for item in specification.epitope.residues] == [11, 12]
+
+
+def test_another_target_without_a_complex_is_refused_before_the_card(tmp_path: Path) -> None:
+    """A campaign cannot borrow PD-L1's epitope by leaving its own undeclared."""
+
+    target_path = _complex_pair(tmp_path)
+    (target_path.parent / "complex.pdb").unlink()
+
+    with pytest.raises(TargetNotDeclared) as refused:
+        declared_target({"target_id": "CD22", "target_chain": "U", "partner_chains": "H"}, target_path)
+
+    assert "no_measured_partner_footprint_for:CD22" in str(refused.value)
+
+
+def test_a_file_that_is_not_pdl1_cannot_be_declared_as_pdl1(tmp_path: Path) -> None:
+    target_path = _complex_pair(tmp_path)
+    (target_path.parent / "complex.pdb").unlink()
+
+    with pytest.raises(TargetNotDeclared) as refused:
+        declared_target({"target_id": "PDL1"}, target_path)
+
+    assert "not_the_recorded_pdl1_reference" in str(refused.value)
+
+
+def test_the_launch_refuses_a_plan_that_declares_no_target(attempts: Path) -> None:
+    """Nothing is spent: the refusal is before the runtime is asked for anything."""
+
+    runtime = _Runtime(accepted_per_trajectory=2)
+    request = dataclasses.replace(_launch(attempts), fields={"gpu": "0", "mber_trajectories": 1})
+
+    reply = _launcher(attempts, runtime).launch(request)
+
+    assert reply["status"] == "target_not_declared"
+    assert "plan_declares_no_target_id" in reply["diagnosis"]
+    assert runtime.calls == []
+
+
+def test_the_output_frame_is_found_with_the_declared_identities(tmp_path: Path) -> None:
+    """The offset check still refuses a different protein; it is just not PD-L1 only."""
+
+    cohort = tmp_path / "attempt" / "cohort"
+    cohort.mkdir(parents=True)
+    shutil.copy(MODEL, cohort.parent / "t1_binder-1_complex.pdb")
+
+    found = clinical_epitope_in_output_frame(cohort, _RECORDED_PDL1)
+    assert found == (frozenset(residue - OFFSET for residue in PDL1_PD1_FOOTPRINT),)
+
+    other = dataclasses.replace(
+        _RECORDED_PDL1, identities={18: "TRP", 19: "TRP"}, epitope=frozenset({18, 19})
+    )
+    assert clinical_epitope_in_output_frame(cohort, other) is None
