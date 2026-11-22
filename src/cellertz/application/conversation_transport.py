@@ -179,7 +179,7 @@ def configured_handler(
                 from cellertz.application.plan_configuration_suggestion import handle_plan_suggestion
 
                 status, payload = handle_plan_suggestion(
-                    _plan_suggester(request_supervisor),
+                    _plan_suggester(request_supervisor, generation_plans),
                     generation_plans,
                     drafter,
                     method="GET",
@@ -290,7 +290,7 @@ def configured_handler(
                 from cellertz.application.plan_configuration_suggestion import handle_plan_suggestion
 
                 status, payload = handle_plan_suggestion(
-                    _plan_suggester(request_supervisor),
+                    _plan_suggester(request_supervisor, generation_plans),
                     generation_plans,
                     drafter,
                     method="POST",
@@ -449,7 +449,15 @@ def _artifact_route(path: str) -> tuple[str, str] | None:
     return run_id, artifact_id
 
 
-def _plan_suggester(supervisor: Any) -> Any:
+def _plan_suggester(supervisor: Any, generation_plans: Any = None) -> Any:
+    """The suggester, built once per supervisor.
+
+    It is handed the plan service's own input catalog, which startup opened
+    with the roles the configured launcher declares. Opening a second one here
+    would default to all three BindCraft roles and verify nothing on a root
+    that holds only the target.
+    """
+
     cached = getattr(supervisor, "_plan_suggester", None)
     if cached is not None:
         return cached
@@ -469,6 +477,7 @@ def _plan_suggester(supervisor: Any) -> Any:
         store,
         knowledge=_knowledge_reader(),
         literature=EuropePMCLiteratureSearch(),
+        inputs=getattr(generation_plans, "_inputs", None),
     )
     setattr(supervisor, "_plan_suggester", cached)
     return cached
@@ -570,7 +579,7 @@ def _declared_blocks_reader(generation_plans: Any, supervisor: Any) -> Any:
         fields = plan.get("fields")
         if not isinstance(fields, dict):
             return None
-        store = getattr(_plan_suggester(supervisor), "_store", None)
+        store = getattr(_plan_suggester(supervisor, generation_plans), "_store", None)
         listing = getattr(store, "list_for", None)
         if not callable(listing):
             return None

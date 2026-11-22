@@ -250,6 +250,7 @@ class PlanConfigurationSuggester:
         structure_residues: set[tuple[str, int]] | None = None,
         numbering_maps: tuple[Mapping[str, Any], ...] = (),
         literature: Any | None = None,
+        inputs: Any | None = None,
     ) -> None:
         self._model = model
         self._limits = limits if limits is not None else resolve_supervisor_limits()
@@ -260,6 +261,8 @@ class PlanConfigurationSuggester:
         self._structure_residues = structure_residues
         self._numbering_maps = numbering_maps
         self._literature = literature if literature is not None else EuropePMCLiteratureSearch()
+        # The plan service's catalog, opened with the launcher's roles.
+        self._inputs = inputs
 
     def _structure(self, plan: Mapping[str, Any]) -> dict[str, Any]:
         sha = _plan_structure_sha(plan)
@@ -267,7 +270,7 @@ class PlanConfigurationSuggester:
             return _structure_packet(sha, set(self._structure_residues), self._numbering_maps, None)
         if sha is None:
             return _structure_packet(None, None, (), None)
-        residues, limitation = _residues_matching(sha)
+        residues, limitation = _residues_matching(sha, self._inputs)
         return _structure_packet(sha, residues, (), limitation)
 
     def _literature_search(self, request: Mapping[str, Any]) -> dict[str, Any]:
@@ -784,10 +787,23 @@ def _recorded_partner(partner: Mapping[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in partner.items() if key != "target_residues"}
 
 
-def _residues_matching(sha: str) -> tuple[set[tuple[str, int]] | None, str | None]:
-    from cellertz.application.generation_plan import open_registered_input_catalog
+def _residues_matching(
+    sha: str, catalog: Any | None = None
+) -> tuple[set[tuple[str, int]] | None, str | None]:
+    """The residues of the verified prepared target, or why they are unknown.
 
-    loaded = open_registered_input_catalog().verified_target_bytes()
+    ``catalog`` is the plan service's own, which startup opened with the roles
+    the configured launcher declares. Opening one here instead defaulted to
+    BindCraft's three roles, so ``verified_target_bytes`` verified nothing on a
+    root holding only the target — mBER's, and the CD22 root on this server —
+    and every hotspot residue was reported unmappable.
+    """
+
+    if catalog is None:
+        from cellertz.application.generation_plan import open_registered_input_catalog
+
+        catalog = open_registered_input_catalog()
+    loaded = catalog.verified_target_bytes()
     if loaded is None:
         return None, "The verified structure file could not be read. Residue existence was not inferred from a number range."
     digest, body = loaded

@@ -27,7 +27,7 @@ TARGET = b"ATOM      1  CA  ALA A   1       0.000   0.000   0.000\n"
 
 def _root(tmp_path, *, full: bool):
     root = tmp_path / "inputs"
-    root.mkdir()
+    root.mkdir(parents=True, exist_ok=True)
     (root / "target.pdb").write_bytes(TARGET)
     if full:
         (root / "settings.json").write_bytes(b'{"chain": "A"}\n')
@@ -119,3 +119,61 @@ def test_an_unconfigured_root_still_reports_its_reason(tmp_path) -> None:
     ):
         catalog = open_registered_input_catalog(environ, required_roles=MBER_ROLES)
         assert catalog.registration_status() == expected
+
+
+def test_the_suggestion_reads_residues_from_a_target_only_root(tmp_path) -> None:
+    """The hole this closes: the plan service verified the root, the suggestion did not.
+
+    ``_residues_matching`` opened its own catalog with no roles, which means
+    BindCraft's three. On the CD22 root every declared hotspot was rejected as
+    unmappable even though the launcher had verified the same file.
+    """
+
+    from cellertz.application.plan_configuration_suggestion import _residues_matching
+
+    root = _root(tmp_path, full=False)
+    sha = hashlib.sha256(TARGET).hexdigest()
+
+    residues, limitation = _residues_matching(sha, _catalog(root, MBER_ROLES))
+    assert residues == {("A", 1)}
+    assert limitation is None
+
+    residues, limitation = _residues_matching(sha, _catalog(root, None))
+    assert residues is None
+    assert "could not be read" in limitation
+
+
+def test_a_hash_that_is_not_this_root_s_is_still_refused(tmp_path) -> None:
+    """The roles say which files form the identity, never that any file will do."""
+
+    from cellertz.application.plan_configuration_suggestion import _residues_matching
+
+    catalog = _catalog(_root(tmp_path, full=False), MBER_ROLES)
+
+    residues, limitation = _residues_matching("0" * 64, catalog)
+
+    assert residues is None
+    assert "does not match this plan" in limitation
+
+
+def test_the_suggester_uses_the_catalog_it_was_given(tmp_path) -> None:
+    from cellertz.application.plan_configuration_suggestion import PlanConfigurationSuggester
+    from cellertz.application.request_supervisor import SupervisorLimits
+
+    sha = hashlib.sha256(TARGET).hexdigest()
+    plan = {"fields": {"input_artifacts": [{"role": "target_structure", "sha256": sha, "verified": True}]}}
+    limits = SupervisorLimits(
+        max_model_calls=1, max_output_tokens=10, token_budget=10, call_timeout_seconds=1.0, retries=0
+    )
+
+    def packet(catalog):
+        suggester = PlanConfigurationSuggester(
+            object(), limits, knowledge=None, literature=object(), inputs=catalog
+        )
+        return suggester._structure(plan)
+
+    reached = packet(_catalog(_root(tmp_path / "mber", full=False), MBER_ROLES))
+    assert reached["available"] is True
+    assert reached["residues"] == [{"chain": "A", "residue": 1}]
+
+    assert packet(_catalog(_root(tmp_path / "three", full=False), None))["available"] is False
