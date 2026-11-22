@@ -344,7 +344,7 @@ graded risk heuristic, not a threshold."*
 | 3 · classify blocks against the partner, with a declared direction | built ✅ (21 Nov) — `partner_classification`, reproducing 72 of the atlas's 76 blocks |
 | 4 · campaign series, one change each | rounds with parent/child lineage ✅; **seeding on a parent design** ❌ |
 | 5 · audit with reachability and a null model | built ✅, and inside `audit_hotspot_blocks` |
-| 6 · pre-filters, then two-axis rank | built ✅; **not injected** — `specialist_scorer` is empty and the journey still falls back to ipSAE |
+| 6 · pre-filters, then two-axis rank | built ✅; injected ✅ (22 Nov) — the server scores from the launch's own panel; the journey still cannot reach it (below) |
 | 7 · clinical anchor | **nothing** — no `drugs` record, and J_clin has to be supplied by hand |
 
 Steps 0 and 3 were built on 21 Nov 2026. What is left on them is operational
@@ -353,9 +353,37 @@ still reports why it was not measured rather than a verdict, and the front end
 does not yet collect the direction — so a measured block reads as geometry with
 its meaning withheld.
 
-The gap that silently corrupts a record is **step 6**: until `specialist_scorer`
-is injected, a journey that completes on the server writes an ipSAE score with
-`ProteinIpSAECalculator` in its provenance.
+### Step 6, injected 22 Nov 2026 — and the cohort it needs was being thrown away
+
+The silent corruption is closed: the server injects a scorer, and a score is
+only recorded under a protocol this journey names. ipSAE stays BindCraft's,
+replayed from saved models; an mBER execution is scored from the atlas's
+two-axis panel. A result under any third protocol fails the stage with the
+reason the scorer gave instead of being stored.
+
+The score is **read, never recomputed**. `rank_mber_output` already screens and
+ranks on the GPU host, and both axes are cohort statistics — a percentile only
+exists against the designs it was computed with. Scoring one design again here
+would need the whole cohort or would invent a number. So the panel row is the
+score, and its provenance carries the cohort it came from (generated, screened
+in, ranked, rejected by the screen, rejected by the gate, not measurable),
+without which the number is unreadable.
+
+That panel was being **computed and discarded**: `_execution_from_reply` copies
+a fixed list of keys from the launcher's reply and `ranking` was not among
+them. The launch did the atlas's step 6 on the GPU and the journey kept none
+of it, which is why ipSAE was the only thing left to fall back on.
+
+**What still blocks a real run, and it is upstream of the scorer.** An mBER
+launch returns `status: "ranked"` and never sets `accepted_candidate` or
+`candidate_identity` — only the BindCraft path does, through
+`read_accepted_launch_evidence` on `status: "verified"`. So the round stops at
+"no accepted candidate" before generation, and the three stages before scoring
+are BindCraft-shaped anyway: generation reads BindCraft's design stats and the
+evidence gate requires a relaxed PDB and a PAE file per model, neither of which
+mBER produces. Reaching the scorer needs the launcher to declare its selected
+design as the accepted candidate and those two stages to be recorded from the
+launch's own output rather than re-derived from BindCraft artifacts.
 
 ---
 
@@ -445,6 +473,7 @@ are missing from it:
    `complex.pdb` in each input root, and collect `partner_direction` in the
    front end.
 2. ~~**The analysis extraction**~~ — built 21 Nov 2026.
-3. **Inject `specialist_scorer`**, which closes the step-6 gap where a journey
-   completing on the server still writes an ipSAE score.
+3. ~~**Inject `specialist_scorer`**~~ — injected 22 Nov 2026. Outstanding, and
+   upstream of it: an mBER launch declares no accepted candidate, so a journey
+   round never reaches the scorer (below).
 4. **Seed and lesson on rounds.**

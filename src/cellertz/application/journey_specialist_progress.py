@@ -21,9 +21,28 @@ from cellertz.domains.protein_design.agents.prioritization import (
     ProteinPrioritizationAgentV1,
 )
 from cellertz.domains.protein_design.agents.ranking import ProteinRankingAgentV1
+from cellertz.domains.protein_design.scoring.engager_two_axis import (
+    PROTOCOL_ID as ENGAGER_PROTOCOL_ID,
+)
 from cellertz.tools.protein_scoring.scoring_v2 import ProteinScoreResultV2
 
 _SPECIALISTS = ("scoring", "ranking", "critique", "prioritization")
+# The scoring protocols a journey will record, and how each one names itself in
+# the stage it writes. A result under any other protocol is refused rather
+# than stored: two protocols' numbers are different claims and the record has
+# to say which one it holds. ipSAE is BindCraft's, replayed from saved models;
+# the engager two-axis protocol is the atlas's, computed by the launch itself
+# over the whole cohort, which is why its provider is not a calculator here.
+RECORDED_PROTOCOLS: dict[str, dict[str, str]] = {
+    "ipsae": {
+        "provider": "BindCraftIpSAEEvidenceProvider",
+        "label": "raw ipSAE",
+    },
+    ENGAGER_PROTOCOL_ID: {
+        "provider": "rank_engager_designs",
+        "label": "the engager two-axis score",
+    },
+}
 _TERMINAL_PROGRESS = frozenset({"recorded", "failed", "interrupted"})
 _LAUNCHER = "GenerationPlanService.launch_apptainer_demonstration"
 _LAUNCH_TOOL = "apptainer_demonstration_launch"
@@ -155,7 +174,7 @@ def apply_specialist_progress(
         scored,
         handoff,
         evidence,
-        "configured_scorer" if scorer is not None else "ProteinIpSAECalculator",
+        _score_source(scored, scorer),
         catalog_root,
         scoring_started,
         scoring_completed,
@@ -358,7 +377,10 @@ def _fail_scoring(
         document,
         now,
         contribution=_SCORE_FAILED,
-        failure_reason=f"{type(exc).__name__}: {_SCORE_FAILED}",
+        # The exception's own words, not only its class: a scorer refuses for
+        # reasons that differ in what to do next — no panel row, a protocol
+        # this journey will not record, a candidate the i_pTM gate dropped.
+        failure_reason=f"{type(exc).__name__}: {exc or _SCORE_FAILED}. {_SCORE_FAILED}",
     )
     stage["started_at"] = scoring_started
     stage["completed_at"] = scoring_completed
@@ -383,12 +405,14 @@ def _complete_from_score(
     scoring_completed: str,
 ) -> None:
     now = scoring_completed
-    if scored.ranking_method != "ipsae" or scored.ranking_score is None:
+    protocol = RECORDED_PROTOCOLS.get(scored.ranking_method)
+    if protocol is None or scored.ranking_score is None:
         _block_scoring(
             document,
             target,
             execution,
-            "Scoring did not return raw ipSAE. Ranking was not invoked. Fixture metrics were not used.",
+            f"Scoring returned {scored.ranking_method or 'no protocol'}, which this journey "
+            "does not record. Ranking was not invoked. Fixture metrics were not used.",
             handoff,
         )
         return
@@ -397,14 +421,14 @@ def _complete_from_score(
         "scoring",
         "completed",
         "structural_scoring",
-        "BindCraftIpSAEEvidenceProvider",
+        protocol["provider"],
         True,
         execution,
         target,
         document,
         now,
         contribution=(
-            f"Scoring recorded raw ipSAE for {scored.candidate_id}. "
+            f"Scoring recorded {protocol['label']} for {scored.candidate_id}. "
             "This is not model synthesis and not a fixture metric. "
             "BindCraft i_pTM was not used."
         ),
@@ -413,7 +437,7 @@ def _complete_from_score(
     scoring["output"] = {
         "candidate_id": scored.candidate_id,
         "ranking_score": scored.ranking_score,
-        "ranking_signal": "ipsae",
+        "ranking_signal": scored.ranking_method,
         "model_ids": model_ids,
         "fixture_metrics": False,
         "scientific_validation_established": False,
@@ -450,7 +474,7 @@ def _complete_from_score(
         document,
         now,
         contribution=(
-            f"Deterministic rank by raw ipSAE. {first.candidate_id} is rank {first.rank}. "
+            f"Deterministic rank by {protocol['label']}. {first.candidate_id} is rank {first.rank}. "
             "This is not model synthesis. BindCraft i_pTM was not used."
         ),
         model_ids=model_ids,
@@ -598,8 +622,17 @@ def _score(
     execution: Mapping[str, Any],
     scorer: Callable[[Mapping[str, Any]], ProteinScoreResultV2] | None,
 ) -> ProteinScoreResultV2:
-    if scorer is not None:
-        return scorer(execution)
+    return scorer(execution) if scorer is not None else ipsae_score(execution)
+
+
+def ipsae_score(execution: Mapping[str, Any]) -> ProteinScoreResultV2:
+    """Raw ipSAE from the saved BindCraft models, which is what this path replays.
+
+    Public because an injected scorer has to be able to reach it: a configured
+    scorer serves every generator, and for a BindCraft execution the score is
+    this one. A scorer that could not delegate would have to copy it.
+    """
+
     from dataclasses import replace
 
     from cellertz.domains.protein_design.scoring.bindcraft_ipsae import (
@@ -1227,6 +1260,22 @@ def _remember(
         target["specialist_event_sequence"] = sequence
         events.append(event)
         owner[owner_key] = events
+
+
+def _score_source(scored: ProteinScoreResultV2, scorer: Any) -> str:
+    """What computed this score, taken from the result rather than from the seam.
+
+    It used to read ``configured_scorer`` for any injected scorer, which once
+    the server injects one would have erased ``ProteinIpSAECalculator`` from
+    every BindCraft record while the calculation stayed the same.
+    """
+
+    provenance = scored.provenance if isinstance(scored.provenance, dict) else {}
+    calculator = provenance.get("calculator")
+    named = calculator.get("implementation") if isinstance(calculator, dict) else None
+    if isinstance(named, str) and named:
+        return named
+    return "configured_scorer" if scorer is not None else "ProteinIpSAECalculator"
 
 
 def _model_ids(scored: ProteinScoreResultV2) -> list[str]:

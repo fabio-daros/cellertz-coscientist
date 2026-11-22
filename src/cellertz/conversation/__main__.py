@@ -196,12 +196,18 @@ def main(*, control: object | None = None, deadline: object | None = None) -> No
         scientific_runs.startup()
         worker.start()
         scientific_worker.start()
+        from cellertz.application.journey_engager_scoring import specialist_scorer
+
         journeys = DesignJourneyService(
             generation_plans,
             knowledge=FileKnowledgeReader(default_second_brain_root()),
             store=open_design_journey_store(),
             attempt_root=_journey_attempt_root(),
             results_catalog=_results_catalog(),
+            # Without this the scoring stage falls back to ipSAE for every
+            # generator. It reads the launch's two-axis panel when there is
+            # one and replays ipSAE from BindCraft's models when there is not.
+            specialist_scorer=specialist_scorer,
         )
         from cellertz.application.journey_orchestration import JourneyOrchestrationWorker
 

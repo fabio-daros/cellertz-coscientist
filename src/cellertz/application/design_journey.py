@@ -3195,6 +3195,11 @@ def _execution_from_reply(
         "diagnostics",
         "automatic_retry",
         "other_services_signaled",
+        # mBER's launch screens and ranks the cohort on the GPU host and
+        # returns the atlas's two-axis panel. It was dropped here, so the
+        # scoring stage had nothing but ipSAE to fall back on — a protocol the
+        # professor ruled out and mBER cannot produce.
+        "ranking",
     ):
         if name in reply:
             finished[name] = reply[name]
