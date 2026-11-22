@@ -600,6 +600,9 @@ class DemonstrationLaunch:
     sif_path: Path
     expected_sif_sha256: str
     n_designs: int | None = None
+    # The parent design a child campaign starts from, as the journey recorded
+    # it on the round. A generator that cannot seed ignores it; BindCraft does.
+    seed_design: Mapping[str, Any] | None = None
 
 
 def explicit_run_delivery(request: DemonstrationLaunch) -> dict[str, Any] | None:

@@ -969,8 +969,15 @@ class GenerationPlanService:
         gpu_index: int,
         attempt_id: str,
         attempt_directory: str,
+        seed_from: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Explicit human launch. Approval of the plan does not call this."""
+        """Explicit human launch. Approval of the plan does not call this.
+
+        ``seed_from`` is the parent design a child campaign starts from, which
+        the journey reads off the round. This service does not choose it and
+        does not interpret it: a generator that seeds knows what to do with
+        it, and one that does not ignores it.
+        """
 
         from cellertz.application.apptainer_demonstration import (
             PROFILE_ID,
@@ -1045,6 +1052,7 @@ class GenerationPlanService:
                 apptainer_bin=Path(os.environ.get("CELLERTZ_APPTAINER_BIN", "/usr/bin/apptainer")),
                 sif_path=Path(sif_path),
                 expected_sif_sha256=sif_sha256,
+                seed_design=None if seed_from is None else dict(seed_from),
             )
         )
         plan.dispatches[key] = {"content": content, "reply": reply}

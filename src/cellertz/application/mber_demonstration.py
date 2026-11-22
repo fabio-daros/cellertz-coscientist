@@ -58,9 +58,15 @@ from cellertz.application.attempt_evidence import (
     PDL1_PD1_FOOTPRINT_IDENTITIES,
     numbering_offset,
 )
+from cellertz.application.contracts import ApplicationContractError
 from cellertz.application.generation_plan import COMPLEX_FILENAME
 from cellertz.application.mber_campaign import SETTINGS_FILENAME, rank_mber_output
-from cellertz.application.mber_settings import GENERATOR_VERSION, write_mber_vhh_settings
+from cellertz.application.mber_settings import (
+    GENERATOR_VERSION,
+    SeedDesign,
+    seeded_masked_sequence,
+    write_mber_vhh_settings,
+)
 from cellertz.application.vhh_campaign import (
     AcceptanceMetric,
     AcceptancePolicy,
@@ -542,6 +548,57 @@ def clinical_epitope_in_output_frame(
     return None
 
 
+class SeedRefused(ValueError):
+    """A parent design was handed down that this scaffold cannot be seeded on."""
+
+
+def _seed_design(recorded: Any, specification: VHHCampaignSpecification) -> SeedDesign | None:
+    """Turn the round's recorded parent design into mBER's seeding input.
+
+    ``None`` means an unseeded campaign, which is what a first round is. A
+    recorded seed that cannot be reseated is **refused**, never dropped:
+    falling back to the bare framework would run a different experiment from
+    the one the round was opened for, and the series exists to measure exactly
+    that difference.
+
+    Which loop is reopened is **ours**, like the classification's edge cut:
+    the last declared CDR region, which on this scaffold is CDR3 at 96-109 and
+    is what the seeding test in this repository reopens. Reopening *every* CDR
+    is not seeding at all — the parent's residues sit only in design positions,
+    so opening all of them reproduces the bare scaffold exactly, which is the
+    bug the equality check below catches.
+
+    shortcut: the reopened loop is the last declared CDR. Upgrade when a child
+    round declares which positions it reopens, which is the campaign's choice
+    and not this module's.
+    """
+
+    if recorded is None:
+        return None
+    if not isinstance(recorded, Mapping):
+        raise SeedRefused("seed_is_not_a_record")
+    design = recorded.get("design")
+    sequence = recorded.get("sequence")
+    if not isinstance(design, str) or not design:
+        raise SeedRefused("seed_names_no_design")
+    if not isinstance(sequence, str) or not sequence:
+        raise SeedRefused(f"seed_carries_no_sequence_for:{design}")
+    scaffold = specification.scaffold
+    if scaffold is None or not scaffold.cdr_regions:
+        raise SeedRefused("scaffold_declares_no_cdr_region_to_redesign")
+    last = scaffold.cdr_regions[-1]
+    spans = ((last.start, last.end),)
+    try:
+        # Built here so the refusal happens with the other pre-flight checks
+        # rather than inside the first trajectory's settings write.
+        reseated = seeded_masked_sequence(scaffold.masked_sequence, sequence, spans)
+    except ApplicationContractError as error:
+        raise SeedRefused(f"{error}:{design}") from error
+    if reseated == scaffold.masked_sequence:
+        raise SeedRefused(f"seed_reproduces_the_bare_scaffold:{design}")
+    return SeedDesign(design_id=design, sequence=sequence, redesign_spans=spans)
+
+
 def _declared_candidate(accepted: Any, attempt_id: str) -> dict[str, Any]:
     """The acceptance fields a ranked launch adds to its reply.
 
@@ -648,6 +705,18 @@ class MberDemonstrationLauncher:
             target = declared_target(request.fields, request.target_path)
         except TargetNotDeclared as error:
             return {**refused, "status": "target_not_declared", "diagnosis": str(error)}
+        # The screen's design count is what the person asked for, so it is the
+        # accepted target rather than a number the run quietly ignores. The
+        # trajectory bound still caps the card.
+        accepted_target = request.n_designs if type(request.n_designs) is int else None
+        specification = demonstration_specification(trajectories, accepted_target, target)
+        try:
+            # With the other pre-flight refusals: a seed that does not fit this
+            # scaffold would silently become an unseeded campaign, and the
+            # series would measure the lever it was meant to pull as inert.
+            seed = _seed_design(request.seed_design, specification)
+        except SeedRefused as error:
+            return {**refused, "status": "seed_rejected", "diagnosis": str(error)}
         if not request.sif_path.is_file() or _sha256(request.sif_path) != request.expected_sif_sha256:
             return {**refused, "status": "sif_hash_mismatch"}
         if not request.apptainer_bin.is_file():
@@ -672,11 +741,6 @@ class MberDemonstrationLauncher:
             generator_version=GENERATOR_VERSION,
             gpu_observation=_gpu_observation(report if isinstance(report, dict) else None),
         )
-        # The screen's design count is what the person asked for, so it is the
-        # accepted target rather than a number the run quietly ignores. The
-        # trajectory bound still caps the card.
-        accepted_target = request.n_designs if type(request.n_designs) is int else None
-        specification = demonstration_specification(trajectories, accepted_target, target)
         cohort = request.attempt_directory / COHORT_DIRNAME
         runtime = self.runtime or GroupSupervisedRuntime()
         completed: list[Path] = []
@@ -689,6 +753,7 @@ class MberDemonstrationLauncher:
                 output_dir,
                 request.target_path,
                 output_dir / SETTINGS_FILENAME,
+                seed_from=seed,
             )
             argv = trajectory_argv(
                 request.apptainer_bin,
@@ -765,6 +830,17 @@ class MberDemonstrationLauncher:
             "accepted_designs": accepted_rows,
             "scientific_validation": False,
             "runtime_name": RUNTIME_NAME,
+            # What the trajectories started from. An unseeded run says so
+            # rather than leaving the question open, because the whole point
+            # of a campaign series is which of the two this was.
+            "seeded_from": None
+            if seed is None
+            else {
+                "design_id": seed.design_id,
+                "redesign_spans": [list(span) for span in seed.redesign_spans],
+                "parent_round_id": (request.seed_design or {}).get("parent_round_id"),
+                "parent_attempt_id": (request.seed_design or {}).get("attempt_id"),
+            },
         }
         if accepted_rows == 0:
             # mBER's own filter rejecting every binder is a legitimate outcome

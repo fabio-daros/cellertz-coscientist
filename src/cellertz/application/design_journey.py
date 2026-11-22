@@ -771,6 +771,7 @@ class DesignJourneyService:
                 gpu_index=parsed["gpu_index"],
                 attempt_id=attempt_id,
                 attempt_directory=str(attempt_directory),
+                seed_from=_seed_for_launch(prepared),
             )
         except Exception as exc:  # noqa: BLE001 - a launcher failure must be recorded, not left running
             reply = {"status": "launcher_exception", "launched": False, "exception_type": type(exc).__name__}
@@ -857,6 +858,7 @@ class DesignJourneyService:
                 gpu_index=request["gpu_index"],
                 attempt_id=attempt_id,
                 attempt_directory=directory,
+                seed_from=_seed_for_launch(document),
             )
         except Exception as exc:  # noqa: BLE001 - the saved attempt is not launched again
             reply = {"status": "launcher_exception", "launched": False, "exception_type": type(exc).__name__}
@@ -1022,6 +1024,9 @@ class DesignJourneyService:
                 "target": fields.get("target_identity") if isinstance(fields.get("target_identity"), str) else None,
                 "approved_gpu": None,
                 "sequence_limits": _same_sequence_limits(fields.get("sequence_limits")),
+                # Read before the parent's record is written back below, so it
+                # is the parent's own execution and not the child's.
+                "seeded_from": _parent_seed(updated, parent),
             }
             for item in rounds:
                 if item.get("round_id") == parent["round_id"]:
@@ -2606,6 +2611,62 @@ def _active_round_cancelled(document: Mapping[str, Any]) -> bool:
     return False
 
 
+def _seed_for_launch(document: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The seed recorded on the round this launch belongs to.
+
+    Stored when the child round was prepared, from the parent's accepted
+    design. Read here rather than recomputed so the launch starts from the
+    design the round was opened against, not from whatever the parent's record
+    says by the time the GPU is free.
+    """
+
+    rounds = document.get("rounds")
+    active = document.get("active_round_id")
+    if not isinstance(rounds, list) or not isinstance(active, str):
+        return None
+    for item in rounds:
+        if isinstance(item, dict) and item.get("round_id") == active:
+            seed = item.get("seeded_from")
+            return seed if isinstance(seed, dict) else None
+    return None
+
+
+def _parent_seed(
+    document: Mapping[str, Any], parent: Mapping[str, Any]
+) -> dict[str, Any] | None:
+    """The parent round's accepted design, which a child campaign starts from.
+
+    The atlas's second lever, and the one this journey had no way to pull: on
+    albumin, seeding on a good design took the lineage from 2 of 14 to 13 of
+    14. A child round carried the parent's *plan* and not the parent's
+    *design*, so every campaign in a series restarted from the bare framework
+    and the series measured nothing it was meant to measure.
+
+    ``None`` when the parent produced nothing to seed on, which is not an
+    error: a child round of a campaign that accepted no design is a fresh
+    start, and saying so is better than seeding on a design that is not there.
+    """
+
+    execution = _execution_for_round(document, parent)
+    if not isinstance(execution, dict) or execution.get("accepted_candidate") is not True:
+        return None
+    identity = execution.get("candidate_identity")
+    if not isinstance(identity, dict):
+        return None
+    design = identity.get("design")
+    sequence = identity.get("sequence")
+    attempt_id = execution.get("attempt_id")
+    if not all(isinstance(item, str) and item for item in (design, sequence, attempt_id)):
+        return None
+    return {
+        "parent_round_id": parent.get("round_id"),
+        "attempt_id": attempt_id,
+        "candidate_id": identity.get("candidate_id"),
+        "design": design,
+        "sequence": sequence,
+    }
+
+
 def _execution_for_round(document: Mapping[str, Any], snapshot: Mapping[str, Any]) -> dict[str, Any] | None:
     if document.get("active_round_id") == snapshot.get("round_id"):
         current = document.get("execution")
@@ -3204,6 +3265,9 @@ def _execution_from_reply(
         "diagnostics",
         "automatic_retry",
         "other_services_signaled",
+        # Which parent design the trajectories started from, or None for an
+        # unseeded campaign. The series is a claim about this difference.
+        "seeded_from",
         # mBER's launch screens and ranks the cohort on the GPU host and
         # returns the atlas's two-axis panel. It was dropped here, so the
         # scoring stage had nothing but ipSAE to fall back on — a protocol the

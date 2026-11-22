@@ -487,3 +487,77 @@ def test_the_output_frame_is_found_with_the_declared_identities(tmp_path: Path) 
         _RECORDED_PDL1, identities={18: "TRP", 19: "TRP"}, epitope=frozenset({18, 19})
     )
     assert clinical_epitope_in_output_frame(cohort, other) is None
+
+
+def _parent_sequence() -> str:
+    """A real parent: the scaffold with every design position filled in."""
+
+    from cellertz.application.mber_settings import MASK
+
+    scaffold = demonstration_specification(1).scaffold.masked_sequence
+    return "".join("G" if residue == MASK else residue for residue in scaffold)
+
+
+def test_a_seeded_launch_sends_the_parent_design_to_every_trajectory(attempts: Path) -> None:
+    """The atlas's second lever: on albumin, seeding took 2 of 14 to 13 of 14.
+
+    The settings document is the only mechanism — mBER has no seeding flag —
+    so this asserts the reseated mask reached the file each trajectory reads.
+    """
+
+    runtime = _Runtime(accepted_per_trajectory=1)
+    parent = _parent_sequence()
+    request = dataclasses.replace(
+        _launch(attempts, trajectories=2),
+        seed_design={
+            "parent_round_id": "round_j_1",
+            "attempt_id": "attempt.parent",
+            "design": "parent_design",
+            "sequence": parent,
+        },
+    )
+
+    reply = _launcher(attempts, runtime).launch(request)
+
+    assert reply["status"] == "ranked", reply
+    scaffold = demonstration_specification(1).scaffold.masked_sequence
+    for index in (1, 2):
+        settings = json.loads(
+            (attempts / "attempts" / ATTEMPT_ID / f"t{index}" / "settings.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        sent = settings["binder"]["masked_sequence"]
+        assert sent != scaffold, "the trajectory started from the bare framework"
+        assert sent.count("*") < scaffold.count("*")
+    assert reply["seeded_from"]["design_id"] == "parent_design"
+    assert reply["seeded_from"]["parent_attempt_id"] == "attempt.parent"
+    assert reply["seeded_from"]["redesign_spans"], "a seed that redesigns nothing is not a seed"
+
+
+def test_an_unseeded_launch_still_sends_the_bare_scaffold(attempts: Path) -> None:
+    reply = _launcher(attempts, _Runtime(accepted_per_trajectory=1)).launch(_launch(attempts))
+
+    settings = json.loads(
+        (attempts / "attempts" / ATTEMPT_ID / "t1" / "settings.json").read_text(encoding="utf-8")
+    )
+    assert settings["binder"]["masked_sequence"] == demonstration_specification(1).scaffold.masked_sequence
+    assert reply["seeded_from"] is None
+
+
+def test_a_seed_that_cannot_be_reseated_is_refused_before_the_card(attempts: Path) -> None:
+    """Falling back to the bare framework would run a different experiment."""
+
+    runtime = _Runtime(accepted_per_trajectory=1)
+    launcher = _launcher(attempts, runtime)
+    for seed, expected in (
+        ({"design": "d", "sequence": "TOOSHORT"}, "seed_length_differs_from_scaffold"),
+        ({"design": "d"}, "seed_carries_no_sequence_for:d"),
+        ({"sequence": _parent_sequence()}, "seed_names_no_design"),
+        ("not a record", "seed_is_not_a_record"),
+    ):
+        request = dataclasses.replace(_launch(attempts), seed_design=seed)
+        reply = launcher.launch(request)
+        assert reply["status"] == "seed_rejected", seed
+        assert expected in reply["diagnosis"], seed
+    assert runtime.calls == [], "nothing was spent on a seed that does not fit"

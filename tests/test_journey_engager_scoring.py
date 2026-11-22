@@ -447,3 +447,59 @@ def test_a_declared_sequence_that_disagrees_with_the_cohort_is_refused(tmp_path)
 
     assert stages["generation"]["status"] == "blocked"
     assert "different molecule" in stages["generation"]["blocking_reason"]
+
+
+def test_a_child_round_carries_the_parent_s_accepted_design() -> None:
+    """The atlas's second lever: on albumin, seeding took 2 of 14 to 13 of 14.
+
+    A child round carried the parent's plan and not the parent's design, so
+    every campaign in a series restarted from the bare framework and the
+    series measured nothing it was meant to measure.
+    """
+
+    from cellertz.application.design_journey import _parent_seed, _seed_for_launch
+
+    parent = {"round_id": "round_j_1"}
+    document = {
+        "active_round_id": "round_j_1",
+        "execution": {
+            "attempt_id": "attempt.parent",
+            "accepted_candidate": True,
+            "candidate_identity": {
+                "candidate_id": "mber_t1_binder_1",
+                "design": "t1_binder_1",
+                "sequence": _SEQUENCE,
+                "execution_id": "attempt.parent",
+            },
+        },
+        "rounds": [parent],
+    }
+
+    seed = _parent_seed(document, parent)
+
+    assert seed == {
+        "parent_round_id": "round_j_1",
+        "attempt_id": "attempt.parent",
+        "candidate_id": "mber_t1_binder_1",
+        "design": "t1_binder_1",
+        "sequence": _SEQUENCE,
+    }
+    # The launch reads the seed off the round it belongs to.
+    child = {"round_id": "round_j_2", "parent_round_id": "round_j_1", "seeded_from": seed}
+    assert _seed_for_launch({"active_round_id": "round_j_2", "rounds": [parent, child]}) == seed
+
+
+def test_a_parent_that_accepted_nothing_leaves_the_child_unseeded() -> None:
+    """Not an error: a child of a campaign that produced nothing is a fresh start."""
+
+    from cellertz.application.design_journey import _parent_seed
+
+    parent = {"round_id": "round_j_1"}
+    for execution in (
+        {"attempt_id": "a", "accepted_candidate": False},
+        {"attempt_id": "a", "accepted_candidate": True},
+        {"attempt_id": "a", "accepted_candidate": True, "candidate_identity": {"design": "d"}},
+        None,
+    ):
+        document = {"active_round_id": "round_j_1", "execution": execution, "rounds": [parent]}
+        assert _parent_seed(document, parent) is None, execution

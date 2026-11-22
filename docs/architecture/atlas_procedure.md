@@ -334,6 +334,57 @@ graded risk heuristic, not a threshold."*
 
 ---
 
+
+### Seeding the next campaign, 22 Nov 2026
+
+The atlas's second lever, and the one this journey had no way to pull: on
+albumin, seeding on a good design took the lineage from 2 of 14 to 13 of 14. A
+child round carried the parent's *plan* and not the parent's *design*, so every
+campaign in a series restarted from the bare framework and the series measured
+nothing it was meant to measure. The domain logic had been written and nothing
+in the application ever built a `SeedDesign`: it existed only in a test.
+
+The chain is now parent design → round → launch → settings:
+
+| where | what |
+| --- | --- |
+| `prepare_next_round` | reads the parent's accepted candidate onto the child as `seeded_from` |
+| the launch | passes the round's own record down; `DemonstrationLaunch` carries it |
+| the launcher | builds the `SeedDesign` and writes it into every trajectory's settings |
+| the reply | records `seeded_from`, or `None`, so the execution says which it was |
+
+mBER has no seeding flag — the mechanism is the masked sequence, with the
+parent's residues held where the bare scaffold would have left a design
+position open. What that does to the document the card reads:
+
+```
+spans reopened  : ((96, 109),)
+scaffold open   : 41 positions
+seeded open     : 14 positions
+scaffold: SCAAS**********WFRQA ... YYC**************WGQ
+seeded  : SCAASGGGGGGGGGGWFRQA ... YYC**************WGQ
+```
+
+**Which loop is reopened is ours**, like the classification's edge cut: the
+last declared CDR region, CDR3 at 96-109 on this scaffold, which is what the
+seeding test in this repository reopens. Reopening *every* CDR is not seeding
+at all — the parent's residues sit only in design positions, so opening all of
+them reproduces the bare scaffold exactly. That was the first version of this
+code, and the equality check that now refuses a seed reproducing the bare
+scaffold is what caught it.
+
+A seed that cannot be reseated is **refused with the other pre-flight checks**,
+never dropped: falling back to the bare framework would run a different
+experiment from the one the round was opened for, and the series exists to
+measure precisely that difference. A parent that accepted nothing leaves the
+child unseeded, which is not an error but a fresh start.
+
+What the approval still does not cover: the seed is journey state, not plan
+state, so the reviewer signs the plan digest and the round's seed rides beside
+it — the same gap as the verdict in step 3.
+
+---
+
 ## What this platform has, against those seven steps
 
 | step | state |
@@ -342,7 +393,7 @@ graded risk heuristic, not a threshold."*
 | 1 · agent proposes blocks | `hotspot_identification_agent.suggestion` ✅ |
 | 2 · guard verdict | limits ✅; `forbidden`, `exclusions`, oversized triples, guarded output ❌ |
 | 3 · classify blocks against the partner, with a declared direction | built ✅ (21 Nov) — `partner_classification`, reproducing 72 of the atlas's 76 blocks |
-| 4 · campaign series, one change each | rounds with parent/child lineage ✅; **seeding on a parent design** ❌ |
+| 4 · campaign series, one change each | rounds with parent/child lineage ✅; seeding on a parent design ✅ (22 Nov); **a lesson field** ❌ |
 | 5 · audit with reachability and a null model | built ✅, and inside `audit_hotspot_blocks` |
 | 6 · pre-filters, then two-axis rank | built ✅; injected ✅ (22 Nov); a journey round reaches it end to end ✅ (22 Nov) |
 | 7 · clinical anchor | **nothing** — no `drugs` record, and J_clin has to be supplied by hand |
@@ -566,4 +617,6 @@ are missing from it:
 3. ~~**Inject `specialist_scorer`**~~ — injected 22 Nov 2026. Outstanding, and
    upstream of it: an mBER launch declares no accepted candidate, so a journey
    round never reaches the scorer (below).
-4. **Seed and lesson on rounds.**
+4. ~~**Seed on rounds**~~ — seeded 22 Nov 2026. Outstanding: a **lesson**
+   field, so a child round records *why* it differs from its parent, and a
+   declaration of which loop it reopens (today the last CDR, ours).
