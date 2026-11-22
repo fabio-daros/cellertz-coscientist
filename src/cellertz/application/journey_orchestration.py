@@ -24,7 +24,18 @@ from typing import Any
 from uuid import uuid4
 
 _TERMINAL_DISPATCH = frozenset({"completed", "blocked", "failed", "unresolved", "refused"})
-_CLEAN_NO_CANDIDATE = frozenset({"budget_exhausted"})
+# A launch that finished its own pipeline and legitimately has no candidate.
+# Specialists still run, and record the absence honestly. mBER's own filter
+# rejecting every binder is this, not a failure: 7 of 8 trajectories did
+# exactly that on the card.
+_CLEAN_NO_CANDIDATE = frozenset({"budget_exhausted", "no_accepted_design"})
+# The terminal statuses that may carry an accepted candidate. "verified" is
+# BindCraft's, reached through the review validation; "ranked" is mBER's,
+# reached through the screen and the two-axis panel. Shared with
+# ``_execution_from_reply``, which decides the same question about the same
+# statuses — two copies of this set would let the dispatch and the execution
+# record disagree about whether a run produced anything.
+ACCEPTING_STATUSES = frozenset({"verified", "ranked"})
 
 
 class JourneyOrchestrationWorker:
@@ -225,7 +236,7 @@ def recover_document(document: dict[str, Any]) -> dict[str, Any] | None:
     if dispatch.get("generation_invoked") is True and _generation_process_alive(document):
         return None
     execution = document.get("execution") if isinstance(document.get("execution"), dict) else {}
-    if execution.get("terminal") is True and execution.get("status") in _CLEAN_NO_CANDIDATE | {"verified"}:
+    if execution.get("terminal") is True and execution.get("status") in _CLEAN_NO_CANDIDATE | ACCEPTING_STATUSES:
         return None
     _finish_dispatch(
         document,
@@ -272,9 +283,9 @@ def follow_up_decision(execution: Mapping[str, Any]) -> str:
         if status == "execution_unresolved":
             return "unresolved"
         return "running"
-    if status == "verified" and execution.get("accepted_candidate") is True:
+    if status in ACCEPTING_STATUSES and execution.get("accepted_candidate") is True:
         return "specialists"
-    if status == "verified":
+    if status in ACCEPTING_STATUSES:
         return "unresolved"
     if status in {"launch_failed", "failed", "outputs_rejected", "launcher_exception", "vram_insufficient"}:
         return "failed"

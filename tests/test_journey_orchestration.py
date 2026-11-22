@@ -255,3 +255,78 @@ def test_budget_exhaustion_blocks_specialists_without_a_score(tmp_path: Path) ->
     assert _ROUND10_DESIGN not in json.dumps(stored["execution"].get("candidate_id"))
     plans.close()
     service.close()
+
+
+def _decide(status: str, **extra: object) -> str:
+    from cellertz.application.journey_orchestration import follow_up_decision
+
+    return follow_up_decision({"status": status, "terminal": True, **extra})
+
+
+def test_a_ranked_launch_is_routed_to_the_specialists() -> None:
+    """mBER's terminal status is "ranked"; only BindCraft's "verified" was routed.
+
+    Everything else fell through to "failed", so a run that screened and
+    ranked a real cohort on the card was recorded as a failed dispatch and no
+    specialist was ever dispatched.
+    """
+
+    assert _decide("ranked", accepted_candidate=True) == "specialists"
+    assert _decide("verified", accepted_candidate=True) == "specialists"
+
+
+def test_a_terminal_status_that_accepted_nothing_is_unresolved_not_failed() -> None:
+    """The launch finished its pipeline; what it produced is the open question."""
+
+    assert _decide("ranked") == "unresolved"
+    assert _decide("verified") == "unresolved"
+
+
+def test_mber_accepting_no_design_is_a_clean_outcome() -> None:
+    """Its own filter rejecting every binder is a result, not a failure.
+
+    Specialists run and record the absence, which is what budget exhaustion
+    already did.
+    """
+
+    assert _decide("no_accepted_design") == "specialists"
+    assert _decide("budget_exhausted") == "specialists"
+
+
+def test_a_real_failure_is_still_a_failure() -> None:
+    for status in ("launch_failed", "failed", "outputs_rejected", "launcher_exception", "vram_insufficient"):
+        assert _decide(status) == "failed", status
+    assert _decide("ranked", terminal=False) == "running"
+
+
+def test_a_ranked_execution_is_left_alone_after_a_restart() -> None:
+    """The recovery guard listed only BindCraft's clean terminal statuses.
+
+    A finished mBER launch would have been reported as "the GPU launch was not
+    started again after restart" and its execution overwritten as unresolved.
+    """
+
+    from cellertz.application.journey_orchestration import recover_document
+
+    def saved(status: str) -> dict:
+        return {
+            "journey_id": "journey_restart",
+            "post_generation": {
+                "dispatch_id": "dispatch_1",
+                "automatic": True,
+                "status": "running",
+                "phase": "generation",
+                "generation_invoked": True,
+                "events": [],
+            },
+            "execution": {"status": status, "terminal": True, "accepted_candidate": True},
+            "rounds": [],
+            "stages": [],
+            "events": [],
+        }
+
+    for status in ("ranked", "no_accepted_design", "verified", "budget_exhausted"):
+        assert recover_document(saved(status)) is None, status
+    recovered = recover_document(saved("some_other_status"))
+    assert recovered is not None
+    assert recovered["post_generation"]["status"] == "unresolved"
