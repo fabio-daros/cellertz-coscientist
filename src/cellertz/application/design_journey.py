@@ -50,6 +50,9 @@ _APPROVAL_KEYS = frozenset(
 _LINK_KEYS = frozenset({"request_id", "request_revision", "plan_id", "revision", "digest"})
 _RUN_KEYS = _LINK_KEYS | {"idempotency_key"}
 _LAUNCH_KEYS = _APPROVAL_KEYS | {"gpu_index"}
+# The approval source of a click on Run: an explicit request, not a review by a
+# second person. It is a label for where the authority came from, never a name.
+_EXPLICIT_RUN = "explicit_run"
 _TRAJECTORY_BLOCK = (
     "Recorded plan approval does not launch generation. "
     "Execution authorization and launch are separate actions."
@@ -417,8 +420,14 @@ class DesignJourneyService:
         if not isinstance(published, dict) or published.get("plan_id") != parsed["plan_id"]:
             return 404, _run_refused("plan_absent")
         binding = _design_request_binding(str(published.get("conversation_id") or ""))
+        child = False
         if binding != (parsed["request_id"], parsed["request_revision"]):
-            return 409, _run_refused("plan_identity_rejected")
+            # A child round's plan lives under its own conversation id, so it
+            # never matches the request binding. It is accepted only when it is
+            # the journey's own active round — never a plan that merely says so.
+            child = self._is_active_round_plan(parsed)
+            if not child:
+                return 409, _run_refused("plan_identity_rejected")
         if published.get("revision") != parsed["revision"] or published.get("digest") != parsed["digest"]:
             return 409, _run_refused("plan_revision_conflict")
         configuration = _run_configuration(published, self._plans)
@@ -436,11 +445,20 @@ class DesignJourneyService:
         gpu = explicit_gpu_index((published.get("fields") or {}).get("gpu"))
         if gpu is None:
             return 409, _run_refused("gpu_not_selected")
-        status, linked = self.link_saved_plan(
-            {key: parsed[key] for key in ("request_id", "request_revision", "plan_id", "revision", "digest")}
-        )
+        if child:
+            # The journey already holds this plan as its active round, and
+            # linking it would re-bind it to the request's own conversation.
+            existing = self._store.for_request(parsed["request_id"])
+            linked = {"journey_id": existing.get("journey_id")} if isinstance(existing, dict) else {}
+            status = 200
+        else:
+            status, linked = self.link_saved_plan(
+                {key: parsed[key] for key in ("request_id", "request_revision", "plan_id", "revision", "digest")}
+            )
         if status != 200:
             return status, linked
+        if self._defer_generation:
+            return self._run_deferred(str(linked.get("journey_id")), parsed, gpu, design_count)
         with self._lock:
             current = self._store.get(str(linked.get("journey_id")))
             if not isinstance(current, dict):
@@ -508,6 +526,120 @@ class DesignJourneyService:
         if finished["launched"] is not True:
             presented["status"] = finished["status"]
             return 200, presented
+        return 200, presented
+
+    def _is_active_round_plan(self, parsed: Mapping[str, Any]) -> bool:
+        """Whether this plan is the active round of the request's own journey."""
+
+        journey = self._store.for_request(parsed["request_id"])
+        if not isinstance(journey, dict):
+            return False
+        active = journey.get("active_round_id")
+        rounds = journey.get("rounds")
+        if not isinstance(active, str) or not isinstance(rounds, list):
+            return False
+        return (
+            journey.get("plan_id") == parsed["plan_id"]
+            and journey.get("plan_revision") == parsed["revision"]
+            and any(
+                isinstance(item, dict)
+                and item.get("round_id") == active
+                and item.get("parent_round_id")
+                and item.get("plan_id") == parsed["plan_id"]
+                for item in rounds
+            )
+        )
+
+    def _run_deferred(
+        self,
+        journey_id: str,
+        parsed: Mapping[str, Any],
+        gpu: int,
+        design_count: int,
+    ) -> tuple[int, dict[str, Any]]:
+        """One click, recorded as an explicit run, launched by the journey's worker.
+
+        The synchronous run waited for the card inside the HTTP request, and an
+        mBER trajectory took 19 minutes on this server. This commits the launch
+        identity and returns; the worker that serves every journey launches it,
+        and the same stages that follow any launch — accepted candidate,
+        specialists, scoring — follow this one.
+
+        It does not record a review or an authorization. ``approval_source`` is
+        ``explicit_run`` on the execution and on the saved launch, because a
+        click on Run is not a second person's review and calling it one would
+        attribute an authority that was never exercised.
+        """
+
+        inventory, gpu_report = self._gpu_inventory(gpu)
+        if inventory is not None:
+            return 409, _run_refused(inventory)
+        with self._lock:
+            current = self._store.get(journey_id)
+            if not isinstance(current, dict):
+                return 404, _run_refused("journey_absent")
+            stored = _stored_run(current, parsed)
+            if stored is not None:
+                presented = self._present(current)
+                presented["run"] = _public_run(stored)
+                return 200, presented
+            if self._attempt_root is None:
+                return 409, _run_refused("attempt_directory_unconfigured")
+            attempt_id = f"attempt.{uuid4().hex[:8]}"
+            attempt_directory = self._attempt_root / attempt_id
+            self._attempt_root.mkdir(parents=True, exist_ok=True)
+            identity = {
+                **parsed,
+                "reviewer_id": _EXPLICIT_RUN,
+                "reason": "An explicit run was requested from the design plan.",
+                "gpu_index": gpu,
+            }
+            running = _execution_record(
+                current,
+                identity,
+                attempt_id=attempt_id,
+                attempt_directory=str(attempt_directory),
+                status="running",
+                launched=False,
+                terminal=False,
+                progress=[{"status": "running"}],
+            )
+            running["consumed"] = True
+            running["source"] = "run_design"
+            running["request_id"] = parsed["request_id"]
+            running["approval_source"] = _EXPLICIT_RUN
+            if isinstance(gpu_report, dict):
+                running["gpu_observation"] = {
+                    "occupancy": gpu_report.get("occupancy"),
+                    "compute_apps": gpu_report.get("compute_apps"),
+                    "memory": gpu_report.get("memory"),
+                }
+            prepared = json.loads(json.dumps(current))
+            previous = prepared.get("execution")
+            if isinstance(previous, dict) and previous.get("source") == "run_design":
+                history = prepared.get("execution_history")
+                history = history if isinstance(history, list) else []
+                history.append(json.loads(json.dumps(previous)))
+                prepared["execution_history"] = history
+            prepared["execution"] = running
+            from cellertz.application.journey_orchestration import new_dispatch
+
+            dispatch = new_dispatch(identity, attempt_id=attempt_id, attempt_directory=str(attempt_directory))
+            dispatch["launch_request"]["mode"] = _EXPLICIT_RUN
+            dispatch["launch_request"]["n_designs"] = design_count
+            prepared["post_generation"] = dispatch
+            if not isinstance(prepared.get("rounds"), list) or not prepared.get("rounds"):
+                prepared["rounds"] = _stored_rounds(prepared, self._plans)
+            if not isinstance(prepared.get("active_round_id"), str):
+                prepared["active_round_id"] = prepared["rounds"][-1]["round_id"]
+            _copy_dispatch(prepared)
+            # One commit stores the attempt identity. The GPU call is outside this lock.
+            self._save(prepared)
+        wake = getattr(self._orchestrator, "wake", None)
+        if callable(wake):
+            wake()
+        presented = self._present(prepared)
+        presented["run"] = _public_run(running)
         return 200, presented
 
     def results_for_request(self, request_id: str) -> dict[str, Any] | None:
@@ -848,27 +980,36 @@ class DesignJourneyService:
         if execution.get("terminal") is True:
             self._follow_automatic(str(document.get("journey_id")))
             return
-        launch = getattr(self._plans, "launch_apptainer_demonstration", None)
+        explicit = request.get("mode") == _EXPLICIT_RUN
+        launch = getattr(
+            self._plans,
+            "launch_explicit_run" if explicit else "launch_apptainer_demonstration",
+            None,
+        )
         attempt_id = execution.get("attempt_id")
         directory = execution.get("attempt_directory")
         if not callable(launch) or not isinstance(attempt_id, str) or not isinstance(directory, str):
             return
         attempt_directory = Path(directory)
+        shared = {
+            "plan_id": request["plan_id"],
+            "revision": request["revision"],
+            "idempotency_key": request["idempotency_key"],
+            "gpu_index": request["gpu_index"],
+            "attempt_id": attempt_id,
+            "attempt_directory": directory,
+            "seed_from": _seed_for_launch(document),
+            "declaration": _saved_declaration(
+                self._drafter, str(document.get("request_id")), _revision_of(document)
+            ),
+        }
         try:
-            reply = launch(
-                plan_id=request["plan_id"],
-                revision=request["revision"],
-                reviewer_id=request["reviewer_id"],
-                reason=request["reason"],
-                idempotency_key=request["idempotency_key"],
-                gpu_index=request["gpu_index"],
-                attempt_id=attempt_id,
-                attempt_directory=directory,
-                seed_from=_seed_for_launch(document),
-                declaration=_saved_declaration(
-                    self._drafter, str(document.get("request_id")), _revision_of(document)
-                ),
-            )
+            if explicit:
+                # No reviewer: the approval is the click itself, and the digest
+                # the person saw is what the plan service checks it against.
+                reply = launch(digest=request["digest"], n_designs=request["n_designs"], **shared)
+            else:
+                reply = launch(reviewer_id=request["reviewer_id"], reason=request["reason"], **shared)
         except Exception as exc:  # noqa: BLE001 - the saved attempt is not launched again
             reply = {"status": "launcher_exception", "launched": False, "exception_type": type(exc).__name__}
         if not isinstance(reply, dict):
@@ -1011,6 +1152,11 @@ class DesignJourneyService:
             conversation_id = f"design-journey:{updated['request_id']}:round:{child_id}"
             explicit = _proposal_draft(proposals, fields)
             plan, error = _draft(self._plans, conversation_id, request_text, explicit, None)
+            inherit = getattr(self._plans, "inherit_choices", None)
+            if plan is not None and callable(inherit):
+                # The child changes one thing; it keeps what the parent settled.
+                inherited = inherit(str(parent.get("plan_id") or ""), str(plan.get("plan_id")))
+                plan = inherited if isinstance(inherited, dict) else plan
             child_ids = [
                 item for item in parent.get("child_round_ids") or [] if isinstance(item, str)
             ]
@@ -3749,6 +3895,21 @@ def _request_results(document: Mapping[str, Any], root: Path | None) -> dict[str
         linked.append(current)
     if isinstance(history, list):
         linked.extend(item for item in history if isinstance(item, dict) and item.get("source") == "run_design")
+    # Opening the next round clears the journey's current execution and keeps
+    # the parent's on its round, so without this a parent's run would drop out
+    # of Results the moment its child opened.
+    rounds = document.get("rounds")
+    if isinstance(rounds, list):
+        seen = {item.get("attempt_id") for item in linked}
+        for item in rounds:
+            kept = item.get("execution") if isinstance(item, dict) else None
+            if (
+                isinstance(kept, dict)
+                and kept.get("source") == "run_design"
+                and kept.get("attempt_id") not in seen
+            ):
+                linked.append(kept)
+                seen.add(kept.get("attempt_id"))
     return {
         "request_id": document.get("request_id"),
         "request_revision": document.get("request_revision"),

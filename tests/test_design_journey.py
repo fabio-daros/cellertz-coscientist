@@ -4475,3 +4475,193 @@ def test_a_note_does_not_refuse_the_run_but_a_real_question_does() -> None:
     # A payload from a server that does not mark its questions is read as blocking.
     assert _open_questions({"questions": [unmarked]}) == [unmarked]
     assert _open_questions({}) == []
+
+
+def test_run_design_returns_before_the_card_and_the_worker_launches_it_as_an_explicit_run(
+    tmp_path: Path,
+) -> None:
+    """One click, registered, and no wait inside the HTTP request.
+
+    The synchronous run held the request open for the whole launch, and an mBER
+    trajectory took 19 minutes. It also never reached the stages that follow
+    any other launch: accepted candidate, specialists, scoring.
+    """
+
+    from cellertz.application.journey_orchestration import JourneyOrchestrationWorker
+
+    catalog, _hashes = _input_files(tmp_path)
+    plan_path = tmp_path / "plans.sqlite"
+    seen: list[Any] = []
+
+    class Stub:
+        def launch(self, request: Any) -> dict[str, object]:
+            seen.append(request)
+            return {"status": "no_accepted_design", "launched": True}
+
+    plans = GenerationPlanService(
+        None, store=SQLiteGenerationPlanStore(plan_path), inputs=catalog, demonstration=Stub()
+    )
+    created, drafts = _ready_plan(plans, tmp_path)
+    original = plans.published(created["plan_id"])
+    assert original is not None
+    service = DesignJourneyService(
+        plans,
+        store=SQLiteDesignJourneyStore(tmp_path / "journeys.sqlite"),
+        attempt_root=tmp_path / "attempts",
+        drafter=drafts,
+    )
+    service.attach_orchestrator(JourneyOrchestrationWorker(service))
+    body = {
+        "request_id": "request_run",
+        "request_revision": 1,
+        "plan_id": original["plan_id"],
+        "revision": original["revision"],
+        "digest": original["digest"],
+        "idempotency_key": "run-deferred",
+    }
+
+    status, started = handle_design_journey(
+        service, "POST", "/api/design-journeys/run", json.dumps(body).encode()
+    )
+
+    assert status == 200, started
+    # Returned before the card: the launcher has not been called.
+    assert seen == []
+    assert started["run"]["status"] == "running"
+    assert started["run"]["launched"] is False
+    saved = service._store.for_request("request_run")
+    assert saved["post_generation"]["status"] == "queued"
+    assert saved["execution"]["consumed"] is True
+    assert saved["execution"]["approval_source"] == "explicit_run"
+    # Not a review and not an authorization: neither was exercised.
+    assert saved.get("execution_authorization") is None
+    assert saved.get("approval") is None
+    assert "reviewer" not in json.dumps(started["run"])
+
+    assert service.continue_post_generation() is True
+
+    assert len(seen) == 1
+    request = seen[0]
+    assert request.approval_source == "explicit_run"
+    # The plan carries target_identity and nothing of the complex; the launch
+    # asks the saved draft, so the launcher gets what the person stated.
+    assert request.declaration["target_id"] == "PDL1"
+    finished = service._store.for_request("request_run")
+    assert finished["execution"]["status"] == "no_accepted_design"
+    assert finished["execution"]["terminal"] is True
+    assert finished["execution"]["source"] == "run_design"
+    assert finished["post_generation"]["status"] in {"completed", "blocked"}
+    # The live Results tab reads these records, so a deferred run must be in it.
+    results = service.results_for_request("request_run")
+    assert results is not None
+    assert [item["attempt_id"] for item in results["results"]] == [saved["execution"]["attempt_id"]]
+    assert results["results"][0]["status"] == "no_accepted_design"
+
+    again, repeated = handle_design_journey(
+        service,
+        "POST",
+        "/api/design-journeys/run",
+        json.dumps({**body, "idempotency_key": "run-again"}).encode(),
+    )
+    assert again == 200
+    assert repeated["run"]["attempt_id"] == started["run"]["attempt_id"]
+    assert len(seen) == 1, "the same revision is not launched twice"
+    plans.close()
+    service.close()
+
+
+def test_the_next_round_runs_from_the_same_button_and_both_runs_stay_in_results(
+    tmp_path: Path,
+) -> None:
+    """Run, open the next round with a lesson, run it: what the professor does.
+
+    A child round's plan lives under its own conversation id, so run_design
+    refused it as plan_identity_rejected, and opening the round cleared the
+    journey's current execution, so the parent's run left Results.
+    """
+
+    from cellertz.application.journey_orchestration import JourneyOrchestrationWorker
+
+    catalog, _hashes = _input_files(tmp_path)
+    seen: list[Any] = []
+
+    class Stub:
+        def launch(self, request: Any) -> dict[str, object]:
+            seen.append(request)
+            return {"status": "no_accepted_design", "launched": True}
+
+    plans = GenerationPlanService(
+        None, store=SQLiteGenerationPlanStore(tmp_path / "plans.sqlite"), inputs=catalog, demonstration=Stub()
+    )
+    created, drafts = _ready_plan(plans, tmp_path)
+    original = plans.published(created["plan_id"])
+    assert original is not None
+    service = DesignJourneyService(
+        plans,
+        store=SQLiteDesignJourneyStore(tmp_path / "journeys.sqlite"),
+        attempt_root=tmp_path / "attempts",
+        drafter=drafts,
+    )
+    service.attach_orchestrator(JourneyOrchestrationWorker(service))
+
+    def run(plan: dict[str, Any], key: str) -> tuple[int, dict[str, Any]]:
+        return handle_design_journey(
+            service,
+            "POST",
+            "/api/design-journeys/run",
+            json.dumps(
+                {
+                    "request_id": "request_run",
+                    "request_revision": 1,
+                    "plan_id": plan["plan_id"],
+                    "revision": plan["revision"],
+                    "digest": plan["digest"],
+                    "idempotency_key": key,
+                }
+            ).encode(),
+        )
+
+    status, first = run(original, "first")
+    assert status == 200, first
+    assert service.continue_post_generation() is True
+    parent_attempt = first["run"]["attempt_id"]
+    journey_id = service._store.for_request("request_run")["journey_id"]
+
+    status, opened = handle_design_journey(
+        service,
+        "POST",
+        f"/api/design-journeys/{journey_id}/rounds",
+        json.dumps({"lesson": "Reopen CDR3 alone."}).encode(),
+    )
+    assert status == 200, opened
+    child = next(item for item in opened["rounds"] if item.get("parent_round_id"))
+    assert child["lesson"]["declared"] == "Reopen CDR3 alone."
+    assert child["lesson"]["learned_from"]["status"] == "no_accepted_design"
+    # The parent accepted no design, so the child starts from the bare scaffold.
+    assert child["seeded_from"] is None
+
+    # Opening the round must not drop the parent's run from Results.
+    kept = service.results_for_request("request_run")
+    assert [item["attempt_id"] for item in kept["results"]] == [parent_attempt]
+
+    child_plan = plans.published(child["plan_id"])
+    assert child_plan is not None
+    status, second = run(child_plan, "second")
+    assert status == 200, second
+    assert second["run"]["attempt_id"] != parent_attempt
+    assert service.continue_post_generation() is True
+
+    assert len(seen) == 2
+    assert seen[1].approval_source == "explicit_run"
+    assert seen[1].declaration["target_id"] == "PDL1"
+    results = service.results_for_request("request_run")
+    assert [item["attempt_id"] for item in results["results"]] == [
+        second["run"]["attempt_id"],
+        parent_attempt,
+    ]
+
+    # A plan that merely says it is a round of this journey is not one.
+    status, _refused = run({**child_plan, "plan_id": original["plan_id"], "digest": "0" * 64}, "forged")
+    assert status == 409
+    plans.close()
+    service.close()

@@ -586,6 +586,66 @@ class GenerationPlanService:
         created = self.draft(key, proposal)
         return _with_design_binding(created, (request_id, revision)), True
 
+    def inherit_choices(self, parent_plan_id: str, child_plan_id: str) -> dict[str, Any] | None:
+        """Carry the parent's resolved hotspot and filter-policy choices to a child round's plan.
+
+        A child round changes one thing, so it keeps everything else the parent
+        had settled. Drafting it again from the request text cannot do that: the
+        filter policy's consent and the hotspot strategy were recorded by a
+        structured choice and are not in the text, so the child came back with
+        both asked again and could not be run.
+
+        Only those two settings are carried, with their provenance marked
+        ``preserved`` — they are the parent's decisions, not new ones. A parent
+        that had not resolved one leaves the child's question open, which is the
+        honest state. Returns the child plan as published, or ``None`` when
+        either plan is absent.
+        """
+
+        parent = self._plans.get(parent_plan_id)
+        child = self._plans.get(child_plan_id)
+        if parent is None or child is None:
+            return None
+        carried: dict[str, Any] = {}
+        resolved: set[str] = set()
+        for key, value in parent.fields.items():
+            if key == "hotspot_strategy" or key.startswith("hotspot_assumption"):
+                carried[key] = copy.deepcopy(value)
+                resolved.add("hotspot_assumption")
+            elif key.startswith("filter_policy"):
+                carried[key] = copy.deepcopy(value)
+                resolved.add("filter_policy")
+        if "hotspot_strategy" not in carried:
+            resolved.discard("hotspot_assumption")
+        if "filter_policy" not in carried:
+            resolved.discard("filter_policy")
+        for key in list(carried):
+            if key.endswith("_provenance"):
+                carried[key] = "preserved"
+        fields = copy.deepcopy(child.fields)
+        fields.update(carried)
+        questions = [
+            dict(item) for item in child.questions if item.get("field") not in resolved
+        ]
+        if canonical_digest(_document(fields, questions)) == canonical_digest(
+            _document(child.fields, child.questions)
+        ):
+            return self._published(child)
+        child.revision_history.append(_revision_snapshot(child))
+        child.revision += 1
+        child.fields = fields
+        child.questions = questions
+        child.approval = None
+        child.events.append(
+            _event(
+                "choices_inherited",
+                "A child round kept the parent's hotspot and filter-policy choices. "
+                "No run was started.",
+            )
+        )
+        self._persist(child)
+        return self._published(child)
+
     def revise_parameters(
         self,
         request_id: str,
