@@ -145,6 +145,60 @@ export function SupervisorMark() {
   );
 }
 
+/** The two answers the platform accepts for the partner direction, in its own words. */
+const PARTNER_DIRECTIONS: { value: string; label: string }[] = [
+  { value: "avoid", label: "Avoid the partner — touching it is the failure" },
+  { value: "compete", label: "Compete with the partner — touching it is the goal" },
+];
+
+/**
+ * One answerable question. The partner direction is a closed choice with **no
+ * default**: it reverses the meaning of every contact percentage the platform
+ * reports and cannot be inferred from the target, so the person picks it. The
+ * server already refuses any word but these two; the choice makes the
+ * vocabulary visible and spares the round trip a typo would cost.
+ */
+function AnswerControl({
+  field,
+  question,
+  idPrefix,
+  value,
+  onAnswer,
+}: {
+  field: string;
+  question: string;
+  idPrefix: string;
+  value: string;
+  onAnswer: (key: string, value: string) => void;
+}) {
+  if (field === "partner_direction") {
+    return (
+      <fieldset key={field} className="partner-direction">
+        <legend>{question}</legend>
+        {PARTNER_DIRECTIONS.map((choice) => (
+          <label key={choice.value} htmlFor={`${idPrefix}-${field}-${choice.value}`}>
+            <input
+              type="radio"
+              id={`${idPrefix}-${field}-${choice.value}`}
+              name={`${idPrefix}-${field}`}
+              value={choice.value}
+              checked={value === choice.value}
+              onChange={() => onAnswer(field, choice.value)}
+            />
+            {choice.label}
+          </label>
+        ))}
+      </fieldset>
+    );
+  }
+  return (
+    <label key={field} htmlFor={`${idPrefix}-${field}`}>
+      {question}
+      <input id={`${idPrefix}-${field}`} value={value} onChange={(event) => onAnswer(field, event.target.value)} />
+    </label>
+  );
+}
+
 function SupervisorReview({
   analysis,
   outdated,
@@ -207,14 +261,14 @@ function SupervisorReview({
             outdated ? (
               <p key={item.field}>{item.question}</p>
             ) : (
-              <label key={item.field} htmlFor={`recorded-${item.field}`}>
-                {item.question}
-                <input
-                  id={`recorded-${item.field}`}
-                  value={answers[item.field] ?? ""}
-                  onChange={(event) => onAnswer(item.field, event.target.value)}
-                />
-              </label>
+              <AnswerControl
+                key={item.field}
+                field={item.field}
+                question={item.question}
+                idPrefix="recorded"
+                value={answers[item.field] ?? ""}
+                onAnswer={onAnswer}
+              />
             ),
           )}
         </>
@@ -225,14 +279,14 @@ function SupervisorReview({
           {supervisorQuestions.map((item) => {
             const field = item.field;
             return !outdated && field ? (
-              <label key={item.question} htmlFor={`supervisor-${field}`}>
-                {item.question}
-                <input
-                  id={`supervisor-${field}`}
-                  value={answers[field] ?? ""}
-                  onChange={(event) => onAnswer(field, event.target.value)}
-                />
-              </label>
+              <AnswerControl
+                key={item.question}
+                field={field}
+                question={item.question}
+                idPrefix="supervisor"
+                value={answers[field] ?? ""}
+                onAnswer={onAnswer}
+              />
             ) : (
               <p key={item.question}>{item.question}</p>
             );

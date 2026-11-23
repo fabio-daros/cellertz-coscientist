@@ -136,6 +136,32 @@ export type DesignJourneyRecord = {
   } | null;
 };
 
+// The route refuses anything longer, so the box stops here rather than letting
+// the person write a lesson the server will not record.
+const LESSON_MAX = 500;
+
+function seedSentence(card: RoundCard): string {
+  const seed = card.seeded_from;
+  if (!seed || !seed.design) {
+    return "The bare scaffold. The parent accepted no design to start from.";
+  }
+  return `Parent design ${seed.design}${seed.attempt_id ? ` (${seed.attempt_id})` : ""}.`;
+}
+
+function lessonSentence(card: RoundCard): string {
+  const lesson = card.lesson;
+  if (!lesson || lesson.status !== "declared" || !lesson.declared) {
+    return "None declared.";
+  }
+  const seen = lesson.learned_from;
+  const measured = seen?.status
+    ? ` Parent: ${seen.status}${seen.design ? `, design ${seen.design}` : ""}${
+        seen.scoring_protocol ? `, scored under ${seen.scoring_protocol}` : ""
+      }${typeof seen.ranked_designs === "number" ? `, ${seen.ranked_designs} ranked` : ""}.`
+    : "";
+  return `${lesson.declared}${measured}`;
+}
+
 type RoundCard = {
   round_id: string;
   parent_round_id?: string | null;
@@ -175,6 +201,21 @@ type RoundCard = {
   specialist_stages?: JourneyStage[];
   specialist_events?: { stage_id?: string; status?: string; at?: string; reason?: string; implementation_kind?: string }[];
   specialist_progress_available?: boolean;
+  // The parent's accepted design this round's campaign starts from, or null
+  // for a fresh start. The series is a claim about exactly this difference.
+  seeded_from?: { design?: string | null; attempt_id?: string | null; parent_round_id?: string | null } | null;
+  // Why this round differs from its parent, as the person declared it, beside
+  // what the parent measured. `not_declared` is a record, not an absence.
+  lesson?: {
+    status?: string;
+    declared?: string | null;
+    learned_from?: {
+      status?: string | null;
+      design?: string | null;
+      scoring_protocol?: string | null;
+      ranked_designs?: number | null;
+    } | null;
+  } | null;
   post_generation?: {
     automatic?: boolean;
     status?: string;
@@ -491,6 +532,7 @@ function RoundCards({
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [cancelledOpen, setCancelledOpen] = useState(false);
   const [actionError, setActionError] = useState<{ roundId: string; message: string } | null>(null);
+  const [lessons, setLessons] = useState<Record<string, string>>({});
   const submitting = useRef(false);
 
   async function prepare(roundId: string) {
@@ -500,10 +542,14 @@ function RoundCards({
     submitting.current = true;
     setPendingRound(roundId);
     try {
+      // Sent only when written: the route refuses an empty lesson rather than
+      // filing "not declared" against text that was blanked, and a round
+      // opened without one is a normal round.
+      const lesson = (lessons[roundId] ?? "").trim();
       const response = await fetch(`/api/design-journeys/${record.journey_id}/rounds`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ parent_round_id: roundId }),
+        body: JSON.stringify(lesson ? { parent_round_id: roundId, lesson } : { parent_round_id: roundId }),
       });
       const body = (await response.json()) as DesignJourneyRecord & { status?: string; detail?: string };
       if (!response.ok || !body.journey_id) {
@@ -513,6 +559,7 @@ function RoundCards({
         return;
       }
       setActionError(null);
+      setLessons((current) => ({ ...current, [roundId]: "" }));
       onPrepared(body);
     } catch {
       const message = "The next round was not prepared. Generation was not launched.";
@@ -678,6 +725,18 @@ function RoundCards({
                 <dt>Target</dt>
                 <dd>{card.target ?? "not recorded"}</dd>
               </div>
+              {card.parent_round_id ? (
+                <>
+                  <div>
+                    <dt>Starts from</dt>
+                    <dd>{seedSentence(card)}</dd>
+                  </div>
+                  <div>
+                    <dt>Lesson</dt>
+                    <dd>{lessonSentence(card)}</dd>
+                  </div>
+                </>
+              ) : null}
               {cancelledCard ? (
                 <div>
                   <dt>Cancelled</dt>
@@ -711,6 +770,28 @@ function RoundCards({
             )}
             {actionError?.roundId === card.round_id ? <p role="alert">{actionError.message}</p> : null}
             <div className={compact ? "round-toolbar" : undefined}>
+            {canPrepare && (card.active !== false || prepareLabel === "Prepare another round") ? (
+              <p className="round-lesson-input">
+                <label htmlFor={`lesson-${card.round_id}`}>
+                  Why does the next round differ from this one? (optional)
+                </label>
+                <textarea
+                  id={`lesson-${card.round_id}`}
+                  rows={2}
+                  maxLength={LESSON_MAX}
+                  value={lessons[card.round_id] ?? ""}
+                  disabled={pendingRound === card.round_id}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setLessons((current) => ({ ...current, [card.round_id]: value }));
+                  }}
+                />
+                <small>
+                  {(lessons[card.round_id] ?? "").length} of {LESSON_MAX}. It is recorded beside what this
+                  round measured; leaving it empty records that none was declared.
+                </small>
+              </p>
+            ) : null}
             <div className="round-actions">
               {canCancel ? (
                 <button

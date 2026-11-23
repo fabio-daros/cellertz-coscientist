@@ -423,6 +423,36 @@ this a declaration rather than a form.
 
 ---
 
+
+### What the front collects, and what it cannot reach, 22 Nov 2026
+
+**The direction is a closed choice with no default.** The request form asked
+for it in a free-text box; it is now two radios — avoid the partner, compete
+with it — and neither is pre-selected, because it reverses the meaning of every
+contact percentage and cannot be inferred from the target. The server already
+refused any word but `compete` and `avoid`, so a typo was never silent; the
+choice shows the vocabulary and spares the round trip. The value sent is
+exactly the word `request_draft` accepts, checked against the real draft code:
+`avoid` and `compete` enter, `yes` and an empty answer are refused.
+
+**The lesson has an input that nothing mounts.** The box sits in
+`DesignJourney`, beside "Prepare next round", with the 500-character limit the
+route enforces, sent only when written. Child cards show what they start from
+and the lesson beside what the parent measured. All of it is tested. But
+`DesignJourney` is mounted only by `LegacyWorkspace`, which the exported `App`
+never renders: the shipped front is `ProteinDesignModule` — request, plan,
+results — and its single run action posts to `/api/design-journeys/run`. It
+never calls `/rounds`. The production bundle confirms it: none of
+`DesignJourney`'s text is in it, the deployed one included.
+
+So today the live front cannot open a child round at all, and the seeding and
+the lesson that the backend now records have no way in from the screen the
+professor uses. Making them reachable is not a field: a child round is a new
+plan under its own conversation id, and the live plan view selects by request.
+That integration is the open piece.
+
+---
+
 ## What this platform has, against those seven steps
 
 | step | state |
@@ -437,10 +467,9 @@ this a declaration rather than a form.
 | 7 · clinical anchor | **nothing** — no `drugs` record, and J_clin has to be supplied by hand |
 
 Steps 0 and 3 were built on 21 Nov 2026. What is left on them is operational
-rather than code: **neither input root holds a `complex.pdb`**, so every block
-still reports why it was not measured rather than a verdict, and the front end
-does not yet collect the direction — so a measured block reads as geometry with
-its meaning withheld.
+rather than code: the PD-L1 input root still holds no `complex.pdb` (the CD22
+root does, since 22 Nov), so its blocks report why they were not measured
+rather than a verdict. The direction is collected as of 22 Nov (below).
 
 ### Step 6, injected 22 Nov 2026 — and the cohort it needs was being thrown away
 
@@ -649,8 +678,8 @@ are missing from it:
 1. ~~**Partner classification.**~~ Built 21 Nov 2026. The verdict is derived
    from the measurement rather than claimed by the agent, because the atlas's
    own four words do not track its own contact numbers. Outstanding: place
-   `complex.pdb` in each input root, and collect `partner_direction` in the
-   front end.
+   `complex.pdb` in the PD-L1 root. The direction is collected in the front
+   end as a closed choice, 22 Nov 2026.
 2. ~~**The analysis extraction**~~ — built 21 Nov 2026.
 3. ~~**Inject `specialist_scorer`**~~ — injected 22 Nov 2026. Outstanding, and
    upstream of it: an mBER launch declares no accepted candidate, so a journey

@@ -1743,6 +1743,162 @@ describe("design journey", () => {
     }
     fetchMock.mockRestore();
   });
+  describe("the lesson a round declares", () => {
+    const parentCard = {
+      round_id: "round_lesson_1",
+      parent_round_id: null,
+      child_round_id: null,
+      ordinal: 1,
+      active: true,
+      plan_id: "plan_parent",
+      plan_revision: 1,
+      digest: "parent-digest",
+      target: "CD22",
+      outcome: "ranked",
+      outcome_label: "Ranked cohort.",
+      execution_completed: true,
+      successful_candidate_generation: true,
+      candidate_count: 1,
+      recorded_review_status: "recorded_plan",
+      execution_authorization_status: "authorized",
+    };
+    const journey = {
+      ...savedJourney,
+      journey_id: "journey_lesson",
+      plan_id: "plan_parent",
+      rounds: [parentCard],
+    };
+    const childCard = {
+      round_id: "round_lesson_2",
+      parent_round_id: "round_lesson_1",
+      child_round_id: null,
+      ordinal: 2,
+      active: true,
+      plan_id: "plan_child",
+      plan_revision: 1,
+      digest: "child-digest",
+      target: "CD22",
+      outcome_label: "No launch recorded.",
+      execution_completed: false,
+      successful_candidate_generation: false,
+      candidate_count: 0,
+      recorded_review_status: "not_recorded",
+      execution_authorization_status: "not_authorized",
+      seeded_from: { design: "t1_binder_1", attempt_id: "attempt.parent", parent_round_id: "round_lesson_1" },
+      lesson: {
+        status: "declared",
+        declared: "CDR3 stayed off the footprint, reopen it alone.",
+        learned_from: {
+          status: "ranked",
+          design: "t1_binder_1",
+          scoring_protocol: "ENGAGER_TWO_AXIS_2026",
+          ranked_designs: 3,
+        },
+      },
+    };
+
+    function mountWith(prepared: unknown) {
+      clearJourneyLoadCache();
+      return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        if (String(input).endsWith("/rounds")) {
+          return { ok: true, json: async () => prepared } as Response;
+        }
+        return { ok: true, status: 200, json: async () => journey } as Response;
+      });
+    }
+
+    function roundPosts(fetchMock: ReturnType<typeof mountWith>) {
+      return fetchMock.mock.calls.filter((call) => String(call[0]).endsWith("/rounds"));
+    }
+
+    it("sends the lesson the person wrote, trimmed, with the parent", async () => {
+      const fetchMock = mountWith({ ...journey, rounds: [{ ...parentCard, active: false }, childCard] });
+      render(<DesignJourney requestId="request_1" revision={1} requestText="Design a CD22 binder." />);
+      await screen.findByRole("region", { name: "Design journey" });
+
+      await userEvent.type(
+        screen.getByLabelText(/Why does the next round differ/),
+        "  CDR3 stayed off the footprint, reopen it alone.  ",
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Prepare next round" }));
+
+      await screen.findByRole("article", { name: "Round 2" });
+      expect(JSON.parse(String((roundPosts(fetchMock)[0][1] as RequestInit).body))).toEqual({
+        parent_round_id: "round_lesson_1",
+        lesson: "CDR3 stayed off the footprint, reopen it alone.",
+      });
+      fetchMock.mockRestore();
+    });
+
+    it("sends no lesson key at all when the box is empty or only blanks", async () => {
+      // The route refuses an empty lesson, and refusing it would stop a normal
+      // round from being opened.
+      const fetchMock = mountWith({ ...journey, rounds: [{ ...parentCard, active: false }, childCard] });
+      render(<DesignJourney requestId="request_1" revision={1} requestText="Design a CD22 binder." />);
+      await screen.findByRole("region", { name: "Design journey" });
+
+      await userEvent.type(screen.getByLabelText(/Why does the next round differ/), "   ");
+      fireEvent.click(screen.getByRole("button", { name: "Prepare next round" }));
+
+      await screen.findByRole("article", { name: "Round 2" });
+      expect(JSON.parse(String((roundPosts(fetchMock)[0][1] as RequestInit).body))).toEqual({
+        parent_round_id: "round_lesson_1",
+      });
+      fetchMock.mockRestore();
+    });
+
+    it("stops the person at the length the route will record", async () => {
+      const fetchMock = mountWith(journey);
+      render(<DesignJourney requestId="request_1" revision={1} requestText="Design a CD22 binder." />);
+      await screen.findByRole("region", { name: "Design journey" });
+
+      const box = screen.getByLabelText(/Why does the next round differ/) as HTMLTextAreaElement;
+      expect(box.maxLength).toBe(500);
+      await userEvent.type(box, "x");
+      expect(screen.getByText(/1 of 500/)).toBeInTheDocument();
+      fetchMock.mockRestore();
+    });
+
+    it("shows a child round what it starts from and why it differs", async () => {
+      const fetchMock = mountWith(journey);
+      clearJourneyLoadCache();
+      fetchMock.mockImplementation(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => ({ ...journey, rounds: [{ ...parentCard, active: false }, childCard] }),
+          }) as Response,
+      );
+      render(<DesignJourney requestId="request_1" revision={1} requestText="Design a CD22 binder." />);
+
+      const child = await screen.findByRole("article", { name: "Round 2" });
+      expect(child).toHaveTextContent("Parent design t1_binder_1 (attempt.parent).");
+      expect(child).toHaveTextContent("CDR3 stayed off the footprint, reopen it alone.");
+      expect(child).toHaveTextContent("Parent: ranked, design t1_binder_1, scored under ENGAGER_TWO_AXIS_2026, 3 ranked.");
+      fetchMock.mockRestore();
+    });
+
+    it("says so when a child starts from the bare scaffold with no lesson", async () => {
+      const bare = { ...childCard, seeded_from: null, lesson: { status: "not_declared", declared: null } };
+      const fetchMock = mountWith(journey);
+      fetchMock.mockImplementation(
+        async () =>
+          ({
+            ok: true,
+            status: 200,
+            json: async () => ({ ...journey, rounds: [{ ...parentCard, active: false }, bare] }),
+          }) as Response,
+      );
+      render(<DesignJourney requestId="request_1" revision={1} requestText="Design a CD22 binder." />);
+
+      const child = await screen.findByRole("article", { name: "Round 2" });
+      expect(child).toHaveTextContent("The bare scaffold. The parent accepted no design to start from.");
+      expect(child).toHaveTextContent("None declared.");
+      fetchMock.mockRestore();
+    });
+  });
+
 });
 
 function cancelledRound(ordinal: number, parentRoundId: string) {

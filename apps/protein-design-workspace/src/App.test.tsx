@@ -404,6 +404,89 @@ describe("protein design prototype", () => {
     expect(vi.mocked(fetch).mock.calls.filter((call) => String(call[0]) === "/api/design-supervisor")).toHaveLength(1);
   });
 
+  it("asks the partner direction as a closed choice with no default, and sends the word the platform accepts", async () => {
+    // The direction reverses the meaning of every contact percentage the
+    // platform reports, and it is not inferable from the target. The server
+    // refuses any word but compete/avoid; the closed choice shows the
+    // vocabulary and spares the round trip a typo would cost.
+    const user = userEvent.setup();
+    let reads = 0;
+    const message = "Design a CD22 binder that does not compete with m971.";
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url === "/api/design-supervisor") {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            status: "analyzed",
+            agent: "Protein Design Supervisor",
+            request_id: "request_one",
+            revision: 1,
+            message,
+            summary: "The request names a complex but not a direction.",
+            extracted_questions: [
+              {
+                field: "partner_direction",
+                question: "Should this engager compete with the partner for its epitope, or avoid it?",
+                source: "recorded",
+              },
+            ],
+            supervisor_questions: [],
+            validation: { status: "accepted", findings: [] },
+            understood: [],
+            execution_authorized: false,
+            executable: false,
+            model_call: { executed: true, model: "test-model", input_tokens: 1, output_tokens: 1, total_tokens: 2 },
+            instrumentation: { recorded: true, observation: "recorded", provider: "openrouter", model: "test-model" },
+          }),
+        } as Response;
+      }
+      if ((init?.method ?? "GET") === "GET") {
+        reads += 1;
+        return reads === 1 ? emptyDraftList() : listedDraft(message, "request_one", 1);
+      }
+      const body = JSON.parse(String(init?.body));
+      return body.request_id === "request_one"
+        ? draftResponse("draft_updated", "request_one", 2)
+        : draftResponse("draft_created", "request_one", 1);
+    });
+    render(<App />);
+    await user.type(screen.getByLabelText("Design intent"), message);
+    await user.click(screen.getByRole("button", { name: "Save request" }));
+    expect(await screen.findByText("Request saved.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: message }));
+    await user.click(screen.getByRole("button", { name: "Analyze Request" }));
+
+    const group = await screen.findByRole("group", {
+      name: "Should this engager compete with the partner for its epitope, or avoid it?",
+    });
+    const avoid = within(group).getByRole("radio", { name: /Avoid the partner/ });
+    const compete = within(group).getByRole("radio", { name: /Compete with the partner/ });
+    expect(within(group).getAllByRole("radio")).toHaveLength(2);
+    expect(screen.queryByRole("textbox", { name: /compete with the partner/i })).not.toBeInTheDocument();
+    // No default: choosing it is the person's, never inferred.
+    expect(avoid).not.toBeChecked();
+    expect(compete).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Send answers" })).toBeDisabled();
+
+    await user.click(avoid);
+    expect(avoid).toBeChecked();
+    expect(compete).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Send answers" }));
+
+    expect(await screen.findByText("Request saved.")).toBeInTheDocument();
+    expect(postCalls().at(-1)?.[1]).toMatchObject({
+      body: JSON.stringify({
+        session_id: prototypeWorkspace.session_id,
+        message,
+        request_id: "request_one",
+        revision: 1,
+        clarifications: [{ field: "partner_direction", value: "avoid" }],
+      }),
+    });
+  });
+
   it("asks once for a candidate count and keeps that answer off the objective", async () => {
     const user = userEvent.setup();
     const message = "#3 design an new binder to PDL1";
