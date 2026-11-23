@@ -481,6 +481,9 @@ class DesignJourneyService:
                 attempt_id=attempt_id,
                 attempt_directory=str(attempt_directory),
                 n_designs=design_count,
+                declaration=_saved_declaration(
+                    self._drafter, parsed["request_id"], parsed["request_revision"]
+                ),
             )
         except Exception as exc:  # noqa: BLE001 - the failed attempt is kept and is not launched again
             reply = {"status": "launcher_exception", "launched": False, "diagnosis": type(exc).__name__}
@@ -772,6 +775,9 @@ class DesignJourneyService:
                 attempt_id=attempt_id,
                 attempt_directory=str(attempt_directory),
                 seed_from=_seed_for_launch(prepared),
+                declaration=_saved_declaration(
+                    self._drafter, str(prepared.get("request_id")), _revision_of(prepared)
+                ),
             )
         except Exception as exc:  # noqa: BLE001 - a launcher failure must be recorded, not left running
             reply = {"status": "launcher_exception", "launched": False, "exception_type": type(exc).__name__}
@@ -859,6 +865,9 @@ class DesignJourneyService:
                 attempt_id=attempt_id,
                 attempt_directory=directory,
                 seed_from=_seed_for_launch(document),
+                declaration=_saved_declaration(
+                    self._drafter, str(document.get("request_id")), _revision_of(document)
+                ),
             )
         except Exception as exc:  # noqa: BLE001 - the saved attempt is not launched again
             reply = {"status": "launcher_exception", "launched": False, "exception_type": type(exc).__name__}
@@ -2625,6 +2634,11 @@ def _active_round_cancelled(document: Mapping[str, Any]) -> bool:
     return False
 
 
+def _revision_of(document: Mapping[str, Any]) -> int:
+    revision = document.get("request_revision")
+    return revision if type(revision) is int and not isinstance(revision, bool) else 0
+
+
 def _seed_for_launch(document: Mapping[str, Any]) -> dict[str, Any] | None:
     """The seed recorded on the round this launch belongs to.
 
@@ -3522,6 +3536,50 @@ def _run_configuration(published: Mapping[str, Any], plans: Any) -> str | None:
         if not isinstance(path, Path) or not path.is_file():
             return "inputs_unreadable"
     return None
+
+
+_DECLARED_FIELDS = (
+    "target_id",
+    "source_structure",
+    "target_chain",
+    "partner_chains",
+    "partner_direction",
+    "clinical_anchor",
+)
+
+
+def _saved_declaration(drafter: Any, request_id: str, revision: int) -> dict[str, str]:
+    """What this request revision declared about its complex, as the person stated it.
+
+    Only values a person gave (``user``) or that were carried unchanged from an
+    earlier revision of theirs (``preserved``) are returned, and an absent one
+    is simply absent: the direction and the chains are never filled in. This is
+    the same read ``_saved_design_count`` makes for the candidate count, for the
+    same reason — the plan's own fields carry the target as ``target_identity``
+    and none of the rest, so the launch has to ask the saved draft.
+    """
+
+    recorded = None
+    reader = getattr(drafter, "recorded_at", None)
+    if callable(reader):
+        recorded = reader(request_id, revision)
+    if recorded is None:
+        recorded = _readonly_design_record(request_id, revision)
+    if not isinstance(recorded, tuple) or len(recorded) != 2:
+        return {}
+    fields = {field.name: field for field in getattr(recorded[0], "fields", ())}
+    found: dict[str, str] = {}
+    for name in _DECLARED_FIELDS:
+        field = fields.get(name)
+        value = getattr(field, "value", None)
+        if (
+            field is not None
+            and getattr(field, "provenance", None) in {"user", "preserved"}
+            and isinstance(value, str)
+            and value.strip()
+        ):
+            found[name] = value.strip()
+    return found
 
 
 def _saved_design_count(drafter: Any, request_id: str, revision: int) -> int | None:

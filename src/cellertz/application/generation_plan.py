@@ -970,6 +970,7 @@ class GenerationPlanService:
         attempt_id: str,
         attempt_directory: str,
         seed_from: Mapping[str, Any] | None = None,
+        declaration: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Explicit human launch. Approval of the plan does not call this.
 
@@ -1053,6 +1054,7 @@ class GenerationPlanService:
                 sif_path=Path(sif_path),
                 expected_sif_sha256=sif_sha256,
                 seed_design=None if seed_from is None else dict(seed_from),
+                declaration=None if declaration is None else dict(declaration),
             )
         )
         plan.dispatches[key] = {"content": content, "reply": reply}
@@ -1071,6 +1073,8 @@ class GenerationPlanService:
         attempt_id: str,
         attempt_directory: str,
         n_designs: int,
+        seed_from: Mapping[str, Any] | None = None,
+        declaration: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Launch one displayed revision. This does not invent an approval."""
 
@@ -1134,6 +1138,8 @@ class GenerationPlanService:
                 sif_path=Path(sif_path),
                 expected_sif_sha256=sif_sha256,
                 n_designs=n_designs,
+                seed_design=None if seed_from is None else dict(seed_from),
+                declaration=None if declaration is None else dict(declaration),
             )
         )
         if not isinstance(reply, dict):

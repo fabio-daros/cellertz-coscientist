@@ -603,6 +603,11 @@ class DemonstrationLaunch:
     # The parent design a child campaign starts from, as the journey recorded
     # it on the round. A generator that cannot seed ignores it; BindCraft does.
     seed_design: Mapping[str, Any] | None = None
+    # What the saved request declared about its complex: the target, the
+    # structure it came from, the chains and the direction. It is read off the
+    # request draft at launch, like n_designs, because the plan's own fields
+    # carry the target as ``target_identity`` and none of the rest.
+    declaration: Mapping[str, Any] | None = None
 
 
 def explicit_run_delivery(request: DemonstrationLaunch) -> dict[str, Any] | None:

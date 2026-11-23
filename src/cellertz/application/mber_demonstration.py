@@ -200,7 +200,10 @@ def declared_target(fields: object, target_path: Path) -> DeclaredTarget:
 
     if not isinstance(fields, dict):
         raise TargetNotDeclared("plan_declares_no_fields")
-    target_id = fields.get("target_id")
+    # The declaration says ``target_id``; a plan's own fields say
+    # ``target_identity``. Either names the same thing, and a plan with neither
+    # is refused rather than defaulted.
+    target_id = fields.get("target_id") or fields.get("target_identity")
     if not isinstance(target_id, str) or not target_id.strip():
         raise TargetNotDeclared("plan_declares_no_target_id")
     target_id = target_id.strip()
@@ -702,7 +705,13 @@ class MberDemonstrationLauncher:
             # Before the card, not after: a campaign whose target the plan did
             # not declare would record the wrong target on its candidate and
             # rank against the wrong surface.
-            target = declared_target(request.fields, request.target_path)
+            target = declared_target(
+                {
+                    **(request.fields if isinstance(request.fields, dict) else {}),
+                    **(request.declaration or {}),
+                },
+                request.target_path,
+            )
         except TargetNotDeclared as error:
             return {**refused, "status": "target_not_declared", "diagnosis": str(error)}
         # The screen's design count is what the person asked for, so it is the

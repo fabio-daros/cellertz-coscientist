@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import hashlib
 
+import pytest
+
 from cellertz.application.generation_plan import open_registered_input_catalog
 from cellertz.application.mber_demonstration import MberDemonstrationLauncher
 from cellertz.application.plan_configuration_suggestion import _partner_measurement
@@ -176,3 +178,97 @@ def test_a_preparation_record_that_names_no_source_is_not_itself_a_refusal(
     (root / "preparation.json").write_text("not json", encoding="utf-8")
 
     assert _measure(monkeypatch, root)["status"] == "measured"
+
+
+# --- the shape a REAL plan has, which the first version of declared_target never saw ---
+
+
+def test_a_real_plan_carries_the_target_as_target_identity_and_nothing_else_of_the_complex() -> None:
+    """The fact the launcher has to be built around.
+
+    declared_target first read ``target_id``, ``target_chain`` and
+    ``partner_chains`` out of the plan's fields, and every test hand-built a
+    dictionary with those keys. A plan has ``target_identity`` and none of the
+    rest, so every real launch would have been refused as target_not_declared.
+    """
+
+    from cellertz.application.generation_plan import GenerationPlanService
+
+    plan = GenerationPlanService().draft(
+        "design-request:request_1:revision:1",
+        {
+            "request_text": "Design a CD22 binder.",
+            "target_identity": "CD22",
+            "target_identity_provenance": "user",
+            "target_identity_source": "professor",
+        },
+    )
+
+    assert plan["fields"]["target_identity"] == "CD22"
+    for absent in ("target_id", "target_chain", "partner_chains", "partner_direction", "source_structure"):
+        assert absent not in plan["fields"], absent
+
+
+def test_a_plan_shaped_request_launches_when_the_saved_draft_declares_the_complex(tmp_path) -> None:
+    from cellertz.application.mber_demonstration import declared_target
+
+    root = _root(tmp_path)
+    plan_fields = {"target_identity": "CD22", "gpu": "0"}
+    declaration = {"source_structure": "7O52", "target_chain": "U", "partner_chains": "H", "partner_direction": "avoid"}
+
+    found = declared_target({**plan_fields, **declaration}, root / "target.pdb")
+
+    assert found.target_id == "CD22"
+    assert found.epitope == frozenset({1})
+    assert found.partner_chains == ("H",)
+
+
+def test_a_plan_shaped_request_without_a_declaration_is_refused_for_a_target_it_cannot_measure(
+    tmp_path,
+) -> None:
+    from cellertz.application.mber_demonstration import TargetNotDeclared, declared_target
+
+    with pytest.raises(TargetNotDeclared) as refused:
+        declared_target({"target_identity": "CD22", "gpu": "0"}, _root(tmp_path) / "target.pdb")
+
+    assert "no_measured_partner_footprint_for:CD22" in str(refused.value)
+
+
+def test_the_saved_draft_declares_only_what_a_person_stated() -> None:
+    """The direction and the chains are never filled in."""
+
+    from types import SimpleNamespace
+
+    from cellertz.application.design_journey import _saved_declaration
+
+    def field(name: str, value: object, provenance: str) -> SimpleNamespace:
+        return SimpleNamespace(name=name, value=value, provenance=provenance)
+
+    draft = SimpleNamespace(
+        fields=(
+            field("target_id", "CD22", "user"),
+            field("source_structure", "7O52", "preserved"),
+            field("target_chain", "U", "user"),
+            field("partner_chains", "H,L", "documented_default"),
+            field("partner_direction", None, "absent"),
+            field("clinical_anchor", "  ", "user"),
+            field("n_candidates", "5", "user"),
+        )
+    )
+    drafter = SimpleNamespace(recorded_at=lambda request_id, revision: (draft, "message"))
+
+    assert _saved_declaration(drafter, "request_1", 1) == {
+        "target_id": "CD22",
+        "source_structure": "7O52",
+        "target_chain": "U",
+    }
+
+
+def test_a_request_with_no_saved_draft_declares_nothing() -> None:
+    from types import SimpleNamespace
+
+    from cellertz.application.design_journey import _saved_declaration
+
+    drafter = SimpleNamespace(recorded_at=lambda request_id, revision: None)
+
+    assert _saved_declaration(drafter, "request_1", 1) == {}
