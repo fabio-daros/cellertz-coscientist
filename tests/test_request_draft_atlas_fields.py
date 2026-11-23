@@ -119,3 +119,39 @@ def test_a_message_pulling_both_ways_is_ambiguous_not_a_coin_flip() -> None:
     found = _proposals("a non-competing engager that should compete with IgG")
 
     assert found["partner_direction"] == "AMBIGUOUS"
+
+
+def test_a_negated_compete_is_never_read_as_compete() -> None:
+    """The first CD22 trial: "does not compete with the partner" became compete.
+
+    The phrase list names a few negations whole (non-competing, nao competir),
+    and any other way of saying not-to-compete fell through to the compete
+    family, recorded as what the person stated. A closed list cannot name every
+    negation, so a negator near the phrase leaves the direction for the agent
+    to ask. Wrong in the other direction only costs a question.
+    """
+
+    for message in (
+        "design a VHH to CD22 that does not compete with the partner",
+        "a binder that doesn't compete with m971",
+        "it must not compete with the antibody",
+        "we do not want it to compete with IgG",
+        "nunca deve competir com o parceiro",
+        "sem competir com o anticorpo",
+        "não pode competir com m971",
+        "it should never compete with m971",
+        "no, it should not compete with m971",
+    ):
+        found = _proposals(message)
+        assert found["partner_direction"] == "AMBIGUOUS", message
+
+
+def test_a_plain_compete_still_settles_and_a_distant_negator_does_not_block_it() -> None:
+    assert _proposals("it should compete with m971")["partner_direction"] == "compete"
+    # The negator is far from the phrase, so it is not about it.
+    assert (
+        _proposals("this is not a drill and we are in no rush, but it must compete with m971")[
+            "partner_direction"
+        ]
+        == "compete"
+    )

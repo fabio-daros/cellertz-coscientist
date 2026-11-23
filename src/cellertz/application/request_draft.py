@@ -831,13 +831,41 @@ def _atlas_proposals(message: str, folded: str) -> list[FieldProposal]:
             avoid = True
             remaining = remaining.replace(phrase, " ")
     compete = any(phrase in remaining for phrase in _COMPETE_PHRASES)
-    if avoid and compete:
+    # The list above names a few negations whole, and "does not compete with"
+    # is not one of them: it matched the compete family and was recorded as
+    # what the person stated, which is the opposite of what they said. A closed
+    # list cannot name every negation, so a negator near the phrase is not
+    # settled at all and the agent asks. A wrong guess costs every contact
+    # percentage its meaning; a question costs one click.
+    negated = any(_negated(remaining, phrase) for phrase in _COMPETE_PHRASES if phrase in remaining)
+    if (avoid and compete) or (compete and negated):
         proposals.append(FieldProposal("partner_direction", ambiguous=True))
     elif avoid:
         proposals.append(FieldProposal("partner_direction", "avoid"))
     elif compete:
         proposals.append(FieldProposal("partner_direction", "compete"))
     return proposals
+
+
+# Words that turn "compete with" around, in the two languages a request is
+# written in. Contractions are caught by their ending rather than listed.
+_NEGATORS = frozenset(
+    {"not", "no", "never", "without", "cannot", "nor", "nao", "não", "sem", "nunca", "nem", "dont", "doesnt"}
+)
+_NEGATION_WINDOW = 4
+
+
+def _negated(text: str, phrase: str) -> bool:
+    """Whether a negator sits within a few words before any occurrence of the phrase."""
+
+    start = text.find(phrase)
+    while start != -1:
+        for word in text[:start].split()[-_NEGATION_WINDOW:]:
+            bare = word.strip(".,;:!?()\"'").replace("\u2019", "'")
+            if bare in _NEGATORS or bare.endswith("n't"):
+                return True
+        start = text.find(phrase, start + 1)
+    return False
 
 
 def _token_char(char: str) -> bool:
