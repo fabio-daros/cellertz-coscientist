@@ -84,6 +84,9 @@ _ROLE_FILES = {
 # a declared hotspot block against that partner. Not a role: see
 # RegisteredInputCatalog.verified_complex_bytes.
 COMPLEX_FILENAME = "complex.pdb"
+# What a root with no preparation record was registered for: the first root
+# this server held, which was PD-L1's.
+LEGACY_REGISTERED_TARGET = "PDL1"
 _INPUT_QUESTIONS = {
     "input_root_unconfigured": (
         "Set CELLERTZ_PDL1_INPUT_ROOT to an absolute directory containing "
@@ -339,6 +342,30 @@ class RegisteredInputCatalog:
 
         path = self._files.get("target_structure")
         return None if path is None else path.parent
+
+    def registered_target(self) -> str:
+        """The target this root was registered for.
+
+        A root prepared by the platform records it: ``preparation.json`` names
+        ``target_id``. A root with no such record is one of the first, registered
+        for PD-L1 before preparations were recorded, and that is what the plan
+        assumed for every root. Reading it here is what lets a CD22 plan stop
+        being told it conflicts with "the registered PDL1 inputs".
+
+        This file is the operator's and is not part of the input identity, like
+        ``complex.pdb``: it says what the root is for, not which bytes ran.
+        """
+
+        root = self.input_root
+        if root is not None:
+            try:
+                recorded = json.loads((root / "preparation.json").read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                recorded = None
+            name = recorded.get("target_id") if isinstance(recorded, dict) else None
+            if isinstance(name, str) and name.strip():
+                return name.strip()
+        return LEGACY_REGISTERED_TARGET
 
     def verified_paths(self) -> dict[str, Path] | None:
         if self.identities() is None:
@@ -1001,7 +1028,12 @@ class GenerationPlanService:
     def _live_inputs(self) -> dict[str, Any] | None:
         if self._inputs is None:
             return None
-        return self._inputs.identities()
+        found = self._inputs.identities()
+        if found is None:
+            return None
+        named = getattr(self._inputs, "registered_target", None)
+        # Beside the identity, never inside it: this says what the root is for.
+        return {**found, "registered_target": named() if callable(named) else LEGACY_REGISTERED_TARGET}
 
     def recorded_input_facts(self) -> dict[str, Any]:
         """Values read from verified inputs. Missing values stay missing."""
@@ -1013,7 +1045,7 @@ class GenerationPlanService:
         limits = identities.get("sequence_limits")
         return {
             "verified": True,
-            "target_identity": "PDL1",
+            "target_identity": identities.get("registered_target") or LEGACY_REGISTERED_TARGET,
             "hotspot_assumption": hotspot if isinstance(hotspot, str) and hotspot.strip() else None,
             "sequence_limits": dict(limits) if isinstance(limits, dict) else None,
         }
@@ -1251,12 +1283,14 @@ def _fields(
             fields[name] = value.strip()
         else:
             missing.append(name)
+    registered = (identities or {}).get("registered_target") or LEGACY_REGISTERED_TARGET
     if (
         fields.get("target_identity")
         and identities is not None
-        and fields["target_identity"] != "PDL1"
+        and fields["target_identity"].casefold() != registered.casefold()
     ):
         fields["target_identity_conflict"] = True
+        fields["target_identity_registered"] = registered
     recorded_hotspot = None if identities is None else identities.get("hotspot_assumption")
     if (
         isinstance(recorded_hotspot, str)
@@ -1316,7 +1350,8 @@ def _fields(
             {
                 "field": "target_identity",
                 "question": (
-                    "The stated target conflicts with the registered PDL1 inputs. "
+                    "The stated target conflicts with the registered "
+                    f"{fields.get('target_identity_registered') or LEGACY_REGISTERED_TARGET} inputs. "
                     "The stated target was kept."
                 ),
             }
