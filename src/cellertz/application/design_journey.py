@@ -956,9 +956,17 @@ class DesignJourneyService:
         return 200, self._present(updated)
 
     def prepare_next_round(
-        self, journey_id: str, parent_round_id: str | None = None
+        self,
+        journey_id: str,
+        parent_round_id: str | None = None,
+        lesson: object = None,
     ) -> tuple[int, dict[str, Any]]:
-        """Open one child round. Repeated calls for the same parent do not draft again."""
+        """Open one child round. Repeated calls for the same parent do not draft again.
+
+        ``lesson`` is why this round differs from its parent, declared by the
+        person opening it. It is recorded beside the parent's measured outcome
+        and is not required: a round that declares nothing records that.
+        """
 
         with self._lock:
             found = self._store.get(journey_id)
@@ -1027,6 +1035,7 @@ class DesignJourneyService:
                 # Read before the parent's record is written back below, so it
                 # is the parent's own execution and not the child's.
                 "seeded_from": _parent_seed(updated, parent),
+                "lesson": _round_lesson(updated, parent, lesson),
             }
             for item in rounds:
                 if item.get("round_id") == parent["round_id"]:
@@ -1703,9 +1712,14 @@ def handle_design_journey(
         parent = payload.get("parent_round_id")
         if parent is not None and not isinstance(parent, str):
             return 400, _approval_rejected("rejected")
-        if set(payload) - {"parent_round_id"}:
+        if set(payload) - {"parent_round_id", "lesson"}:
             return 400, _approval_rejected("rejected")
-        return service.prepare_next_round(journey_id, parent)
+        lesson = payload.get("lesson")
+        if lesson is not None and _declared_lesson(lesson) is None:
+            # Refused rather than trimmed to nothing: a round would otherwise
+            # record "not_declared" for a lesson the person did write.
+            return 400, _approval_rejected("rejected")
+        return service.prepare_next_round(journey_id, parent, lesson)
     if method == "POST" and "/rounds/" in rest and rest.endswith("/cancellation"):
         journey_id, _, tail = rest.partition("/rounds/")
         round_id = tail[: -len("/cancellation")]
@@ -2631,6 +2645,69 @@ def _seed_for_launch(document: Mapping[str, Any]) -> dict[str, Any] | None:
     return None
 
 
+_LESSON_MAX = 500
+
+
+def _declared_lesson(value: object) -> str | None:
+    """The professor's statement of why this round differs from its parent.
+
+    Prose, so this is not the anchor's narrow pattern: anything printable up to
+    500 characters. Control characters are refused because this text is
+    replayed into records and cards.
+    """
+
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text or len(text) > _LESSON_MAX:
+        return None
+    if any(character < " " and character not in "\n\t" for character in text):
+        return None
+    return text
+
+
+def _round_lesson(
+    document: Mapping[str, Any], parent: Mapping[str, Any], declared: object
+) -> dict[str, Any]:
+    """What this round learned from its parent, and what the parent measured.
+
+    The atlas's campaign series changes one thing per round, and the change is
+    only a finding if the round says what it is responding to. The statement is
+    the professor's — nothing here infers it — but it is recorded **beside the
+    parent's own measured outcome**, so a lesson can be read against what the
+    parent actually produced rather than against a memory of it.
+
+    Always a record, never absent: a round that declares nothing says so.
+    """
+
+    text = _declared_lesson(declared)
+    execution = _execution_for_round(document, parent)
+    observed: dict[str, Any] = {"status": "no_execution_recorded"}
+    if isinstance(execution, dict):
+        identity = execution.get("candidate_identity")
+        ranking = execution.get("ranking")
+        panel = ranking.get("ranking") if isinstance(ranking, dict) else None
+        observed = {
+            "status": execution.get("status"),
+            "attempt_id": execution.get("attempt_id"),
+            "accepted_candidate": execution.get("accepted_candidate") is True,
+            "candidate_id": execution.get("candidate_id"),
+            "design": identity.get("design") if isinstance(identity, dict) else None,
+            # The panel is the parent's measurement; a lesson about ranking is
+            # readable only next to the protocol that produced the numbers.
+            "scoring_protocol": panel.get("protocol_id") if isinstance(panel, dict) else None,
+            "ranked_designs": len(panel["designs"])
+            if isinstance(panel, dict) and isinstance(panel.get("designs"), list)
+            else None,
+        }
+    return {
+        "declared": text,
+        "status": "declared" if text else "not_declared",
+        "parent_round_id": parent.get("round_id"),
+        "learned_from": observed,
+    }
+
+
 def _parent_seed(
     document: Mapping[str, Any], parent: Mapping[str, Any]
 ) -> dict[str, Any] | None:
@@ -3027,6 +3104,8 @@ def _round_card(
         "post_generation": _saved_dispatch(snapshot, document if live else None),
         "parameters": parameters,
         "sequence_limits": snapshot.get("sequence_limits"),
+        "seeded_from": snapshot.get("seeded_from"),
+        "lesson": snapshot.get("lesson"),
         "attempt_id": execution.get("attempt_id") if execution else None,
         "approval": approval,
         "execution_authorization": authorization,

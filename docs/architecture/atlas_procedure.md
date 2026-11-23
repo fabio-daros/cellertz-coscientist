@@ -385,6 +385,44 @@ it — the same gap as the verdict in step 3.
 
 ---
 
+
+### The lesson a round declares, 22 Nov 2026
+
+The series changes one thing per round, and the change is only a finding if the
+round says what it is responding to. Nothing recorded that: a child round
+carried its parent's identity and, from today, its design, but no statement of
+why it differs.
+
+The statement is the professor's — nothing infers it — and it is recorded
+**beside the parent's own measured outcome**, so it can be read against what
+the parent produced rather than against a memory of it:
+
+```json
+{
+  "declared": "O painel colocou CDR3 fora do footprint do m971; reabrir CDR3 sozinha.",
+  "status": "declared",
+  "parent_round_id": "round_j_1",
+  "learned_from": {
+    "status": "ranked", "attempt_id": "attempt.a1b2", "accepted_candidate": true,
+    "design": "t1_binder_1", "scoring_protocol": "ENGAGER_TWO_AXIS_2026",
+    "ranked_designs": 2
+  }
+}
+```
+
+It is always a record and never absent: a round that declares nothing writes
+`not_declared`, and a parent that never ran writes `no_execution_recorded`. The
+scoring protocol travels with it because a lesson about ranking is unreadable
+without the protocol that produced the numbers.
+
+A lesson the route cannot record — not a string, blank, over 500 characters, or
+carrying control characters — is **refused** rather than trimmed away, because
+trimming would file `not_declared` against text the person did write. It is not
+required: opening a child round without one still works, which is what keeps
+this a declaration rather than a form.
+
+---
+
 ## What this platform has, against those seven steps
 
 | step | state |
@@ -393,7 +431,7 @@ it — the same gap as the verdict in step 3.
 | 1 · agent proposes blocks | `hotspot_identification_agent.suggestion` ✅ |
 | 2 · guard verdict | limits ✅; `forbidden`, `exclusions`, oversized triples, guarded output ❌ |
 | 3 · classify blocks against the partner, with a declared direction | built ✅ (21 Nov) — `partner_classification`, reproducing 72 of the atlas's 76 blocks |
-| 4 · campaign series, one change each | rounds with parent/child lineage ✅; seeding on a parent design ✅ (22 Nov); **a lesson field** ❌ |
+| 4 · campaign series, one change each | rounds with parent/child lineage ✅; seeding on a parent design ✅ (22 Nov); a lesson field ✅ (22 Nov) |
 | 5 · audit with reachability and a null model | built ✅, and inside `audit_hotspot_blocks` |
 | 6 · pre-filters, then two-axis rank | built ✅; injected ✅ (22 Nov); a journey round reaches it end to end ✅ (22 Nov) |
 | 7 · clinical anchor | **nothing** — no `drugs` record, and J_clin has to be supplied by hand |
@@ -617,6 +655,7 @@ are missing from it:
 3. ~~**Inject `specialist_scorer`**~~ — injected 22 Nov 2026. Outstanding, and
    upstream of it: an mBER launch declares no accepted candidate, so a journey
    round never reaches the scorer (below).
-4. ~~**Seed on rounds**~~ — seeded 22 Nov 2026. Outstanding: a **lesson**
-   field, so a child round records *why* it differs from its parent, and a
-   declaration of which loop it reopens (today the last CDR, ours).
+4. ~~**Seed and lesson on rounds**~~ — both 22 Nov 2026. Outstanding: a
+   declaration of which loop a child round reopens (today the last CDR, ours),
+   and the approval binding the seed and the lesson rather than the digest
+   alone.

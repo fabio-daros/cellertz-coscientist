@@ -503,3 +503,85 @@ def test_a_parent_that_accepted_nothing_leaves_the_child_unseeded() -> None:
     ):
         document = {"active_round_id": "round_j_1", "execution": execution, "rounds": [parent]}
         assert _parent_seed(document, parent) is None, execution
+
+
+def test_a_round_records_why_it_differs_and_what_the_parent_measured() -> None:
+    """A change is only a finding if the round says what it responds to."""
+
+    from cellertz.application.design_journey import _round_lesson
+
+    parent = {"round_id": "round_j_1"}
+    document = {
+        "active_round_id": "round_j_1",
+        "rounds": [parent],
+        "execution": {
+            "attempt_id": "attempt.parent",
+            "status": "ranked",
+            "accepted_candidate": True,
+            "candidate_id": "mber_t1_binder_1",
+            "candidate_identity": {"design": "t1_binder_1", "sequence": _SEQUENCE},
+            "ranking": _ranking_document(),
+        },
+    }
+
+    lesson = _round_lesson(document, parent, "  CDR3 stayed off the m971 footprint, so reopen it alone.  ")
+
+    assert lesson["status"] == "declared"
+    assert lesson["declared"] == "CDR3 stayed off the m971 footprint, so reopen it alone."
+    assert lesson["parent_round_id"] == "round_j_1"
+    # The statement is the professor's; the evidence beside it is the record's.
+    assert lesson["learned_from"]["status"] == "ranked"
+    assert lesson["learned_from"]["design"] == "t1_binder_1"
+    assert lesson["learned_from"]["scoring_protocol"] == PROTOCOL_ID
+    assert lesson["learned_from"]["ranked_designs"] == 3
+
+
+def test_a_round_that_declares_no_lesson_says_so() -> None:
+    from cellertz.application.design_journey import _round_lesson
+
+    parent = {"round_id": "round_j_1"}
+    document = {"active_round_id": "round_j_1", "rounds": [parent], "execution": None}
+
+    for declared in (None, "", "   ", 7, {"text": "x"}, "x" * 501, "bad\x07control"):
+        lesson = _round_lesson(document, parent, declared)
+        assert lesson["status"] == "not_declared", declared
+        assert lesson["declared"] is None, declared
+    assert lesson["learned_from"] == {"status": "no_execution_recorded"}
+
+
+def test_the_route_refuses_a_lesson_it_cannot_record() -> None:
+    """Trimming it to nothing would record "not_declared" for text that was written."""
+
+    import json as _json
+
+    from cellertz.application.design_journey import handle_design_journey
+
+    class _Service:
+        def __init__(self) -> None:
+            self.calls: list[tuple] = []
+
+        def prepare_next_round(self, journey_id, parent_round_id=None, lesson=None):
+            self.calls.append((journey_id, parent_round_id, lesson))
+            return 200, {"status": "ok"}
+
+    service = _Service()
+    path = "/api/design-journeys/journey_1/rounds"
+
+    status, _payload = handle_design_journey(
+        service, method="POST", path=path, body=_json.dumps({"lesson": "x" * 501}).encode()
+    )
+    assert status == 400
+    status, _payload = handle_design_journey(
+        service, method="POST", path=path, body=_json.dumps({"lesson": "", }).encode()
+    )
+    assert status == 400
+    assert service.calls == []
+
+    status, _payload = handle_design_journey(
+        service,
+        method="POST",
+        path=path,
+        body=_json.dumps({"parent_round_id": "round_j_1", "lesson": "reopen CDR3 only"}).encode(),
+    )
+    assert status == 200
+    assert service.calls == [("journey_1", "round_j_1", "reopen CDR3 only")]
