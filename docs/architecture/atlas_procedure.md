@@ -435,21 +435,43 @@ choice shows the vocabulary and spares the round trip. The value sent is
 exactly the word `request_draft` accepts, checked against the real draft code:
 `avoid` and `compete` enter, `yes` and an empty answer are refused.
 
-**The lesson has an input that nothing mounts.** The box sits in
-`DesignJourney`, beside "Prepare next round", with the 500-character limit the
-route enforces, sent only when written. Child cards show what they start from
-and the lesson beside what the parent measured. All of it is tested. But
-`DesignJourney` is mounted only by `LegacyWorkspace`, which the exported `App`
-never renders: the shipped front is `ProteinDesignModule` — request, plan,
-results — and its single run action posts to `/api/design-journeys/run`. It
-never calls `/rounds`. The production bundle confirms it: none of
-`DesignJourney`'s text is in it, the deployed one included.
+**The lesson, and rounds, are reachable from the screen as of 22 Nov.** The box
+first went into `DesignJourney`, which only `LegacyWorkspace` mounts and the
+exported `App` never renders, so nothing in the shipped bundle contained it.
+The live front is `ProteinDesignModule`, and its Run button did not go through
+the journey at all: `run_design` launched inside the HTTP request and wrote a
+record of its own, so none of what a journey does after a launch — accepted
+candidate, the dispatch decision, the specialists, the scorer, seeding, the
+lesson — was reachable from the screen. An mBER trajectory took 19 minutes
+inside that request.
 
-So today the live front cannot open a child round at all, and the seeding and
-the lesson that the backend now records have no way in from the screen the
-professor uses. Making them reachable is not a field: a child round is a new
-plan under its own conversation id, and the live plan view selects by request.
-That integration is the open piece.
+Three things changed:
+
+- **Run launches through the journey.** With a worker attached it commits the
+  launch identity and returns, the worker launches it, and the same stages
+  follow any other launch. It is recorded as an `explicit_run`: no review and
+  no authorization are written, because a click on Run is not a second person's
+  review and calling it one would attribute an authority nobody exercised. The
+  same plan revision is still never launched twice.
+- **A child round can be run from the same button.** Its plan lives under its
+  own conversation id, so `run_design` refused it; it is accepted now only when
+  it is the active round of the request's own journey. A child also came back
+  incomplete — its filter policy and hotspot strategy were asked again, because
+  the consent and the strategy were recorded by a structured choice that is not
+  in the request text a re-draft reads — so the plan service now carries the
+  parent's resolved choices to the child, marked `preserved`.
+- **Results has a Rounds panel.** It shows each round's outcome, what it starts
+  from, its lesson beside what the parent measured, and the specialists' score
+  under the protocol that produced it. It opens the next round with a lesson
+  box and runs it, and refreshes while a round is running.
+
+**An error this surfaced, in `62a11cc`.** `declared_target` read `target_id`,
+`target_chain` and `partner_chains` from the plan's fields, and every test and
+the CD22 trial hand-built a dictionary with those keys. A real plan carries
+`target_identity` and none of the rest, so every real launch would have been
+refused as `target_not_declared`. The declaration now comes from the saved
+request draft at launch, the way `n_designs` does, and a regression test builds
+a real plan and asserts which keys it has.
 
 ---
 

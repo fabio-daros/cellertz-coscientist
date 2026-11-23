@@ -1,3 +1,4 @@
+import { LESSON_MAX, lessonSentence, type RoundLesson, type RoundSeed, seedSentence } from "./protein-design/rounds";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { openRecordedResults } from "./AttemptInspection";
 
@@ -136,32 +137,6 @@ export type DesignJourneyRecord = {
   } | null;
 };
 
-// The route refuses anything longer, so the box stops here rather than letting
-// the person write a lesson the server will not record.
-const LESSON_MAX = 500;
-
-function seedSentence(card: RoundCard): string {
-  const seed = card.seeded_from;
-  if (!seed || !seed.design) {
-    return "The bare scaffold. The parent accepted no design to start from.";
-  }
-  return `Parent design ${seed.design}${seed.attempt_id ? ` (${seed.attempt_id})` : ""}.`;
-}
-
-function lessonSentence(card: RoundCard): string {
-  const lesson = card.lesson;
-  if (!lesson || lesson.status !== "declared" || !lesson.declared) {
-    return "None declared.";
-  }
-  const seen = lesson.learned_from;
-  const measured = seen?.status
-    ? ` Parent: ${seen.status}${seen.design ? `, design ${seen.design}` : ""}${
-        seen.scoring_protocol ? `, scored under ${seen.scoring_protocol}` : ""
-      }${typeof seen.ranked_designs === "number" ? `, ${seen.ranked_designs} ranked` : ""}.`
-    : "";
-  return `${lesson.declared}${measured}`;
-}
-
 type RoundCard = {
   round_id: string;
   parent_round_id?: string | null;
@@ -203,19 +178,10 @@ type RoundCard = {
   specialist_progress_available?: boolean;
   // The parent's accepted design this round's campaign starts from, or null
   // for a fresh start. The series is a claim about exactly this difference.
-  seeded_from?: { design?: string | null; attempt_id?: string | null; parent_round_id?: string | null } | null;
+  seeded_from?: RoundSeed | null;
   // Why this round differs from its parent, as the person declared it, beside
   // what the parent measured. `not_declared` is a record, not an absence.
-  lesson?: {
-    status?: string;
-    declared?: string | null;
-    learned_from?: {
-      status?: string | null;
-      design?: string | null;
-      scoring_protocol?: string | null;
-      ranked_designs?: number | null;
-    } | null;
-  } | null;
+  lesson?: RoundLesson | null;
   post_generation?: {
     automatic?: boolean;
     status?: string;

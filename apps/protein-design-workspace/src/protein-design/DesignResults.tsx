@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { SelectedDesignRequest } from "./DesignRequest";
 import { StructureTrace, type TracedModel } from "../StructureTrace";
+import { DesignRounds } from "./DesignRounds";
 
 type Cell = { kind?: string; text?: string };
 type Metric = { metric?: string; model1?: Cell; model2?: Cell };
@@ -138,6 +139,7 @@ export function DesignResults({ selection }: { selection: SelectedDesignRequest 
     <section aria-label="Results">
       <h2>Results</h2>
       <p>{selection.message}</p>
+      <DesignRounds requestId={selection.requestId} />
       {failed ? <p>The results could not be loaded.</p> : null}
       {!failed && document && document.results.length === 0 ? <p>No results for this request.</p> : null}
       {document && document.results.length > 0 ? (

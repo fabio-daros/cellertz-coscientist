@@ -978,7 +978,11 @@ function RunDesign({
       onNote(
         `Attempt ${recorded.id} is linked to this request. Status ${recorded.status}.`
         + (recorded.diagnosis ? ` Diagnosis ${recorded.diagnosis}.` : "")
-        + (recorded.launched ? "" : " Generation was not started.")
+        + (recorded.launched
+          ? ""
+          : recorded.status === "running"
+            ? " The server queued it and will start it."
+            : " Generation was not started.")
         + " This attempt was not repeated.",
       );
     } catch {
@@ -1012,7 +1016,11 @@ function RunDesign({
         <p>
           Status {attempt.status}. Elapsed {elapsed}s.
           {attempt.diagnosis ? ` ${attempt.diagnosis}.` : ""}
-          {attempt.launched ? " Result recorded." : " Generation was not started."}
+          {attempt.launched
+            ? " Result recorded."
+            : attempt.status === "running"
+              ? " Queued. The server will start it."
+              : " Generation was not started."}
         </p>
       ) : null}
       {failure ? <p>{failure}</p> : null}
