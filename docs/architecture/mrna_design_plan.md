@@ -286,7 +286,7 @@ Each phase ends with a check against his published numbers.
 | # | phase | exit check |
 | --- | --- | --- |
 | 0 | **Facts**: how to get the binary and docs (N1); the reference bar and vendor limits (P1, P2); acceptance of this plan | answers recorded |
-| 1 | **Offline core**: Pareto, dedupe, stratified shortlist, on his published library as a fixture | reproduces 113 = 109 + 4 and one pick per decile. The Hamming picks themselves need strands he did not publish, so they are property-tested until a real run supplies them |
+| 1 | **Offline core**: Pareto, dedupe, stratified shortlist, on his published library as a fixture; a design's identity is the **UTR+CDS combination** (10.3) | reproduces 113 = 109 + 4 and one pick per decile. The Hamming picks themselves need strands he did not publish, so they are property-tested until a real run supplies them |
 | 2 | **Construct validator** | accepts his 10; rejects the no-stop construct and a two-stop reference |
 | 3 | **Install the binary here; `doctor`; first real call** through the runner | `doctor` resolves his three objectives; re-evaluating his 10 shortlisted strands returns his nat/te/hl within tolerance; the same strand twice returns the same values (cheap, and the bar is re-evaluated per campaign) |
 | 4 | **One real round**: `codon-usage`, then one seeded resample around its front; a temperature strategy only once `cellertz-ai` is reachable | wall-clock and front match the order of magnitude above |
@@ -342,6 +342,7 @@ naturalness, TE and half-life; his longer reply to it supports that.
 | N3 | What is `filter`'s default epsilon, and does epsilon 0 give the exact front? | phase 1 | decides exact versus approximate fronts at scale |
 | N4 | Is there a version we can pin for the metrics protocol and config (beyond `--version`)? | phase 3 | what goes in the bar's snapshot |
 | N5 | What does `minimize` do, and does it take a mask and a seed? | none | may replace part of the resampling move |
+| N6 | Does the config register an **immunogenicity** evaluator, and anything for **ribosome dynamics** (codon ramp, tRNA adaptation, pause sites) beyond `te_mean`? | phase 5 | decides whether these are axes we can measure or gaps we declare |
 
 ### 9.2 For the professor
 
@@ -349,11 +350,12 @@ naturalness, TE and half-life; his longer reply to it supports that.
 | --- | --- | --- | --- |
 | P1 | Which reference sequence is the bar for "found", or which per-axis floors? | **phase 5** | it is the `BarProfile`; with no answer no campaign can be approved |
 | P2 | Which manufacturing limits apply: restriction enzymes to avoid, stop-codon policy, organism, vector, maximum homopolymer run? | phase 5 | hard constraints in the profile and fields of the synthesis export |
-| P3 | Are the UTRs fixed, or part of the design? Is the target host human? | phase 1 | variable UTRs add the plan's step 03 (UTR and CDS library) and a generator that varies them |
+| P3 | ~~Are the UTRs fixed, or part of the design?~~ **Answered by his question 1: they vary.** Still open: is the target host human? | phase 1 | the interaction study (10.3) is now a campaign type, and a design's identity is the UTR+CDS combination |
 | P4 | What is the first real protein after Fluc? | phase 4 | a second worked example, so nothing is tuned to one construct |
 | P5 | What is behind "naturalness correlates with measured expression", and what does "previously-validated" mean for the 5 references? | none | decides whether naturalness deciles are a method or a convention |
 | P6 | Is "10 sequences, naturalness deciles, Hamming diversity" a standing method or this campaign's choice? | phase 1 | the shortlist size and stratifying axis become profile fields |
 | P7 | Agree: a round may widen the search, never lower the bar, and changing the bar needs approval? | phase 6 | a rule enforced in code, not configuration |
+| P8 | Should **immunogenicity** be a fourth axis, a hard constraint, or out of scope? And the degradation model: axis, constraint, or descriptive as today? | phase 5 | both are profile fields; today decay is measured and unused |
 
 ### 9.3 What can start before any answer
 
@@ -361,3 +363,82 @@ Phases 1 and 2 need none of the open answers: the offline core is exercised on h
 published library (reproduce 113 = 109 + 4 and one pick per decile) and the
 construct validator on his 10 published CDS plus constructed failures. Only
 the dependencies on the answers above wait.
+
+## 10. The professor's three questions, and Therna's platform
+
+Added 26 Nov 2026, from three questions the professor sent and the public
+page at `therna.com/platform` (RNA-Logix). Their page is a vendor claim, read
+once; nothing here treats it as a specification.
+
+### 10.1 His three questions against this plan
+
+| # | his question | where it lands |
+| --- | --- | --- |
+| 1 | How synergistic or additive is the interaction between 5'UTR, coding region and 3'UTR? | **new: a second campaign type** (10.3). His Fluc data cannot answer it — both UTRs are fixed there — and it settles the open P3: the UTRs vary |
+| 2 | IP agent: how distinct are the sequences from patented mRNA? | **new: a gate, not an axis** (10.4), at phase 7 |
+| 3 | Generation, reasoning and prioritisation on model metrics **plus** secondary structure and ribosome dynamics / decay, grounded in PubMed | **mostly already here** (10.5) |
+
+### 10.2 What RNA-Logix is, and where we differ
+
+| theirs | ours |
+| --- | --- |
+| **Chronos**: proprietary wet-lab data — 10M measurements, ~60 cell contexts, ~60k UTR fragments | the professor's 5 validated sequences and 2 benchmarks. **This is the real asymmetry; no amount of architecture closes it** |
+| **T-Series**: proprietary foundation models, one per axis (UTRs, splicing, interactions, translation, structure, design) | Codonscope evaluators, an open metric list from config, auditable through `doctor` |
+| **Proto**: "optimises all attributes at once", contrasted with one at a time in the order 5'UTR, CDS, 3'UTR, immunogenicity | a Pareto front over several axes **is** simultaneous optimisation; we already do this, over 3 axes, with the UTRs fixed |
+| **BioReason-RNA**: a reasoning model whose chain is "the proposed mechanism" | a critic that must **cite retrieved literature**; the mechanism is evidence-backed rather than model-asserted |
+| **Clotho**: the loop — design, mechanism, test against their data, refine until a hypothesis holds | the journey loop: rounds, seed, lesson, declared budget and stops |
+| no human gate described: "a scientist asks the question and a scientist receives the report" | **mandatory human gates**, as the work plan requires. A deliberate difference, not a gap |
+
+**The one claim worth answering with measurement.** Proto's selling point is
+that attributes are optimised together rather than in sequence. The professor's
+question 1 asks whether that matters here — is the combination additive or not.
+They assert; we can **measure** it, and cheaply. Either answer is useful: if
+additive, optimising the CDS alone is defensible and the search space collapses;
+if not, joint UTR+CDS design is necessary and that is a finding.
+
+**Immunogenicity** is on their axis list and on none of ours. The professor's
+three axes are naturalness, TE and half-life. Open: does the Codonscope config
+register an immunogenicity evaluator (ask Felipe), and should it be an axis or a
+constraint (ask the professor)?
+
+### 10.3 Campaign type 2: interaction study
+
+The optimisation campaign searches for the best designs. This one **measures
+whether the parts interact**, and is a different run with a different output.
+
+- **Library**: a factorial sweep over (5'UTR x CDS x 3'UTR) building blocks,
+  assembled by `codonscope build` — which takes building-block files and emits
+  strand **and** mask in one record, so it is the primitive for this.
+- **Analysis**: is `f(u5, cds, u3)` predicted by the sum of each part's effect?
+  The deviation is the interaction. Deterministic, no model needed.
+- **Cost is the reason to do it early**: evaluation is ~58 s per 500 sequences
+  while sampling is ~552 s per 500. A factorial sweep over CDS that already
+  exist is nearly free; it reuses designs instead of generating them.
+- **It changes phase 1**: a design's identity is the *combination*, not the CDS.
+  Cheap to carry from the start, expensive to retrofit.
+
+### 10.4 The IP distance gate
+
+A constraint before the shortlist gate and the synthesis export, never a Pareto
+axis. Same shape as the literature layer: an external source, a cache behind a
+protocol, provenance on every answer.
+
+**Two boundaries, in the code and on the screen:**
+
+1. **It measures distance; it does not clear anything.** "No patent found" is
+   not a freedom-to-operate opinion, and the platform must never present it as
+   one.
+2. Whether a sequence search over patents is available at all is **unknown**:
+   Google Patents has no documented free sequence-similarity API. Public patent
+   data on BigQuery, EBI patent sequence databases and Lens are candidates to
+   investigate. Phase 7, because there is nothing to screen until designs exist.
+
+### 10.5 What question 3 already has
+
+| he asks for | status |
+| --- | --- |
+| secondary structure | **already in Codonscope**: `lfc`, `lfv`, `lfcp`, `lfvp` (LinearFold / LinearPartition), `mfe`, `lmfe`, `efe`, and circular variants. `-e` takes expressions, so this is profile configuration, not new code |
+| mRNA decay | **already measured** by his PyTorch degradation model, but deliberately kept off the Pareto axes. Promoting it to an axis or a hard constraint is his decision to record in the profile |
+| ribosome dynamics | partly `te_mean`. Codon ramp, tRNA adaptation and pause sites would be new evaluators — open question for Felipe |
+| PubMed knowledge base | **already integrated**: `literature_search.py` (EuropePMC, which indexes PubMed) with a cache protocol and a Django implementation; the hotspot agent already cites what it retrieved |
+| reasoning that proposes a mechanism | the round's **lesson** already exists and is recorded beside what the round measured. Make the mechanism an explicit, cited field of it — this is the auditable version of BioReason-RNA's reasoning chain |
