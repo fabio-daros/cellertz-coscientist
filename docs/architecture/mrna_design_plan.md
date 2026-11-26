@@ -286,8 +286,8 @@ Each phase ends with a check against his published numbers.
 | # | phase | exit check |
 | --- | --- | --- |
 | 0 | **Facts**: how to get the binary and docs (N1); the reference bar and vendor limits (P1, P2); acceptance of this plan | answers recorded |
-| 1 | **Offline core**: Pareto, dedupe, stratified shortlist, on his published library as a fixture; a design's identity is the **UTR+CDS combination** (10.3) | reproduces 113 = 109 + 4 and one pick per decile. The Hamming picks themselves need strands he did not publish, so they are property-tested until a real run supplies them |
-| 2 | **Construct validator** | accepts his 10; rejects the no-stop construct and a two-stop reference |
+| 1 | **Offline core** (11.1, 11.5): Pareto, dedupe, stratified shortlist, construct validation, on his published library as a fixture | reproduces 113 = 109 + 4 and one pick per decile. The Hamming picks themselves need strands he did not publish, so they are property-tested until a real run supplies them |
+| 2 | **Campaign contract** (`MRNACampaignSpecification`) and the interaction decomposition (10.3) | a spec refuses an unvalidated construct; additivity is recovered on a synthetic factorial with a known interaction |
 | 3 | **Install the binary here; `doctor`; first real call** through the runner | `doctor` resolves his three objectives; re-evaluating his 10 shortlisted strands returns his nat/te/hl within tolerance; the same strand twice returns the same values (cheap, and the bar is re-evaluated per campaign) |
 | 4 | **One real round**: `codon-usage`, then one seeded resample around its front; a temperature strategy only once `cellertz-ai` is reachable | wall-clock and front match the order of magnitude above |
 | 5 | **`BarProfile` in the admin (4.5), Supervisor, spec, gate 1** | a campaign cannot be approved without a profile; the spec digest binds criterion, floors, reference set, evaluator version, budget |
@@ -442,3 +442,139 @@ protocol, provenance on every answer.
 | ribosome dynamics | partly `te_mean`. Codon ramp, tRNA adaptation and pause sites would be new evaluators — open question for Felipe |
 | PubMed knowledge base | **already integrated**: `literature_search.py` (EuropePMC, which indexes PubMed) with a cache protocol and a Django implementation; the hotspot agent already cites what it retrieved |
 | reasoning that proposes a mechanism | the round's **lesson** already exists and is recorded beside what the round measured. Make the mechanism an explicit, cited field of it — this is the auditable version of BioReason-RNA's reasoning chain |
+
+## 11. Concrete architecture
+
+Written 26 Nov 2026. This is the shape to build, mirroring
+`domains/protein_design` and the campaign contract in `application/vhh_campaign.py`.
+It commits only to what the answers so far settle; what is still open appears as
+a named seam, not a guess.
+
+### 11.1 Module layout
+
+```
+src/cellertz/domains/mrna_design/          pure science: no I/O, no framework
+  construct.py        assemble and VALIDATE a strand + mask from building blocks
+  scoring/
+    pareto.py         dominance, exact front, epsilon-approximate front
+    shortlist.py      decile stratification + greedy max-min Hamming
+    interaction.py    additivity decomposition for campaign type 2
+  adapters/
+    codonscope.py     argv construction + JSONL parsing. Executes nothing.
+
+src/cellertz/application/
+  mrna_campaign.py    MRNACampaignSpecification: the scientific contract
+  codonscope_runner.py  the process seam + `doctor` readiness
+  mrna_journey.py     the round loop, reusing design_journey's machinery
+```
+
+Why this split: `domains/` holds what can be tested without a binary, which is
+everything in section 9.3's "can start now". `adapters/codonscope.py` builds
+argv and parses records but never runs anything, exactly as `MBERParser` and
+`BindCraftAdapter` separate parsing from execution.
+
+### 11.2 The data model: identity is the strand, provenance is the recipe
+
+```python
+@dataclass(frozen=True)
+class BuildingBlock:
+    """One file's worth of sequence, and whether it is masked (not CDS)."""
+    name: str          # "hbb_5utr_kozak", "fluc_cds", "taa_stop"
+    sequence: str
+    masked: bool       # codonscope build: a path component "masked" marks it
+
+@dataclass(frozen=True)
+class Construct:
+    """An ordered assembly. The mask is derived, never hand-written."""
+    blocks: tuple[BuildingBlock, ...]
+    @property
+    def strand(self) -> str: ...
+    @property
+    def mask(self) -> str: ...        # "0-59,1709-1978"
+
+@dataclass(frozen=True)
+class MRNADesign:
+    strand: str                       # IDENTITY. His dedupe key, and ours
+    construct: Construct              # PROVENANCE: which blocks produced it
+    strategy: str                     # "t05", "codon-usage", "beam150"
+    properties: Mapping[str, float]   # whatever `evaluate -e` returned
+    protocol_id: str                  # which objective expressions produced them
+```
+
+Three decisions worth stating:
+
+1. **The strand is the identity.** His script dedupes by nucleotide strand across
+   strategies, and so must ours; a design found twice is one design.
+2. **The construct is kept, not just the CDS.** Section 10.3 needs to know which
+   5'UTR and 3'UTR produced a strand. Carrying it from the start is free;
+   reconstructing it later is not.
+3. **`properties` is an open mapping, not named fields.** `-e` takes arbitrary
+   expressions over an open metric list, so a fixed `translation_metrics` /
+   `stability_metrics` triple would be wrong the first time someone adds `cai`.
+   The existing `MRNASequenceCandidate` has exactly that fixed shape and is
+   therefore **not** reused as-is.
+
+### 11.3 The Codonscope seam
+
+The CLI is uniform: JSON Lines in, JSON Lines out. So the seam is one call.
+
+```python
+class CodonscopeRunner(Protocol):
+    def run(self, argv: tuple[str, ...], stdin: str = "") -> str:
+        """Run one codonscope command. Returns stdout. Raises on failure."""
+```
+
+It is satisfied by the existing `ExecutionRuntime`, which already carries argv,
+cwd, env and a timeout and already kills the whole process group at the
+deadline. **One field is missing: `ExecutionRequest` has no `stdin`.** Adding
+`stdin: str | None = None` is backward compatible with its eight call sites and
+is the whole change needed on that side.
+
+Everything above it is argv construction in `adapters/codonscope.py`:
+
+```
+build      -> ("codonscope", "build", *block_paths)
+sample     -> ("codonscope", "sample", "--generator", g, "-a", mask, str(n))
+evaluate   -> ("codonscope", "evaluate", "-a", mask, "-e", expr, ...)
+filter     -> ("codonscope", "filter", "-e", "\\-nat", "-e", "\\-te", ...)
+doctor     -> ("codonscope", "doctor")
+```
+
+**`doctor` is the readiness gate**, checked before a campaign the way the GPU
+and image hashes are checked before a protein launch: every variable the
+objective expressions name must resolve to a registered evaluator whose command
+exists. A campaign whose objective cannot be resolved is refused **before** any
+run, and the report is pinned into the campaign's snapshot.
+
+### 11.4 Two campaign types, one pipeline
+
+```
+                 ┌─ optimisation: sample -> evaluate -> front -> shortlist
+ Construct ──────┤
+                 └─ interaction:  build the factorial -> evaluate -> decompose
+```
+
+They share `construct`, `evaluate` and the data model; they differ in how the
+library is produced and what the output means. One field on the specification
+(`objective: "optimisation" | "interaction"`) selects it, and the human gate
+shows which one is being approved — a front and an interaction estimate are not
+comparable claims.
+
+### 11.5 What phase 1 builds, with nothing installed
+
+`domains/mrna_design/scoring/` and `construct.py`, tested against the
+artifact's published files, which are already saved in this session:
+
+| test | fixture | expected |
+| --- | --- | --- |
+| dominance and exact front | `fluc_kozak_full_library.json` (2 180 rows) | 113 non-dominated, equal to his `pareto` flags |
+| dedupe | the same | 2 701 pooled, 2 173 unique — from his own counts |
+| decile stratification | the 113 | ten bins, sizes 11/12/11/11/11/12/11/11/12/11 |
+| shortlist membership | `fluc_kozak_shortlist10.json` | each of the 10 is on the front, one per decile |
+| construct validation | the 10 published CDS | each 1 650 nt, translates to the 550 aa protein, no internal stop |
+| construct refusal | the same, altered | no stop codon; two stops; a mask that does not match the blocks |
+
+The Hamming selection itself cannot be reproduced exactly: he did not publish
+the strands of the full front, only of the ten he chose. It is property-tested
+(picks are pairwise distinct, one per bin, deterministic for a given input)
+until a real run supplies a front with strands.
