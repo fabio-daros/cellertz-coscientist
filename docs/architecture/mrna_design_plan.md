@@ -1,6 +1,7 @@
 # mRNA Design: architecture and build plan
 
-Status: **proposal, 24 Nov 2026, waiting on the answers in section 9.** Nothing
+Status: **proposal, updated 26 Nov 2026 with the maintainer's answers; five
+questions remain (9.1).** Nothing
 here is built. Written from the
 professor's Fluc campaign artifact (claude.ai/artifact/4ruRozsPN9FytAHQffuFuo)
 and the Work Plan v2, phase 01. Every number below was checked against the
@@ -28,13 +29,46 @@ A mask (`-a "0-59,1709-1978"`) marks the fixed ends, so only the CDS is sampled.
 | construct | `codonscope translate --reverse` | **appends no stop codon**; a `TAA` is added by hand |
 | generate | `codonscope sample --generator G -a MASK N` | 8 strategies: greedy, beam 50/150, T = 0.01/0.25/0.5/1.0, `codon-usage` |
 | evaluate | `codonscope evaluate -e naturalness -e half_life_h -e te_mean` | three axes, all maximised |
-| local front | `codonscope filter` | per strategy |
+| local front | `codonscope filter` | per strategy; epsilon-approximate, while his global front below is exact |
 | pool | his `pareto_with_strands_kozak.py` | dedupe by strand (2701 -> 2173), **global** Pareto |
 | shortlist | his `select10_kozak.py` | 10 naturalness deciles over the front; one per decile by greedy max-min Hamming distance, penalty `40 x abs(nat - median) / span`; then a homopolymer QC |
 | extra measure | PyTorch + ViennaRNA degradation model | 107-nt windows, stride 34, 3 seeds; **not** a Pareto axis |
 
-The `gene-cellertz-*` generators call `cellertz-ai gene-cellertz generate`
-(GPU). The whole campaign ran on AWS EC2 `cellertz2`, **not on this server**.
+The `gene-cellertz-*` generators call `cellertz-ai gene-cellertz generate`. The
+whole campaign ran on AWS EC2 `cellertz2`, **not on this server**.
+
+### 2.1 What the maintainer says (26 Nov)
+
+The CLI has eight commands, composed through JSON Lines on stdin/stdout:
+
+| command | what it does |
+| --- | --- |
+| `build` | builds a strand **with its mask** from building-block files; a block whose path has `masked` as a whole component is masked out. Writes one JSONL record carrying strand and mask, so it pipes straight into the rest. This replaces the hand-assembled construct and the hand-added stop codon |
+| `sample` | samples codon sequences with an external generator; **always accepts a seed**, so it can sample around starting sequences |
+| `evaluate` | adds properties to each record; `-e` takes a **math expression over metrics** (`log(cai) * log(naturalness)`) |
+| `filter` | reduces a pool to its **epsilon-approximate** Pareto frontier |
+| `analyze` | summarises a scored pool; a diagnostic, echoes nothing back |
+| `minimize` | minimises properties of sequences |
+| `translate` | codons to amino acids |
+| `doctor` | reports which metric variables each configured evaluator provides, whether its command can be found, and name collisions |
+
+- **No server, no API: a CLI only.** Tuned for CPU; GPU is untested and
+  "probably faster". Memory scales with batch size, whose default is what fits a
+  16 GB laptop; he can add a flag if a larger batch helps.
+- **The mask is always required** and marks everything that is not CDS; the
+  unmasked regions must be valid coding regions. It is also how he infers the
+  UTRs.
+- **The metric list is open.** It comes from a config file (over 3 000 lines as
+  shipped) that registers external programs obeying a protocol, which "has
+  changed several times". Built-ins include folding (`lfc`, `lfv`, `lfcp`,
+  `lfvp`, `mfe`, `lmfe`, `efe`, `circmfe`, `circefe`) and information content
+  (`ic`); the list in the message was cut off.
+- **Determinism.** In practice every objective so far is deterministic. The
+  guarantee he will give is weaker: each objective is deterministic **or a
+  convergent estimate** (variance tends to zero as the budget grows), because
+  Monte Carlo estimators may come.
+- His public `USAGE.md` and `CONFIGURATION.md` links return 404 to us; the
+  repository is not publicly readable. This plan has **not** read them.
 
 ### Verified
 
@@ -64,7 +98,7 @@ The `gene-cellertz-*` generators call `cellertz-ai gene-cellertz generate`
 | **When is nothing found?** | No acceptance threshold anywhere. The front is relative and can never be empty. His one "rerun" was a construct bug (no stop codon) found by a person. | A rule for "no hit". See section 6 for one the data supports. |
 | **Why naturalness deciles?** | One sentence: the metric "we've observed correlates with measured expression". | No expression measurement exists in any file; every number is a model prediction. "Previously-validated" (5 references) is never explained. |
 | **Manufacturability limits** | Homopolymer max run is reported (6 nt) and called "not a concern". | No limit. The embedded GenScript/FastBio order form asks for restriction sites to avoid, stop-codon policy, organism, vector. |
-| **Where Codonscope runs, and how it is called** | CLI on `cellertz2`, driven from a shell. | Whether it has an API or server mode; whether `sample` accepts a seed. |
+| **Where Codonscope runs, and how it is called** | CLI on `cellertz2`, driven from a shell. | **Answered** (2.1): a CPU CLI, no server, accepts seeds. Still open: who owns `cellertz-ai`, and how we get the binary and its docs. |
 
 ## 4. Architecture
 
@@ -109,13 +143,14 @@ agent.** So only the steps that need language use a model.
 | Proximity | **deterministic**: Hamming clustering (already in his shortlist step) |
 | Reflection / Critique | **deterministic** checks; a model may only *explain* a result |
 | Ranking | **deterministic**: global Pareto + stratified shortlist |
-| Evolution | **deterministic** in v1: reallocate the next round's budget by front contribution. Seeded evolution needs Codonscope to accept a seed (open) |
+| Evolution | **deterministic**: reallocate the next round's budget by front contribution, and **resample around the current front** (`sample` always accepts a seed) |
 | Meta-review | **LLM**: the round's lesson, recorded beside what the round measured |
 
 Two of seven use a model in v1. This is a change from the earlier sketch, where
 Evolution was model-driven: in his data the useful move is picking strategies
 (t=0.25 supplies 56 of the 109 global-front designs, t=0.5 supplies 24,
-beam-150 supplies 12), and that is arithmetic.
+beam-150 supplies 12), and resampling around survivors is a flag, not a
+judgment.
 
 ### 4.3 The tool seam
 
@@ -128,14 +163,27 @@ mrna.codonscope.sample      strand, mask, generator, n
 mrna.codonscope.evaluate    strands, mask, metrics
 ```
 
-The domain code talks to a `CodonscopeRunner` protocol. Three ways to satisfy
-it, chosen once the API question is answered:
+The domain code talks to a `CodonscopeRunner` protocol whose wire format is the
+CLI's own: **JSON Lines on stdin and stdout, no files to glue together**.
 
-| option | when |
+| option | status after the 26 Nov answers |
 | --- | --- |
-| A. binary installed here | `evaluate` and `codon-usage` are native Rust; `gene-cellertz-*` generators still need `cellertz-ai` and a GPU |
-| B. thin service on `cellertz2` | Codonscope exposes an API, or we wrap the CLI behind an allow-list |
+| **A. binary installed on this server** | **the plan.** It is a CPU CLI with no server; `evaluate`, `build`, `filter` and the native `codon-usage` generator need nothing else. Needs the binary, its config and its docs (open) |
+| B. thin service on another host | only if the binary cannot run here |
 | C. ssh runtime | last resort; must still kill the whole process group at the deadline, as `GroupSupervisedRuntime` does on the card |
+
+Two things that follow from the CLI's shape:
+
+- **`codonscope doctor` is the readiness gate.** Before a campaign it reports
+  which metric variables the configured evaluators provide and whether their
+  commands exist. A campaign whose objective needs a metric that `doctor`
+  cannot resolve is refused before any run, like the GPU and image checks on the
+  protein side.
+- **The strategies other than `codon-usage` use an external generator,
+  `cellertz-ai gene-cellertz generate`.** Whether it runs on CPU, who maintains
+  it and whether it can be installed here is **not answered** (his answers are
+  about Codonscope). Until it is, the portfolio is `codon-usage` plus seeded
+  resampling.
 
 ### 4.4 Data model (additions)
 
@@ -158,8 +206,11 @@ shortlist size) is configured in the admin, **as the agent prompts already are**
   spec at approval (as `ResolvedPrompt.provenance()` does). Changing the admin
   afterwards never changes an approved campaign.
 - The bar's numbers depend on the evaluator: reference sequences are stored as
-  sequences and **re-evaluated at campaign start**, and the Codonscope version
-  goes into the pinned snapshot. A new evaluator version is a new bar.
+  sequences and **re-evaluated at campaign start**. The pinned snapshot holds
+  the `codonscope --version`, the **exact `-e` objective expressions**, and the
+  `doctor` report, because the metrics protocol has changed several times and
+  an objective is a free expression, not a fixed name. A new evaluator version
+  or a new expression is a new bar.
 - A scientist may **override per campaign**; the override is a diff shown at
   gate 1 and is part of the digest.
 - **Governance stays in code and tests, not in the table:** the agent has no
@@ -203,8 +254,8 @@ reference" is a real, measurable *no hit*, and it would have fired for four
 references in this very campaign. Absolute per-axis floors may be added.
 
 **Again.** Each round changes **one declared thing** from an allowed set (add a
-strategy, raise N, change a temperature, widen a beam). Repeating the same
-experiment is not a search.
+strategy, raise N, change a temperature, widen a beam, **resample around the
+current front**). Repeating the same experiment is not a search.
 
 **The agent may widen the search; it may never lower the bar.** The reference
 set, the floors and the hard constraints are in the approved spec digest. A
@@ -218,10 +269,15 @@ design found", with what was tried and what each round measured.
 high-naturalness end is dominated by beam-150, which converges. A declared
 Hamming floor makes that a measurable reason for another round.
 
+**Estimators.** If an objective becomes a Monte Carlo estimate, a hit has to
+beat the estimate's own noise, and the evaluation budget joins the spec. Today
+every objective is deterministic, so this is a recorded property of each
+metric, not a code path to build yet.
+
 **Cost.** Rounds are minutes, not seconds: temperature sampling ~552 s per 500
 sequences, evaluation ~58 s per 500, `codon-usage` free, a full 8-strategy
 campaign ~48 min. The risk of an autonomous loop here is tokens and
-wall-clock, not a shared GPU.
+wall-clock. Codonscope itself runs on CPU, so it no longer competes for the card.
 
 ## 7. Build order
 
@@ -229,24 +285,27 @@ Each phase ends with a check against his published numbers.
 
 | # | phase | exit check |
 | --- | --- | --- |
-| 0 | **Facts**: API/runtime answer; reference bar; vendor constraints; acceptance of this plan | answers recorded |
+| 0 | **Facts**: how to get the binary and docs (N1); the reference bar and vendor limits (P1, P2); acceptance of this plan | answers recorded |
 | 1 | **Offline core**: Pareto, dedupe, stratified shortlist, on his published library as a fixture | reproduces 113 = 109 + 4 and one pick per decile. The Hamming picks themselves need strands he did not publish, so they are property-tested until a real run supplies them |
 | 2 | **Construct validator** | accepts his 10; rejects the no-stop construct and a two-stop reference |
-| 3 | **First real Codonscope call** through the runner | re-evaluating his 10 shortlisted strands returns his nat/te/hl within tolerance, **and the same strand evaluated twice returns the same values** (the bar is re-evaluated per campaign, so this blocks) |
-| 4 | **One real round**: `codon-usage` then one temperature | wall-clock and front match the order of magnitude above |
+| 3 | **Install the binary here; `doctor`; first real call** through the runner | `doctor` resolves his three objectives; re-evaluating his 10 shortlisted strands returns his nat/te/hl within tolerance; the same strand twice returns the same values (cheap, and the bar is re-evaluated per campaign) |
+| 4 | **One real round**: `codon-usage`, then one seeded resample around its front; a temperature strategy only once `cellertz-ai` is reachable | wall-clock and front match the order of magnitude above |
 | 5 | **`BarProfile` in the admin (4.5), Supervisor, spec, gate 1** | a campaign cannot be approved without a profile; the spec digest binds criterion, floors, reference set, evaluator version, budget |
 | 6 | **The loop**: allocation, stops, lesson | a campaign that cannot beat a reference stops cleanly and says so |
 | 7 | **Journey and screen reuse**, shortlist gate, synthesis export | the professor runs one campaign from the screen |
 
 ## 8. Risks and decisions needed
 
-1. **Codonscope access** (section 4.3) decides phase 3. If it only exists as a
-   CLI on `cellertz2`, option B or C and a network path from this server.
-2. **Evaluation determinism** is unknown. He notes the degradation model
-   differs by ~0.015 between independently trained models; phase 3 must check
-   that `evaluate` is repeatable on the same strand.
-3. **Scale.** His Pareto is O(n^2): fine at 2 000 designs, ~2.5e9 comparisons
-   at 50 000. Use a sort-based front before the loop can generate that many.
+1. **Getting the binary and its docs** decides phase 3. The repository is not
+   publicly readable and the metrics protocol is, in the maintainer's words,
+   an implementation detail that has changed several times: pin the version and
+   the `doctor` report, and expect to re-pin.
+2. **Determinism has no contract.** It holds today; the promise is only
+   "deterministic or convergent". Record, per metric, which it is.
+3. **Scale.** His exact Pareto is O(n^2): fine at 2 000 designs, ~2.5e9
+   comparisons at 50 000. Either a sort-based exact front, or `filter`'s
+   epsilon-approximate one with the epsilon in the pinned snapshot; the two are
+   not interchangeable and the plan must say which a result used.
 4. **The bar is the professor's.** Which reference, which floors, which
    vendor limits. The plan does not invent them; he sets them in the admin
    profile (4.5), and no profile means no campaign can be approved.
@@ -259,16 +318,30 @@ Each phase ends with a check against his published numbers.
 Nothing below is built until these are answered. The right-hand columns are the
 plan's branch for each answer, so the next step is known whichever way it goes.
 
-### 9.1 For whoever operates Codonscope and `cellertz2`
+### 9.1 For the Codonscope maintainer
 
-| # | question | blocks | if yes | if no |
-| --- | --- | --- | --- | --- |
-| O1 | Is there an API, server mode or MCP? Can this server reach `cellertz2`, and by what path? | phase 3 | option B: call it | wrap the CLI behind an allow-list on `cellertz2` (B), or ssh (C) |
-| O2 | Can the `codonscope` binary be installed on this server (version, licence)? | phase 3 | option A for `evaluate` and `codon-usage` | everything goes through `cellertz2` |
-| O3 | Does `gene-cellertz` need a GPU, which, how much memory, and can it be called from outside `cellertz2`? | phase 4 | the full 8-strategy portfolio is available | the portfolio is **`codon-usage` only** until it is reachable; temperature and beam strategies wait |
-| O4 | Does `sample` accept a seed (starting sequences)? | v2 only | Evolution can be seeded from the front | v1 stays an allocator across strategies |
-| O5 | Is `evaluate` deterministic: same strand, same values, twice? | **phase 3** | the bar is re-evaluated each campaign | the bar is stored with a measured noise floor, and a hit needs a margin larger than it |
-| O6 | Which metrics does `evaluate -e` accept beyond naturalness, half-life and TE? | phase 2 | GC, CAI, folding energy etc. become measured constraints | we compute what is cheap ourselves (homopolymer, restriction sites) and leave the rest out |
+**Answered 26 Nov** (details in 2.1):
+
+| # | question | answer | effect |
+| --- | --- | --- | --- |
+| O1 | API, server or MCP? | none: a CLI only | runner speaks JSON Lines over a process; no network seam |
+| O3 | GPU needed? | no, CPU-tuned; GPU untested | runs here; memory follows batch size |
+| O4 | Does `sample` take a seed? | always, and the mask is always required | Evolution resamples around the front in v1 |
+| O5 | Is `evaluate` deterministic? | in practice yes; contract is "deterministic or convergent estimate" | record it per metric; an estimator needs a noise margin |
+| O6 | Which metrics? | open list from a config file; `-e` is a math expression | pin the expressions and the `doctor` report |
+
+My reading of "Sim, pra esses objetivos mencionados sim" is that it answers O5 for
+naturalness, TE and half-life; his longer reply to it supports that.
+
+**Still open** (send these):
+
+| # | question | blocks | effect |
+| --- | --- | --- | --- |
+| N1 | How do we get the binary, its config and `USAGE.md` / `CONFIGURATION.md` (the repo returns 404 to us)? Any licence limit on installing it here? | **phase 3** | without them nothing runs |
+| N2 | What is `cellertz-ai gene-cellertz generate`: who maintains it, does it run on CPU, can it be installed here? | phase 4 | if not, the portfolio is `codon-usage` plus seeded resampling |
+| N3 | What is `filter`'s default epsilon, and does epsilon 0 give the exact front? | phase 1 | decides exact versus approximate fronts at scale |
+| N4 | Is there a version we can pin for the metrics protocol and config (beyond `--version`)? | phase 3 | what goes in the bar's snapshot |
+| N5 | What does `minimize` do, and does it take a mask and a seed? | none | may replace part of the resampling move |
 
 ### 9.2 For the professor
 
@@ -284,7 +357,7 @@ plan's branch for each answer, so the next step is known whichever way it goes.
 
 ### 9.3 What can start before any answer
 
-Phases 1 and 2 need none of them: the offline core is exercised on his
+Phases 1 and 2 need none of the open answers: the offline core is exercised on his
 published library (reproduce 113 = 109 + 4 and one pick per decile) and the
 construct validator on his 10 published CDS plus constructed failures. Only
 the dependencies on the answers above wait.
