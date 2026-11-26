@@ -578,3 +578,75 @@ The Hamming selection itself cannot be reproduced exactly: he did not publish
 the strands of the full front, only of the ten he chose. It is property-tested
 (picks are pairwise distinct, one per bin, deterministic for a given input)
 until a real run supplies a front with strands.
+
+## 12. One backend or two: where the seam goes
+
+Decided 26 Nov 2026, after asking whether mRNA should get its own backend
+behind a central layer, with one frontend over both.
+
+### 12.1 What the code already separates, measured
+
+Density of protein-specific terms (`protein|bindcraft|mber|hotspot|pdl1|ipsae|binder`)
+per module of `application/`:
+
+| module | lines | protein-specific |
+| --- | --- | --- |
+| `journey_orchestration` | 468 | 0.6% |
+| `design_journey` | 4 848 | 1.1% |
+| `scientific_authorization` | 1 412 | 1.6% |
+| `agent_prompts` | 177 | 1.7% |
+| `literature_search` | 334 | 2.1% |
+| `generation_plan` | 2 588 | 4.7% |
+| `request_draft` | 1 487 | 4.8% |
+| `plan_configuration_suggestion` | 1 760 | 7.7% |
+| `journey_specialist_progress` | 1 479 | **11.4%** |
+
+**The real boundary is not product against product; it is engine against
+scientific step.** Prompts, limits, authorization, rounds, dispatch, literature
+and the human gates are genuinely shared. What is protein-specific is the
+hotspot suggestion, the specialist progress and the plan's fields — and those
+already have a home in `domains/`.
+
+A split by product cuts **through** the engine, duplicating governed prompts,
+human gates, scientific authorization and the round loop. Each of those took
+weeks and is what makes the record auditable.
+
+### 12.2 The decision
+
+**A modular monolith now, with one real split: the execution tier.** This is
+also what the platform direction already says — web tier in containers, data in
+RDS, execution on a separate, ephemeral instance. mRNA runs CPU locally;
+protein runs GPU under Apptainer. That split pays; a split by product does not.
+
+Three cheap guardrails keep a future product split possible:
+
+1. **`domains/mrna_design` must not import `domains/protein_design`**, in either
+   direction. Enforced by a test over the import graph, not by discipline.
+2. **Product differences go behind a protocol, never an `if product == ...`.**
+   The precedent exists: a launcher declares its own `required_input_roles`, and
+   the catalog asks rather than branching.
+3. **mRNA does not go through `journey_specialist_progress`.** It is the most
+   contaminated module (11.4%) and is shaped around an accepted candidate, a
+   PDB and a PAE matrix — shapes mRNA does not have. mRNA reuses the dispatch
+   and the rounds, with its own progress recorder. This is the direct lesson of
+   routing mBER through that module: mBER at least produces structures.
+
+### 12.3 What would change the decision
+
+- **Two teams.** The cost of separate backends is mostly organisational, and it
+  pays when ownership is separate. Today it is one developer.
+- **`application/` outgrowing one reader.** If mRNA approaches Protein Design in
+  size, the cut becomes more expensive than it is today. Revisit then, with the
+  guardrails already in place.
+
+Against a split, one requirement: the work plan's phase 03 ends in **"Protein
+Design Readiness & mRNA Handoff"** — a protein candidate feeding mRNA design.
+With separate backends that becomes an integration between services.
+
+### 12.4 The pain this does not ignore
+
+"mRNA work must not endanger Protein Design" is real: the 8444 service is still
+running code from 20 Nov because restarting it is risky. That is a **deployment**
+problem, and it already has a cheaper answer than two backends — separate
+instances of the same code, which `deploy/cd22-trial/trial.sh` does today, and
+the separate execution tier above.
