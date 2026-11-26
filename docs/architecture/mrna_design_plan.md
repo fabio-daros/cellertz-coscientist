@@ -166,11 +166,11 @@ mrna.codonscope.evaluate    strands, mask, metrics
 The domain code talks to a `CodonscopeRunner` protocol whose wire format is the
 CLI's own: **JSON Lines on stdin and stdout, no files to glue together**.
 
-| option | status after the 26 Nov answers |
+| option | status |
 | --- | --- |
-| **A. binary installed on this server** | **the plan.** It is a CPU CLI with no server; `evaluate`, `build`, `filter` and the native `codon-usage` generator need nothing else. Needs the binary, its config and its docs (open) |
-| B. thin service on another host | only if the binary cannot run here |
-| C. ssh runtime | last resort; must still kill the whole process group at the deadline, as `GroupSupervisedRuntime` does on the card |
+| A. binary installed on this server | was the plan after the 26 Nov answers; **dropped.** The repository is 404 to us, and the reproducibility unit is not the binary but binary + 3k-line config + the external evaluator programs it names |
+| **B. a service on another host** | **the plan, as of 26 Nov.** Agreed with the maintainer: he stands up an **MCP server in front of Codonscope on a server**, and the platform connects to it as a client. We install nothing. See 11.3 for what that server has to report |
+| C. ssh runtime | no longer needed |
 
 Two things that follow from the CLI's shape:
 
@@ -296,10 +296,15 @@ Each phase ends with a check against his published numbers.
 
 ## 8. Risks and decisions needed
 
-1. **Getting the binary and its docs** decides phase 3. The repository is not
-   publicly readable and the metrics protocol is, in the maintainer's words,
-   an implementation detail that has changed several times: pin the version and
-   the `doctor` report, and expect to re-pin.
+1. **The execution environment is not ours.** Codonscope runs behind the
+   maintainer's MCP server on a server we do not control (11.3). The binary no
+   longer has to be obtained, which removes the phase-3 blocker; in exchange we
+   can no longer hash what we ran, so the server has to report its version and
+   config digest and the platform has to refuse a campaign whose digest moved
+   mid-flight. The metrics protocol is, in the maintainer's words, an
+   implementation detail that has changed several times, so expect to re-pin.
+   A shared server also means our timing figures (~552 s per 500 sampled) assume
+   an idle CPU and are not a guarantee.
 2. **Determinism has no contract.** It holds today; the promise is only
    "deterministic or convergent". Record, per metric, which it is.
 3. **Scale.** His exact Pareto is O(n^2): fine at 2 000 designs, ~2.5e9
@@ -324,7 +329,7 @@ plan's branch for each answer, so the next step is known whichever way it goes.
 
 | # | question | answer | effect |
 | --- | --- | --- | --- |
-| O1 | API, server or MCP? | none: a CLI only | runner speaks JSON Lines over a process; no network seam |
+| O1 | API, server or MCP? | none: a CLI only — **superseded later the same day: he will stand up an MCP server in front of it, on a server** | the runner is an MCP client, not a process call (11.3) |
 | O3 | GPU needed? | no, CPU-tuned; GPU untested | runs here; memory follows batch size |
 | O4 | Does `sample` take a seed? | always, and the mask is always required | Evolution resamples around the front in v1 |
 | O5 | Is `evaluate` deterministic? | in practice yes; contract is "deterministic or convergent estimate" | record it per metric; an estimator needs a noise margin |
@@ -337,10 +342,10 @@ naturalness, TE and half-life; his longer reply to it supports that.
 
 | # | question | blocks | effect |
 | --- | --- | --- | --- |
-| N1 | How do we get the binary, its config and `USAGE.md` / `CONFIGURATION.md` (the repo returns 404 to us)? Any licence limit on installing it here? | **phase 3** | without them nothing runs |
+| N1 | ~~How do we get the binary and its config?~~ **Resolved by the MCP decision: we do not.** Still needed: the server's address, a token, and whether it is the host the Fluc campaign ran on (EC2 `cellertz2`) | **phase 3** | 11.3 lists the four things that server must provide; send them before he builds |
 | N2 | What is `cellertz-ai gene-cellertz generate`: who maintains it, does it run on CPU, can it be installed here? | phase 4 | if not, the portfolio is `codon-usage` plus seeded resampling |
 | N3 | What is `filter`'s default epsilon, and does epsilon 0 give the exact front? | phase 1 | decides exact versus approximate fronts at scale |
-| N4 | Is there a version we can pin for the metrics protocol and config (beyond `--version`)? | phase 3 | what goes in the bar's snapshot |
+| N4 | Can every MCP response carry binary version + config sha256 + per-evaluator version? **Now the load-bearing question:** remote, we can hash nothing ourselves | phase 3 | without it a recorded campaign is not reproducible and a silent config change is undetectable (11.3, requirement 3) |
 | N5 | What does `minimize` do, and does it take a mask and a seed? | none | may replace part of the resampling move |
 | N6 | Does the config register an **immunogenicity** evaluator, and anything for **ribosome dynamics** (codon ramp, tRNA adaptation, pause sites) beyond `te_mean`? | phase 5 | decides whether these are axes we can measure or gaps we declare |
 
@@ -514,37 +519,76 @@ Three decisions worth stating:
    The existing `MRNASequenceCandidate` has exactly that fixed shape and is
    therefore **not** reused as-is.
 
-### 11.3 The Codonscope seam
+### 11.3 The Codonscope seam: an MCP client
 
-The CLI is uniform: JSON Lines in, JSON Lines out. So the seam is one call.
+**Decided 26 Nov.** The maintainer puts an MCP server in front of Codonscope on
+a server; the platform is the **client**. We install no binary, no config and
+none of the external evaluator programs — which is the point, because those
+three together are the reproducibility unit and only one of them was ever
+obtainable.
+
+The domain code still talks to one protocol. Only the adapter behind it changes:
 
 ```python
 class CodonscopeRunner(Protocol):
-    def run(self, argv: tuple[str, ...], stdin: str = "") -> str:
-        """Run one codonscope command. Returns stdout. Raises on failure."""
+    def sample(self, strand, mask, generator, n, seed) -> LibraryRef: ...
+    def evaluate(self, library: LibraryRef, mask, expressions) -> MetricsRef: ...
+    def doctor(self) -> DoctorReport: ...
 ```
 
-It is satisfied by the existing `ExecutionRuntime`, which already carries argv,
-cwd, env and a timeout and already kills the whole process group at the
-deadline. **One field is missing: `ExecutionRequest` has no `stdin`.** Adding
-`stdin: str | None = None` is backward compatible with its eight call sites and
-is the whole change needed on that side.
+Two consequences for the rest of the plan:
 
-Everything above it is argv construction in `adapters/codonscope.py`:
+- Phases 1 and 2 are untouched. The offline core and the campaign contract are
+  tested against the artifact's published files and never call Codonscope.
+- The `stdin: str | None` field this plan wanted on `ExecutionRequest` is **no
+  longer needed**. There is no local process.
 
-```
-build      -> ("codonscope", "build", *block_paths)
-sample     -> ("codonscope", "sample", "--generator", g, "-a", mask, str(n))
-evaluate   -> ("codonscope", "evaluate", "-a", mask, "-e", expr, ...)
-filter     -> ("codonscope", "filter", "-e", "\\-nat", "-e", "\\-te", ...)
-doctor     -> ("codonscope", "doctor")
-```
+We are a **programmatic** MCP client: the deterministic loop decides when to
+sample and evaluate. MCP here is transport, not a surface on which a model picks
+calls. That distinction is the whole reason the loop stays reproducible.
 
-**`doctor` is the readiness gate**, checked before a campaign the way the GPU
-and image hashes are checked before a protein launch: every variable the
+#### What the server has to provide
+
+Four requirements, in the order they bite. The first three are shape decisions
+that are cheap now and rework later.
+
+1. **Results by reference, not inline.** Evaluating 2 701 strands is megabytes
+   of JSON Lines. An MCP tool result is text destined for a model's context. The
+   tools must return a handle — an id or URL for the JSONL artifact — which the
+   platform fetches out of band. Inline rows fail on the first real campaign.
+2. **Asynchronous: start, poll, fetch.** Sampling 500 strands by temperature is
+   ~552 s. A synchronous call of that length does not survive any ordinary
+   transport. The shape that works is the one the protein side already has
+   (`start_run`, `run_state`), and the state should distinguish **queued** from
+   **running**, because the server is shared and our timing figures assume an
+   idle CPU.
+3. **Version and config digest on every response.** This is the one that is easy
+   to omit and impossible to retrofit. On the protein side the platform
+   recomputes `SIF_SHA256` before every launch and refuses on
+   `sif_hash_mismatch`; the generator records
+   `mber-open-<version>@<commit>`. With Codonscope remote we can hash nothing, so
+   the server must report: binary version, sha256 of the config, and the version
+   of each registered evaluator. The platform pins that into the campaign
+   snapshot and **refuses to continue a campaign whose digest changed between
+   rounds** — otherwise the same seed can give a different number and nothing in
+   the record would say so. `doctor` is the natural place.
+4. **A token.** The platform is the client, so the deliberate no-auth decision
+   on *our* MCP server (port 8000 is exposed to the compose network only, never
+   published to the host) is unaffected. His server crosses a network and spends his CPU on external evaluators, so it
+   needs one, and our side needs a per-request ceiling on calls so a loop cannot
+   drain it.
+
+**`doctor` remains the readiness gate.** Before a campaign, every variable the
 objective expressions name must resolve to a registered evaluator whose command
-exists. A campaign whose objective cannot be resolved is refused **before** any
-run, and the report is pinned into the campaign's snapshot.
+exists on that server. A campaign whose objective cannot be resolved is refused
+**before** any run, and the report is pinned into the campaign's snapshot.
+
+**Open:** is it the same server the professor's Fluc campaign ran on (AWS EC2
+`cellertz2`)? If yes, its config and evaluators are the ones that produced the
+data phase 1 reproduces, so our numbers are comparable to his and
+`cellertz-ai gene-cellertz` (N2) may be reachable the same way. If it is a
+different host, neither follows and the evaluator versions have to be compared
+before any result is called a reproduction.
 
 ### 11.4 Two campaign types, one pipeline
 
